@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/pre-tool-validate.ts"
+          }
+        ],
+        "description": "Validate shell commands against known error patterns (self-healing)"
+      },
+      ...
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/post-tool-record.ts"
+          }
+        ],
+        "description": "Record tool usage for session analysis"
+      },
+      ...
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/capture-error.ts"
+          }
+        ],
+        "description": "Capture tool failures in agent memory for self-healing"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/session-analyze.ts"
+          }
+        ],
+        "description": "Analyze session pattern and update learned instincts"
+      },
+      ...
+    ],
+    "AfterFileEdit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/learn-from-edit.ts"
+          }
+        ],
+        "description": "Learn from file edits (style patterns, preferences)"
+      }
+    ],
+    "BeforeSubmitPrompt": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/observe-correction.ts"
+          }
+        ],
+        "description": "Observe and learn from user corrections"
+      }
+    ],
+    "AfterAgentResponse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/memory/record-response.ts"
+          }
+        ],
+        "description": "Record agent response for learning history"
+      }
+    ]
+  }
+}

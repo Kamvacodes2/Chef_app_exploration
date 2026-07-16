@@ -1,0 +1,400 @@
+{
+  "categories": [
+    {
+      "id": "healthy",
+      "name": "Healthy EasyChef",
+      "paletteId": "olive",
+      "mood": "Soft daylight, fresh and light",
+      "order": 0
+    },
+    {
+      "id": "chicken",
+      "name": "Chicken Meals",
+      "paletteId": "persimmon",
+      "mood": "Golden hour, grilled and juicy",
+      "order": 1
+    },
+    {
+      "id": "beef-premium",
+      "name": "Beef & Meat Premium",
+      "paletteId": "espresso",
+      "mood": "Cozy cafe, rich and hearty",
+      "order": 2
+    },
+    {
+      "id": "breakfast",
+      "name": "Overnight Oats",
+      "paletteId": "vanilla",
+      "mood": "Warm sunlight, gentle mornings",
+      "order": 3
+    },
+    {
+      "id": "pasta-bakes",
+      "name": "Pasta Bakes & Kid Friendly",
+      "paletteId": "strawberry",
+      "mood": "Soft, playful comfort food",
+      "order": 4
+    },
+    {
+      "id": "sunday-lunch",
+      "name": "Seven Colours Sunday Lunch",
+      "paletteId": "blood-red",
+      "mood": "Elegant evening, premium spread",
+      "order": 5
+    }
+  ],
+  "meals": [
+    {
+      "id": "healthy-chicken-gyro-bowl",
+      "categoryId": "healthy",
+      "name": "Chicken Gyro Bowl",
+      "description": "Grilled chicken, fresh greens and a light tzatziki drizzle.",
+      "priceDisplay": "R89",
+      "image": {
+        "src": "/images/meals/healthy/chicken-gyro-bowl.webp",
+        "width": 736,
+        "height": 981,
+        "alt": "Chicken gyro bowl with fresh vegetables"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 34,
+        "carbs": 22,
+        "fat": 12,
+        "fibre": 5
+      }
+    },
+    {
+      "id": "healthy-burger-bowl",
+      "categoryId": "healthy",
+      "name": "Burger Bowl",
+      "description": "Deconstructed burger flavours over crisp greens.",
+      "priceDisplay": "R85",
+      "image": {
+        "src": "/images/meals/healthy/burger-bowl.webp",
+        "width": 736,
+        "height": 1308,
+        "alt": "Burger bowl with lean mince and salad"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 1,
+      "nutrition": {
+        "protein": 30,
+        "carbs": 18,
+        "fat": 14,
+        "fibre": 6
+      }
+    },
+    {
+      "id": "healthy-chicken-salad-bowl",
+      "categoryId": "healthy",
+      "name": "Chicken Salad Bowl",
+      "description": "Lean chicken breast with a colourful vegetable medley.",
+      "priceDisplay": "R79",
+      "image": {
+        "src": "/images/meals/healthy/chicken-salad-bowl.webp",
+        "width": 736,
+        "height": 981,
+        "alt": "Chicken salad bowl"
+      },
+      "isHot": false,
+      "hasCutlery": true,
+      "order": 2,
+      "nutrition": {
+        "protein": 32,
+        "carbs": 14,
+        "fat": 9,
+        "fibre": 6.5
+      }
+    },
+    {
+      "id": "chicken-peri-peri",
+      "categoryId": "chicken",
+      "name": "Peri-Peri Chicken",
+      "description": "Flame-grilled chicken basted in fiery peri-peri sauce.",
+      "priceDisplay": "R95",
+      "image": {
+        "src": "/images/meals/chicken/peri-peri-chicken.webp",
+        "width": 736,
+        "height": 1104,
+        "alt": "Peri-peri chicken"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 42,
+        "carbs": 6,
+        "fat": 16,
+        "fibre": 1.5
+      }
+    },
+    {
+      "id": "chicken-bbq",
+      "categoryId": "chicken",
+      "name": "BBQ Chicken",
+      "description": "Smoky BBQ glazed chicken, grilled to perfection.",
+      "priceDisplay": "R92",
+      "image": {
+        "src": "/images/meals/chicken/bbq-chicken.webp",
+        "width": 736,
+        "height": 920,
+        "alt": "BBQ chicken"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 1,
+      "nutrition": {
+        "protein": 40,
+        "carbs": 12,
+        "fat": 18,
+        "fibre": 1
+      }
+    },
+    {
+      "id": "chicken-roasted",
+      "categoryId": "chicken",
+      "name": "Roasted Chicken",
+      "description": "Slow-roasted chicken with golden crispy skin.",
+      "priceDisplay": "R99",
+      "image": {
+        "src": "/images/meals/chicken/roasted-chicken.webp",
+        "width": 736,
+        "height": 1104,
+        "alt": "Roasted chicken"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 2,
+      "nutrition": {
+        "protein": 44,
+        "carbs": 4,
+        "fat": 20,
+        "fibre": 0.5
+      }
+    },
+    {
+      "id": "beef-steak-chips",
+      "categoryId": "beef-premium",
+      "name": "Steak & Chips",
+      "description": "Tender grilled steak served with crispy golden chips.",
+      "priceDisplay": "R149",
+      "image": {
+        "src": "/images/meals/beef-premium/steak-and-chips.webp",
+        "width": 564,
+        "height": 1002,
+        "alt": "Steak and chips"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 45,
+        "carbs": 40,
+        "fat": 24,
+        "fibre": 4
+      }
+    },
+    {
+      "id": "beef-oxtail-stew",
+      "categoryId": "beef-premium",
+      "name": "Oxtail Stew",
+      "description": "Slow-braised oxtail in a rich, hearty gravy.",
+      "priceDisplay": "R159",
+      "image": {
+        "src": "/images/meals/beef-premium/oxtail-stew.webp",
+        "width": 675,
+        "height": 1200,
+        "alt": "Oxtail stew"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 1,
+      "nutrition": {
+        "protein": 38,
+        "carbs": 16,
+        "fat": 30,
+        "fibre": 3
+      }
+    },
+    {
+      "id": "beef-lamb-chops",
+      "categoryId": "beef-premium",
+      "name": "Lamb Chops",
+      "description": "Char-grilled lamb chops with herb seasoning.",
+      "priceDisplay": "R169",
+      "image": {
+        "src": "/images/meals/beef-premium/lamb-chops.webp",
+        "width": 736,
+        "height": 1308,
+        "alt": "Lamb chops"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 2,
+      "nutrition": {
+        "protein": 40,
+        "carbs": 2,
+        "fat": 32,
+        "fibre": 0.5
+      }
+    },
+    {
+      "id": "breakfast-overnight-oats",
+      "categoryId": "breakfast",
+      "name": "Overnight Oats",
+      "description": "Creamy oats soaked overnight with fruit and honey.",
+      "priceDisplay": "R55",
+      "image": {
+        "src": "/images/meals/breakfast/overnight-oats.webp",
+        "width": 684,
+        "height": 1200,
+        "alt": "Overnight oats"
+      },
+      "isHot": false,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 12,
+        "carbs": 45,
+        "fat": 8,
+        "fibre": 7
+      }
+    },
+    {
+      "id": "pasta-beef-lasagne",
+      "categoryId": "pasta-bakes",
+      "name": "Beef Lasagne",
+      "description": "Layers of pasta, beef ragu and melted cheese.",
+      "priceDisplay": "R89",
+      "image": {
+        "src": "/images/meals/pasta-bakes/beef-lasagne.webp",
+        "width": 736,
+        "height": 981,
+        "alt": "Beef lasagne"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 28,
+        "carbs": 48,
+        "fat": 20,
+        "fibre": 3.5
+      }
+    },
+    {
+      "id": "pasta-meatball",
+      "categoryId": "pasta-bakes",
+      "name": "Meatball Pasta",
+      "description": "Juicy meatballs tossed in rich tomato pasta.",
+      "priceDisplay": "R85",
+      "image": {
+        "src": "/images/meals/pasta-bakes/meatball-pasta.webp",
+        "width": 736,
+        "height": 981,
+        "alt": "Meatball pasta"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 1,
+      "nutrition": {
+        "protein": 26,
+        "carbs": 46,
+        "fat": 18,
+        "fibre": 4
+      }
+    },
+    {
+      "id": "pasta-cheesy-mince",
+      "categoryId": "pasta-bakes",
+      "name": "Cheesy Mince Pasta",
+      "description": "Kid-friendly cheesy mince pasta bake.",
+      "priceDisplay": "R79",
+      "image": {
+        "src": "/images/meals/pasta-bakes/cheesy-mince-pasta.webp",
+        "width": 720,
+        "height": 1081,
+        "alt": "Cheesy mince pasta"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 2,
+      "nutrition": {
+        "protein": 24,
+        "carbs": 50,
+        "fat": 19,
+        "fibre": 3
+      }
+    },
+    {
+      "id": "sunday-roast-chicken",
+      "categoryId": "sunday-lunch",
+      "name": "Roast Chicken Seven Colours",
+      "description": "Traditional roast chicken with seven vibrant sides.",
+      "priceDisplay": "R129",
+      "image": {
+        "src": "/images/meals/sunday-lunch/roast-chicken-seven-colours.webp",
+        "width": 736,
+        "height": 755,
+        "alt": "Roast chicken seven colours"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 0,
+      "nutrition": {
+        "protein": 36,
+        "carbs": 34,
+        "fat": 16,
+        "fibre": 6
+      }
+    },
+    {
+      "id": "sunday-oxtail",
+      "categoryId": "sunday-lunch",
+      "name": "Oxtail Seven Colours",
+      "description": "Rich oxtail served the traditional Sunday way.",
+      "priceDisplay": "R159",
+      "image": {
+        "src": "/images/meals/sunday-lunch/oxtail-seven-colours.webp",
+        "width": 736,
+        "height": 1036,
+        "alt": "Oxtail seven colours"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 1,
+      "nutrition": {
+        "protein": 34,
+        "carbs": 32,
+        "fat": 28,
+        "fibre": 5.5
+      }
+    },
+    {
+      "id": "sunday-chicken",
+      "categoryId": "sunday-lunch",
+      "name": "Chicken Seven Colours",
+      "description": "Classic chicken Sunday lunch with seven colourful sides.",
+      "priceDisplay": "R119",
+      "image": {
+        "src": "/images/meals/sunday-lunch/chicken-seven-colours.webp",
+        "width": 736,
+        "height": 920,
+        "alt": "Chicken seven colours"
+      },
+      "isHot": true,
+      "hasCutlery": true,
+      "order": 2,
+      "nutrition": {
+        "protein": 35,
+        "carbs": 33,
+        "fat": 15,
+        "fibre": 6
+      }
+    }
+  ]
+}
