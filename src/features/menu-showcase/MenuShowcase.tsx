@@ -48,7 +48,7 @@ export function MenuShowcase(): ReactElement {
 
   return (
     <section
-      className="relative w-full min-h-dvh overflow-hidden"
+      className="relative min-h-[calc(100dvh-60px)] w-full overflow-hidden"
       onMouseEnter={pause}
       onMouseLeave={resume}
       onFocus={pause}
@@ -59,7 +59,7 @@ export function MenuShowcase(): ReactElement {
       data-phase={phase}
     >
       <BackgroundLayer palette={palette} />
-      <div className="relative z-10 flex h-full min-h-dvh w-full flex-col items-center justify-center gap-4 px-4 py-6 md:px-10 md:py-8">
+      <div className="relative z-10 flex h-full min-h-[calc(100dvh-60px)] w-full flex-col items-center justify-center gap-4 px-4 py-6 md:px-10 md:py-8">
         {isMobile ? (
           <>
             <AnimatePresence mode="wait">

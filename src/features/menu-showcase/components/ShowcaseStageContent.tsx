@@ -1,6 +1,7 @@
 import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
+import { getPalette } from "@/features/hero/constants/palettes";
 import { ShowcaseHands } from "./ShowcaseHands";
 import { ShowcasePlate } from "./ShowcasePlate";
 import { HANDS_RECEDE_DELAY_MS } from "../constants/showcaseTransitions";
@@ -60,6 +61,11 @@ export function ShowcaseStageContent({
 
   const isExiting = phase === "EXITING_HANDS_ARRIVING" || phase === "EXITING_PULLING_AWAY";
 
+  // Resolve the palette's adaptive hand color so the line-art hands stay
+  // visible against the current slide's background (dark palettes flip the
+  // strokes to the light cream tone).
+  const handColor = getPalette(slide.paletteId).handColor;
+
   // "cradle" (pre-recede HOLDING) and "rest" (ENTERING) target the identical
   // y/opacity/transition — both are simply "resting, cradling the plate" —
   // so a single "rest" animate value covers them both.
@@ -86,6 +92,7 @@ export function ShowcaseStageContent({
           variant="below-left"
           reducedMotion={reducedMotion}
           animate={handsBelowAnimate}
+          lineColor={handColor}
         />
       </AnimatePresence>
       {/*
@@ -109,6 +116,7 @@ export function ShowcaseStageContent({
           variant="below-right"
           reducedMotion={reducedMotion}
           animate={handsBelowAnimate}
+          lineColor={handColor}
         />
       </AnimatePresence>
       <AnimatePresence>
@@ -118,6 +126,7 @@ export function ShowcaseStageContent({
             variant="above"
             reducedMotion={reducedMotion}
             animate={phase === "EXITING_HANDS_ARRIVING" ? "grab" : "pullAway"}
+            lineColor={handColor}
           />
         ) : null}
       </AnimatePresence>

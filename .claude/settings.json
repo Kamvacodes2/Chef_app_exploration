@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pip install --user -e \".[cli]\")",
+      "Bash(\"/c/Users/Mtika/AppData/Roaming/Python/Python311/Scripts/hermes.exe\" version *)",
+      "Bash(\"/c/Users/Mtika/hermes-agent/venv/Scripts/hermes.exe\" config *)",
+      "Read(//c/Users/Mtika/AppData/Local/hermes/**)",
+      "Bash(ls -la \"C:\\\\Users\\\\Mtika\\\\AppData\\\\Local\\\\hermes\\\\.env\" 2>&1)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\Mtika\\\\AppData\\\\Local\\\\hermes\")"
+    ]
+  }
+}

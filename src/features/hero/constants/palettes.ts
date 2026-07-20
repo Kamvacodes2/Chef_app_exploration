@@ -14,6 +14,12 @@ import type { Palette, PaletteId } from "@/data/types/Palette";
 const DARK_TEXT = "#1A1208";
 const LIGHT_TEXT = "#F3E3B2"; // Vanilla, used as the light/cream text tone
 
+// Line-art hand colors: the source PNGs are dark blood-red strokes. On light
+// palettes we keep a deep bean/espresso stroke for definition; on dark
+// palettes we switch to the warm cream so the hands stay visible.
+const HAND_ON_LIGHT = "#3B1E03"; // Espresso Earth — rich dark stroke
+const HAND_ON_DARK = "#F3E3B2"; // Vanilla cream — light stroke
+
 export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
   vanilla: Object.freeze({
     id: "vanilla",
@@ -21,6 +27,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#FAF3DC",
     mood: "warm sunlight",
     textColor: DARK_TEXT,
+    tone: "light",
+    handColor: HAND_ON_LIGHT,
   }),
   olive: Object.freeze({
     id: "olive",
@@ -31,6 +39,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#2A2F18",
     mood: "soft daylight",
     textColor: LIGHT_TEXT,
+    tone: "dark",
+    handColor: HAND_ON_DARK,
   }),
   persimmon: Object.freeze({
     id: "persimmon",
@@ -38,6 +48,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#CC7248",
     mood: "golden hour",
     textColor: DARK_TEXT,
+    tone: "light",
+    handColor: HAND_ON_LIGHT,
   }),
   espresso: Object.freeze({
     id: "espresso",
@@ -45,6 +57,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#241200",
     mood: "cozy cafe",
     textColor: LIGHT_TEXT,
+    tone: "dark",
+    handColor: HAND_ON_DARK,
   }),
   strawberry: Object.freeze({
     id: "strawberry",
@@ -52,6 +66,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#E88F87",
     mood: "soft",
     textColor: DARK_TEXT,
+    tone: "light",
+    handColor: HAND_ON_LIGHT,
   }),
   "blood-red": Object.freeze({
     id: "blood-red",
@@ -59,6 +75,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#4D0509",
     mood: "elegant evening",
     textColor: LIGHT_TEXT,
+    tone: "dark",
+    handColor: HAND_ON_DARK,
   }),
   "lemon-cream": Object.freeze({
     id: "lemon-cream",
@@ -66,6 +84,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#E9CB7C",
     mood: "bright citrus morning",
     textColor: DARK_TEXT,
+    tone: "light",
+    handColor: HAND_ON_LIGHT,
   }),
   "warm-linen": Object.freeze({
     id: "warm-linen",
@@ -73,6 +93,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#CBB999",
     mood: "soft neutral warmth",
     textColor: DARK_TEXT,
+    tone: "light",
+    handColor: HAND_ON_LIGHT,
   }),
   bean: Object.freeze({
     id: "bean",
@@ -80,6 +102,8 @@ export const PALETTES: Readonly<Record<PaletteId, Palette>> = Object.freeze({
     to: "#1E0909",
     mood: "deep midnight roast",
     textColor: LIGHT_TEXT,
+    tone: "dark",
+    handColor: HAND_ON_DARK,
   }),
 });
 

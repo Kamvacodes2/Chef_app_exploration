@@ -2,9 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useShowcaseController } from "@/features/menu-showcase/state/useShowcaseController";
 import {
+  HANDS_ABOVE_ARRIVE_MS,
   HOLD_MS,
   PLATE_ENTER_MS,
-  PLATE_EXIT_MS,
+  PLATE_PULL_AWAY_MS,
 } from "@/features/menu-showcase/constants/showcaseTransitions";
 import { SHOWCASE_SLIDE_COUNT } from "@/features/menu-showcase/constants/slides";
 import * as mediaQuery from "@/features/hero/hooks/useMediaQuery";
@@ -28,7 +29,7 @@ describe("useShowcaseController", () => {
     vi.clearAllMocks();
   });
 
-  it("progresses ENTERING -> HOLDING -> EXITING -> advances slideIndex -> back to ENTERING", () => {
+  it("progresses ENTERING -> HOLDING -> EXITING sub-phases -> advances slideIndex -> back to ENTERING", () => {
     const { result } = renderHook(() => useShowcaseController(false));
 
     expect(result.current.phase).toBe("ENTERING");
@@ -42,10 +43,15 @@ describe("useShowcaseController", () => {
     act(() => {
       vi.advanceTimersByTime(HOLD_MS);
     });
-    expect(result.current.phase).toBe("EXITING");
+    expect(result.current.phase).toBe("EXITING_HANDS_ARRIVING");
 
     act(() => {
-      vi.advanceTimersByTime(PLATE_EXIT_MS);
+      vi.advanceTimersByTime(HANDS_ABOVE_ARRIVE_MS);
+    });
+    expect(result.current.phase).toBe("EXITING_PULLING_AWAY");
+
+    act(() => {
+      vi.advanceTimersByTime(PLATE_PULL_AWAY_MS);
     });
     expect(result.current.phase).toBe("ENTERING");
     expect(result.current.slideIndex).toBe(1);
@@ -54,7 +60,7 @@ describe("useShowcaseController", () => {
   it("wraps slideIndex via modulo at the array boundary", () => {
     const { result } = renderHook(() => useShowcaseController(false));
 
-    const fullCycleMs = PLATE_ENTER_MS + HOLD_MS + PLATE_EXIT_MS;
+    const fullCycleMs = PLATE_ENTER_MS + HOLD_MS + HANDS_ABOVE_ARRIVE_MS + PLATE_PULL_AWAY_MS;
 
     act(() => {
       for (let i = 0; i < SHOWCASE_SLIDE_COUNT; i += 1) {
@@ -75,7 +81,7 @@ describe("useShowcaseController", () => {
     const indexBefore = result.current.slideIndex;
 
     act(() => {
-      vi.advanceTimersByTime(PLATE_ENTER_MS + HOLD_MS + PLATE_EXIT_MS + 5000);
+      vi.advanceTimersByTime(PLATE_ENTER_MS + HOLD_MS + HANDS_ABOVE_ARRIVE_MS + PLATE_PULL_AWAY_MS + 5000);
     });
 
     expect(result.current.phase).toBe(phaseBefore);
@@ -108,7 +114,7 @@ describe("useShowcaseController", () => {
     expect(result.current.isPaused).toBe(true);
 
     act(() => {
-      vi.advanceTimersByTime(PLATE_ENTER_MS + HOLD_MS + PLATE_EXIT_MS + 5000);
+      vi.advanceTimersByTime(PLATE_ENTER_MS + HOLD_MS + HANDS_ABOVE_ARRIVE_MS + PLATE_PULL_AWAY_MS + 5000);
     });
     expect(result.current.phase).toBe("ENTERING");
     expect(result.current.slideIndex).toBe(0);

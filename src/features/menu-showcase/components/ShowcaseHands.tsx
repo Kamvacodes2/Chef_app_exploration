@@ -1,6 +1,5 @@
-import Image from "next/image";
 import { motion } from "framer-motion";
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import { HANDS_ABOVE_VARIANTS, HANDS_BELOW_VARIANTS } from "../constants/showcaseTransitions";
 
 export type ShowcaseHandsVariant = "below" | "below-left" | "below-right" | "above";
@@ -9,6 +8,13 @@ export interface ShowcaseHandsProps {
   readonly variant: ShowcaseHandsVariant;
   readonly reducedMotion: boolean;
   readonly animate: "enter" | "rest" | "exit" | "grab" | "pullAway";
+  /**
+   * The stroke color the line-art hands should take on. Driven by the active
+   * palette's `handColor` so the hands stay visible as the background palette
+   * changes (dark-red source strokes vanish on the dark olive/espresso/
+   * blood-red/bean palettes, so those switch to the light cream tone).
+   */
+  readonly lineColor: string;
 }
 
 const SOURCE_BY_VARIANT: Readonly<Record<ShowcaseHandsVariant, string>> = Object.freeze({
@@ -28,8 +34,15 @@ const SOURCE_BY_VARIANT: Readonly<Record<ShowcaseHandsVariant, string>> = Object
  * Full-fill hands layer (below the plate, or above it for the "grab" exit
  * motion). `animate` drives the framer-motion variant key explicitly so the
  * parent can coordinate the below/above hand-off sequence.
+ *
+ * The hands are rendered with a CSS mask rather than <Image>: the source PNG
+ * is used purely as an alpha mask over a solid `lineColor` fill, so the
+ * stroke color is fully controllable per-palette (the dark-red source strokes
+ * disappear against the dark brand palettes). The mask keeps the transparent
+ * background and the stroke shape exactly; only the color changes. Color
+ * transitions are smooth via a CSS transition on the background color.
  */
-export function ShowcaseHands({ variant, reducedMotion, animate }: ShowcaseHandsProps): ReactElement {
+export function ShowcaseHands({ variant, reducedMotion, animate, lineColor }: ShowcaseHandsProps): ReactElement {
   const baseVariants = variant === "above" ? HANDS_ABOVE_VARIANTS : HANDS_BELOW_VARIANTS;
   const variants = reducedMotion
     ? {
@@ -40,6 +53,22 @@ export function ShowcaseHands({ variant, reducedMotion, animate }: ShowcaseHands
         exit: { opacity: 0 },
       }
     : baseVariants;
+
+  const src = SOURCE_BY_VARIANT[variant];
+  const maskStyle = {
+    backgroundColor: lineColor,
+    WebkitMaskImage: `url("${src}")`,
+    maskImage: `url("${src}")`,
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
+    // Smooth the stroke-color change as the palette rotates, matching the
+    // 0.6s background-gradient transition in globals.css.
+    transition: "background-color 0.6s ease",
+  } as CSSProperties;
 
   return (
     <motion.div
@@ -56,14 +85,7 @@ export function ShowcaseHands({ variant, reducedMotion, animate }: ShowcaseHands
       exit="exit"
       data-testid={`showcase-hands-${variant}`}
     >
-      <Image
-        src={SOURCE_BY_VARIANT[variant]}
-        alt=""
-        fill
-        sizes="100vw"
-        style={{ objectFit: "contain" }}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0" style={maskStyle} aria-hidden="true" />
     </motion.div>
   );
 }

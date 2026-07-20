@@ -100,7 +100,6 @@ export function useShowcaseController(paused: boolean): ShowcaseController {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.slideIndex, isPaused]);
 
   const pause = useCallback(() => {

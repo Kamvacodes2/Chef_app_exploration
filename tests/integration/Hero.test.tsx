@@ -88,29 +88,4 @@ describe("Hero", () => {
     await waitFor(() => expect(screen.getByText("Meal Two")).toBeInTheDocument());
   });
 
-  it("returns to the WAITING-state UI when the brand mark is clicked while BROWSING", () => {
-    render(<Hero categories={categories} meals={meals} />);
-    fireEvent.click(screen.getByText(/Choose Your Meal/i));
-    expect(screen.getByTestId("meal-navigation")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /return to start/i }));
-
-    expect(screen.getByText(/Choose Your Meal/i)).toBeInTheDocument();
-    expect(screen.queryByTestId("meal-navigation")).not.toBeInTheDocument();
-    expect(screen.queryByText("Meal One")).not.toBeInTheDocument();
-  });
-
-  it("returns to the WAITING-state UI when the brand mark is clicked while DELIGHTED", async () => {
-    vi.useFakeTimers();
-    render(<Hero categories={categories} meals={meals} />);
-    fireEvent.click(screen.getByText(/Choose Your Meal/i));
-
-    vi.runOnlyPendingTimers();
-
-    fireEvent.click(screen.getByRole("button", { name: /return to start/i }));
-
-    expect(screen.getByText(/Choose Your Meal/i)).toBeInTheDocument();
-    expect(screen.queryByTestId("meal-navigation")).not.toBeInTheDocument();
-    vi.useRealTimers();
-  });
 });

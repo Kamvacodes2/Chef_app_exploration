@@ -10,7 +10,6 @@ import { useIsMobile } from "../hooks/useMediaQuery";
 export interface MealLoopProps {
   /** Current index into MEAL_LOOP_ITEMS (the centered "anchor" meal). */
   readonly loopIndex: number;
-  readonly paused: boolean;
   readonly onPause: () => void;
   readonly onResume: () => void;
 }
@@ -33,7 +32,7 @@ export interface MealLoopProps {
  * lead-buffer/overflow-visible fixes below are viewport-agnostic and apply
  * identically at both sizes.
  */
-export function MealLoop({ loopIndex, paused, onPause, onResume }: MealLoopProps) {
+export function MealLoop({ loopIndex, onPause, onResume }: MealLoopProps) {
   const count = MEAL_LOOP_ITEMS.length;
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);

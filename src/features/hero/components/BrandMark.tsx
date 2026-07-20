@@ -2,10 +2,14 @@ import Image from "next/image";
 
 /**
  * Small, unobtrusive brand mark for the hero corner. Renders the "C" spoon
- * icon cropped from the source logo asset alongside a styled "Chill Chef"
+ * icon cropped from the source logo asset alongside a styled "chill chef"
  * text wordmark (Sora 800, -0.06em tracking, 0.9 line-height) — the source
  * PNG's baked-in serif text doesn't match the brand typography spec, so the
  * wordmark is rendered as real text instead of reusing that image region.
+ *
+ * Defaults to the warm cream text color (#F3E3B2) for legibility on dark
+ * backgrounds (olive/espresso/bean) such as the sticky top bar it lives in.
+ * Pass `textColor` to override when the mark sits on a light palette.
  *
  * Kept deliberately quiet: this is UI chrome, not a hero focal point
  * (visual hierarchy is Human > Food > Background > Text > CTA).
@@ -25,7 +29,7 @@ export function BrandMark({ onReset, textColor }: BrandMarkProps) {
     <button
       type="button"
       onClick={onReset}
-      aria-label="Chill Chef — return to start"
+      aria-label="chill chef — return to start"
       className="flex cursor-pointer items-center gap-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900/60"
       data-testid="brand-mark"
     >
@@ -38,10 +42,10 @@ export function BrandMark({ onReset, textColor }: BrandMarkProps) {
         aria-hidden="true"
       />
       <span
-        className="font-brand text-lg text-neutral-900/90"
-        style={textColor ? { color: textColor } : undefined}
+        className="font-brand text-lg"
+        style={{ color: textColor ?? "#F3E3B2" }}
       >
-        Chill Chef
+        chill chef
       </span>
     </button>
   );

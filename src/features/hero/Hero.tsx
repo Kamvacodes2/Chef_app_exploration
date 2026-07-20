@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import type { Category, Meal } from "@/data/types/Meal";
 import { getPalette } from "./constants/palettes";
 import { BackgroundLayer } from "./components/BackgroundLayer";
-import { BrandMark } from "./components/BrandMark";
 import { HeroHeadline } from "./components/HeroHeadline";
 import { MealNavigation } from "./components/MealNavigation";
 import { MealLoop } from "./components/MealLoop";
@@ -32,7 +31,7 @@ export interface HeroProps {
 }
 
 export function Hero({ categories, meals }: HeroProps) {
-  const { state, chooseMeal, navigate, reset, loopPaused, pauseLoop, resumeLoop } = useHeroController();
+  const { state, chooseMeal, navigate, pauseLoop, resumeLoop } = useHeroController();
   const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
   const parallaxEnabled = !isMobile && !reducedMotion;
@@ -67,10 +66,6 @@ export function Hero({ categories, meals }: HeroProps) {
         <ParallaxWrapper parallax={parallax} depth={PARALLAX_DEPTH.background} className="absolute inset-0">
           <BackgroundLayer palette={palette} />
         </ParallaxWrapper>
-
-        <div className="absolute left-4 top-4 z-20 sm:left-6 sm:top-6">
-          <BrandMark onReset={reset} textColor={palette.textColor} />
-        </div>
 
         <div className="relative z-10 flex flex-1 flex-col items-center justify-start gap-6 px-6 pb-8 pt-10 sm:gap-2 sm:pb-2 sm:pt-36">
           {!isBrowsing && <HeroHeadline textColor={palette.textColor} />}
@@ -124,7 +119,6 @@ export function Hero({ categories, meals }: HeroProps) {
           <div className="pointer-events-auto w-full sm:mt-[64px]">
             <MealLoop
               loopIndex={state.loopIndex}
-              paused={loopPaused}
               onPause={pauseLoop}
               onResume={resumeLoop}
             />

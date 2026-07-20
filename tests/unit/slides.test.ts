@@ -17,9 +17,9 @@ describe("SHOWCASE_SLIDES", () => {
     }
   });
 
-  it("every slide's plateSrc matches the /images/loop/meal-N.webp pattern", () => {
+  it("every slide's plateSrc matches the /images/showcase/plate-N.webp pattern", () => {
     for (const slide of SHOWCASE_SLIDES) {
-      expect(slide.plateSrc).toMatch(/^\/images\/loop\/meal-\d+\.webp$/);
+      expect(slide.plateSrc).toMatch(/^\/images\/showcase\/plate-\d+\.webp$/);
     }
   });
 

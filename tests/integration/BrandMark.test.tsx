@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { BrandMark } from "@/features/hero/components/BrandMark";
 
 describe("BrandMark", () => {
-  it("renders the Chill Chef wordmark with the brand typography class", () => {
+  it("renders the chill chef wordmark with the brand typography class", () => {
     render(<BrandMark onReset={() => {}} />);
-    const wordmark = screen.getByText("Chill Chef");
+    const wordmark = screen.getByText("chill chef");
     expect(wordmark).toBeInTheDocument();
     expect(wordmark).toHaveClass("font-brand");
   });
