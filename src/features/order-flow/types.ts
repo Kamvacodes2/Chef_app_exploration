@@ -17,8 +17,9 @@ export interface Goal {
   readonly id: GoalId;
   readonly title: string;
   readonly tagline: string;
-  /** Playful emoji for the fun onboarding cards. */
-  readonly emoji: string;
+  /** Illustrated tile artwork for the onboarding cards. */
+  readonly image: string;
+  readonly imageAlt: string;
   /** Meal `goalTags` that satisfy this goal. */
   readonly matchTags: readonly string[];
   readonly paletteId: PaletteId;

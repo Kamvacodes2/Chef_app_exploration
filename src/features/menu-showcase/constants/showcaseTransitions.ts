@@ -44,7 +44,7 @@ export const HANDS_RECEDE_DELAY_MS = 1000;
 export const PLATE_HEIGHT_PCT = 68;
 
 /** Horizontal offset of the plate's center within the stage, as a percent of stage width. */
-export const PLATE_LEFT_PCT = 70;
+export const PLATE_LEFT_PCT = 69;
 
 /**
  * Vertical position of the plate's BOTTOM edge, as a percent of stage height

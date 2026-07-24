@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --palette-from: #fff7e8;
-  --palette-to: #f3e8c2;
+  --color-oxblood: #7e2422;
+  --color-terracotta: #d97a4a;
+  --color-charcoal: #2b2b2b;
+  --color-soft-beige: #eadfcc;
+  --color-warm-cream: #f7f2ec;
+  --color-warm-white: #fffdfc;
+  --color-maize: #e4c66a;
+  --color-bone: #f7f0e4;
+  --palette-from: var(--color-bone);
+  --palette-to: var(--color-maize);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -14,7 +22,7 @@ body {
      (instead of the cream --palette-from) guarantees that any sub-pixel
      layout gap, dvh rounding, or horizontal overflow at the page edges
      reveals this color rather than a white/cream seam or sliver. */
-  background-color: #2a2f18;
+  background-color: #ffffff;
 }
 
 body {
@@ -32,6 +40,12 @@ body {
   font-weight: 800;
   letter-spacing: -0.06em;
   line-height: 0.9;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @keyframes steamRise {
@@ -81,8 +95,46 @@ body {
   }
 }
 
+@keyframes landingHeroStoryReveal {
+  from {
+    opacity: 0.25;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popularMealsMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.landing-hero-story-reveal {
+  animation: landingHeroStoryReveal 420ms ease-out both;
+}
+
+.popular-meals-marquee {
+  animation: popularMealsMarquee 28s linear infinite;
+}
+
+.popular-meals-marquee:hover,
+.popular-meals-marquee:focus-within {
+  animation-play-state: paused;
+}
+
 .bg-gradient-hero {
-  background-image: linear-gradient(180deg, var(--palette-from), var(--palette-to), var(--palette-from));
+  background-image: linear-gradient(
+    180deg,
+    var(--palette-from),
+    var(--palette-to),
+    var(--palette-from)
+  );
   transition: background-image 0.6s ease;
 }
 
@@ -110,7 +162,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .steam-wisp,
   .cutlery-sheen,
-  .plate-settle {
+  .plate-settle,
+  .landing-hero-story-reveal,
+  .popular-meals-marquee {
     animation: none !important;
   }
 }

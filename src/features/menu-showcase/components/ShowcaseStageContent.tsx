@@ -1,7 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
-import { getPalette } from "@/features/hero/constants/palettes";
 import { ShowcaseHands } from "./ShowcaseHands";
 import { ShowcasePlate } from "./ShowcasePlate";
 import { HANDS_RECEDE_DELAY_MS } from "../constants/showcaseTransitions";
@@ -64,7 +63,7 @@ export function ShowcaseStageContent({
   // Resolve the palette's adaptive hand color so the line-art hands stay
   // visible against the current slide's background (dark palettes flip the
   // strokes to the light cream tone).
-  const handColor = getPalette(slide.paletteId).handColor;
+  const handColor = "#7E2422";
 
   // "cradle" (pre-recede HOLDING) and "rest" (ENTERING) target the identical
   // y/opacity/transition — both are simply "resting, cradling the plate" —
@@ -109,7 +108,12 @@ export function ShowcaseStageContent({
        * React unmounts it on the key change, so there is nothing left to
        * visibly animate away.
        */}
-      <ShowcasePlate key={slide.id} slide={slide} reducedMotion={reducedMotion} animate={plateAnimate} />
+      <ShowcasePlate
+        key={slide.id}
+        slide={slide}
+        reducedMotion={reducedMotion}
+        animate={plateAnimate}
+      />
       <AnimatePresence>
         <ShowcaseHands
           key={`${slide.id}-below-right`}

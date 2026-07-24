@@ -1,25 +1,44 @@
 import { expect, test } from "@playwright/test";
 
-test("progresses WAITING -> BROWSING -> DELIGHTED", async ({ page }) => {
+test("landing page uses the requested section order and live CTA destinations", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const main = page.locator("main");
-  await expect(main).toHaveAttribute("data-phase", "WAITING");
+  await expect(page.getByRole("heading", { name: "Dinner is handled. Your evening is yours." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your evening, made simple." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Real meals, cooked at home." })).toBeVisible();
+  await expect(page.getByTestId("order-flow")).toBeAttached();
+  await expect(page.getByRole("heading", { name: "Give yourself the evening back." })).toBeVisible();
 
-  await page.getByText("Choose Your Meal").click();
-  await expect(main).toHaveAttribute("data-phase", "BROWSING");
+  await expect(page.getByRole("link", { name: "See how it works" })).toHaveAttribute(
+    "href",
+    "#how-it-works",
+  );
+  await expect(page.getByRole("link", { name: "Explore meals" })).toHaveAttribute(
+    "href",
+    "#order-flow",
+  );
 
-  await page.waitForTimeout(3000);
-  await expect(main).toHaveAttribute("data-phase", "DELIGHTED");
+  await expect(page.getByRole("button", { name: "Previous story" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Next story" })).toHaveCount(0);
+  await expect(page.getByText("1 / 4")).toHaveCount(0);
+  await page.getByRole("tab", { name: "Show story 2: More time to hear about their day." }).click();
+  await expect(page.getByRole("heading", { name: "More time to hear about their day." })).toBeVisible();
+  await expect(
+    page.getByAltText(
+      "A parent helping a child with homework while a Chefmate chef cooks in the background",
+    ),
+  ).toBeVisible();
 });
 
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
+  { name: "tablet", width: 768, height: 1024 },
   { name: "mobile", width: 390, height: 844 },
 ] as const;
 
 for (const viewport of VIEWPORTS) {
-  test(`CTA is not obscured by overlapping layers and is clickable (${viewport.name})`, async ({
+  test(`landing page has no horizontal overflow and keeps CTAs clickable (${viewport.name})`, async ({
     page,
   }) => {
     await page.setViewportSize({
@@ -28,8 +47,7 @@ for (const viewport of VIEWPORTS) {
     });
     await page.goto("/");
 
-    const main = page.locator("main");
-    const cta = page.getByText("Choose Your Meal");
+    const cta = page.getByRole("link", { name: "Book a chef" }).first();
     await expect(cta).toBeVisible();
 
     const box = await cta.boundingBox();
@@ -39,25 +57,19 @@ for (const viewport of VIEWPORTS) {
     const centerX = box.x + box.width / 2;
     const centerY = box.y + box.height / 2;
 
-    // Real hit-test: what element is actually stacked on top at the CTA's
-    // rendered center point? A decorative overlapping layer (e.g. the
-    // model image) intercepting pointer events here is exactly the
-    // regression class this guards against; `pointer-events: none` on
-    // decorative layers is required for this to resolve to the button.
     const hitTestPassed = await page.evaluate(
       ({ x, y }) => {
         const el = document.elementFromPoint(x, y);
         const button = el?.closest("button, a, [role='button']");
-        return (
-          button?.textContent?.includes("Choose Your Meal") ?? false
-        );
+        return button?.textContent?.includes("Book a chef") ?? false;
       },
       { x: centerX, y: centerY },
     );
     expect(hitTestPassed).toBe(true);
 
-    await expect(main).toHaveAttribute("data-phase", "WAITING");
-    await cta.click();
-    await expect(main).toHaveAttribute("data-phase", "BROWSING");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 }

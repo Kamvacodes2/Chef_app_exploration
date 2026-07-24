@@ -35,20 +35,22 @@ const meals: Meal[] = [
 ];
 
 describe("Hero", () => {
-  it("shows the headline and CTA in the WAITING state", () => {
+  it("keeps the CTA and promoted meal loop while omitting the model and retired hero copy", () => {
     render(<Hero categories={categories} meals={meals} />);
-    expect(screen.getByText(/Choose Your Meal/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Choose Your Meal/i })).toBeInTheDocument();
+    expect(screen.getByTestId("hero-meal-loop-stage")).toBeInTheDocument();
+    expect(screen.queryByTestId("model-layer")).not.toBeInTheDocument();
+    expect(screen.queryByText(/What's for dinner tonight\?/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Dinner, handled\./i)).not.toBeInTheDocument();
     expect(screen.queryByTestId("meal-navigation")).not.toBeInTheDocument();
   });
 
-  it("renders the model image and the olive palette in the WAITING state, even when the first category uses a different palette", () => {
+  it("omits the model image and renders the oxblood palette in the WAITING state", () => {
     render(<Hero categories={categories} meals={meals} />);
 
-    const modelImage = screen.getByAltText(/waiting patiently/i);
-    expect(modelImage).toBeInTheDocument();
+    expect(screen.queryByAltText(/waiting patiently/i)).not.toBeInTheDocument();
 
-    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "olive");
+    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "blood-red");
   });
 
   it("renders the MealLoop in the WAITING state", () => {
@@ -56,18 +58,26 @@ describe("Hero", () => {
     expect(screen.getByTestId("meal-loop")).toBeInTheDocument();
   });
 
-  it("changes the background palette as the loop auto-advances", () => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "requestAnimationFrame", "cancelAnimationFrame"] });
+  it("keeps the oxblood background palette as the loop auto-advances", () => {
+    vi.useFakeTimers({
+      toFake: [
+        "setTimeout",
+        "clearTimeout",
+        "setInterval",
+        "clearInterval",
+        "requestAnimationFrame",
+        "cancelAnimationFrame",
+      ],
+    });
     render(<Hero categories={categories} meals={meals} />);
 
-    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "olive");
+    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "blood-red");
 
     act(() => {
       vi.advanceTimersByTime(3000);
     });
 
-    // loopIndex 1 → persimmon
-    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "persimmon");
+    expect(screen.getByTestId("background-layer")).toHaveAttribute("data-palette", "blood-red");
 
     vi.useRealTimers();
   });
@@ -87,5 +97,4 @@ describe("Hero", () => {
 
     await waitFor(() => expect(screen.getByText("Meal Two")).toBeInTheDocument());
   });
-
 });

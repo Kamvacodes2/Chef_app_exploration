@@ -14,14 +14,14 @@ export function HowItWorks() {
 
   return (
     <section
-      className="bg-[#2A2F18] px-6 py-20 sm:py-28"
+      className="bg-white px-6 py-20 sm:py-28"
       aria-labelledby="how-it-works-heading"
       data-testid="how-it-works-section"
     >
       <div className="mx-auto max-w-6xl">
         <h2
           id="how-it-works-heading"
-          className="font-sans mb-10 text-sm font-extrabold uppercase tracking-[0.2em] text-[#E1D5BF]/80"
+          className="font-sans mb-10 text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--color-oxblood)]"
         >
           Your Evening, Made Simple
         </h2>

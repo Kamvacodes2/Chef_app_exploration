@@ -30,10 +30,7 @@ const SCROLL_VH_PER_STEP = 60;
 /** Number of timeline items visible at once in the windowed view. */
 const WINDOW_SIZE = 3;
 
-function handleKeyActivate(
-  event: KeyboardEvent<HTMLButtonElement>,
-  onActivate: () => void,
-): void {
+function handleKeyActivate(event: KeyboardEvent<HTMLButtonElement>, onActivate: () => void): void {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     onActivate();
@@ -128,16 +125,16 @@ export function StepTimeline({ steps, activeIndex, onStepSelect }: StepTimelineP
       style={{ minHeight: `${steps.length * SCROLL_VH_PER_STEP}vh` }}
       data-testid="step-timeline-scroll-region"
     >
-      <div className="sm:sticky sm:top-24 sm:self-start">
+      <div className="flex flex-col justify-center rounded-3xl bg-[var(--color-oxblood)] px-8 py-10 sm:sticky sm:top-24 sm:h-[440px] sm:self-start">
         <ol className="relative flex flex-col gap-8 pl-10" data-testid="step-timeline">
           <span
             aria-hidden
-            className="absolute left-5 top-2 bottom-2 w-px -translate-x-1/2 bg-[#E1D5BF]/20"
+            className="absolute left-5 top-2 bottom-2 w-px -translate-x-1/2 bg-[var(--color-bone)]/20"
             data-testid="timeline-track"
           />
           <motion.span
             aria-hidden
-            className="absolute left-5 top-2 bottom-2 w-px -translate-x-1/2 origin-top bg-[#E88D5F]"
+            className="absolute left-5 top-2 bottom-2 w-px -translate-x-1/2 origin-top bg-[var(--color-maize)]"
             style={{ scaleY: fillScaleY }}
             transition={prefersReducedMotion ? { duration: 0 } : undefined}
             data-testid="timeline-fill"
@@ -157,8 +154,8 @@ export function StepTimeline({ steps, activeIndex, onStepSelect }: StepTimelineP
                   aria-hidden
                   className={`absolute -left-5 top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 transition-colors duration-500 ease-out ${
                     index <= activeIndex
-                      ? "border-[#E88D5F] bg-[#E88D5F]"
-                      : "border-[#E1D5BF]/30 bg-transparent"
+                      ? "border-[var(--color-maize)] bg-[var(--color-maize)]"
+                      : "border-[var(--color-bone)]/30 bg-transparent"
                   }`}
                 />
                 <button
@@ -166,16 +163,16 @@ export function StepTimeline({ steps, activeIndex, onStepSelect }: StepTimelineP
                   onClick={() => handleManualSelect(index)}
                   onKeyDown={(event) => handleKeyActivate(event, () => handleManualSelect(index))}
                   aria-current={isActive ? "step" : undefined}
-                  className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88D5F] focus-visible:ring-offset-2 rounded-sm"
+                  className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-maize)] focus-visible:ring-offset-2 rounded-sm"
                 >
                   <span
                     className={`font-sans block text-lg font-extrabold transition-colors duration-500 sm:text-xl ${
-                      isActive ? "text-[#F3E3B2]" : "text-[#E1D5BF]/70"
+                      isActive ? "text-[var(--color-bone)]" : "text-[var(--color-bone)]/70"
                     }`}
                   >
                     {step.title}
                   </span>
-                  <span className="mt-1 block text-sm text-[#E1D5BF]/70">
+                  <span className="mt-1 block text-sm text-[var(--color-bone)]/70">
                     {step.description}
                   </span>
                 </button>

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { ReactElement } from "react";
 import { getPalette } from "@/features/hero/constants/palettes";
 import { cn } from "@/lib/cn";
+import { getMealDetail } from "../constants/mealDetails";
 import type { OrderMenuItem } from "../types";
 
 export interface DishCardProps {
@@ -16,11 +17,12 @@ export interface DishCardProps {
 }
 
 /**
- * A tappable dish card: photo, name, description, price, and a brand-palette
- * accent glow when selected. Used for mains, sides, and desserts alike.
+ * A tappable dish card: photo, name, ingredients and nutrition. Used for
+ * mains, sides, and desserts alike.
  */
 export function DishCard({ item, selected, onSelect, badge }: DishCardProps): ReactElement {
   const palette = getPalette(item.paletteId);
+  const detail = getMealDetail(item);
   return (
     <motion.button
       type="button"
@@ -28,31 +30,31 @@ export function DishCard({ item, selected, onSelect, badge }: DishCardProps): Re
       whileTap={{ scale: 0.97 }}
       aria-pressed={selected}
       className={cn(
-        "group relative flex w-full flex-col overflow-hidden rounded-3xl text-left shadow-md transition-shadow",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F3E3B2]",
-        selected ? "ring-4 shadow-xl" : "ring-1 ring-black/10 hover:shadow-lg",
+        "group relative flex w-full flex-col overflow-hidden rounded-2xl text-left shadow-md transition-shadow",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-bone)]",
+        selected ? "ring-[3px] shadow-xl" : "ring-1 ring-black/10 hover:shadow-lg",
       )}
       style={{
         // Selected cards glow with the item's palette colour.
         ["--tw-ring-color" as never]: selected ? palette.from : undefined,
       }}
     >
-      <div className="relative h-36 w-full overflow-hidden bg-[#2A2F18]">
+      <div className="relative h-32 w-full overflow-hidden bg-[var(--color-oxblood)]">
         <Image
           src={item.imageSrc}
           alt={item.imageAlt}
           fill
-          sizes="(max-width: 640px) 50vw, 240px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {badge ? (
-          <span className="absolute left-2 top-2 rounded-full bg-[#1A1208]/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#F3E3B2]">
+          <span className="absolute left-2 top-2 rounded-full bg-[var(--color-oxblood)]/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-bone)]">
             {badge}
           </span>
         ) : null}
         {selected ? (
           <span
-            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold"
+            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
             style={{ backgroundColor: palette.from, color: palette.textColor }}
             aria-hidden="true"
           >
@@ -60,12 +62,40 @@ export function DishCard({ item, selected, onSelect, badge }: DishCardProps): Re
           </span>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-1 bg-white p-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#1A1208]">{item.name}</h4>
-          <span className="shrink-0 text-sm font-bold text-[#74070D]">{item.priceDisplay}</span>
+      <div className="flex flex-1 flex-col gap-2.5 bg-white p-3.5">
+        <div>
+          <h4 className="font-display text-base font-semibold leading-tight text-[var(--color-oxblood)]">{item.name}</h4>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--color-oxblood)]/65">{item.description}</p>
         </div>
-        <p className="line-clamp-2 text-xs leading-relaxed text-[#1A1208]/60">{item.description}</p>
+        {detail ? (
+          <>
+            <p className="line-clamp-2 text-[11px] leading-relaxed text-[var(--color-charcoal)]/70">
+              <span className="font-bold text-[var(--color-oxblood)]">Ingredients: </span>
+              {detail.ingredients.join(", ")}
+            </p>
+            <dl
+              className="grid grid-cols-4 gap-1.5 border-t border-[var(--color-oxblood)]/10 pt-2.5 text-center"
+              aria-label={`Nutrition for ${item.name}`}
+            >
+              <div>
+                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">Cal</dt>
+                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">{detail.nutrition.calories}</dd>
+              </div>
+              <div>
+                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">Protein</dt>
+                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">{detail.nutrition.protein}g</dd>
+              </div>
+              <div>
+                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">Carbs</dt>
+                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">{detail.nutrition.carbs}g</dd>
+              </div>
+              <div>
+                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">Fat</dt>
+                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">{detail.nutrition.fat}g</dd>
+              </div>
+            </dl>
+          </>
+        ) : null}
       </div>
     </motion.button>
   );

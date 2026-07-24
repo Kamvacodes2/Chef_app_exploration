@@ -55,10 +55,6 @@ export function MealCard({ meal }: MealCardProps) {
         <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 sm:mt-2 sm:text-xs">
           {meal.description}
         </p>
-        <p className="mt-2 font-display text-sm text-neutral-900 sm:mt-2.5 sm:text-base">
-          {meal.priceDisplay}
-        </p>
-        <div className="my-2.5 h-px w-full bg-neutral-900/10 sm:my-2.5" aria-hidden="true" />
         <NutritionFacts nutrition={meal.nutrition} />
       </div>
     </div>

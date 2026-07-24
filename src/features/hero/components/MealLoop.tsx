@@ -38,8 +38,8 @@ export function MealLoop({ loopIndex, onPause, onResume }: MealLoopProps) {
   const [containerWidth, setContainerWidth] = useState(0);
   const isMobile = useIsMobile();
 
-  const SLOT_WIDTH = isMobile ? 108 : 128;
-  const SLOT_GAP = isMobile ? 12 : 16;
+  const SLOT_WIDTH = isMobile ? 140 : 176;
+  const SLOT_GAP = isMobile ? 14 : 22;
   const SLOT_PITCH = SLOT_WIDTH + SLOT_GAP;
 
   // Fixed lead buffer rendered BEFORE the logical start of the loop
@@ -65,7 +65,10 @@ export function MealLoop({ loopIndex, onPause, onResume }: MealLoopProps) {
   const OPACITY_FALLOFF = 0.15;
   const MIN_SCALE = 0.55;
   const SCALE_FALLOFF = 0.07;
-  const ANCHOR_SCALE = 1.7;
+  const ANCHOR_SCALE = 1.85;
+  // Nudge the featured plate toward the model's hands instead of perfectly
+  // centering it on the viewport.
+  const ANCHOR_OFFSET_X = isMobile ? 14 : 34;
 
   // Measure the visible track width so the anchor slot can be centered
   // under the model (which is horizontally centered on the page) instead
@@ -101,7 +104,7 @@ export function MealLoop({ loopIndex, onPause, onResume }: MealLoopProps) {
   const hasMeasured = containerWidth > 0;
 
   const anchorOffset = activeIdx * SLOT_PITCH;
-  const trackX = containerWidth / 2 - anchorOffset - SLOT_WIDTH / 2;
+  const trackX = containerWidth / 2 - anchorOffset - SLOT_WIDTH / 2 + ANCHOR_OFFSET_X;
 
   return (
     <div

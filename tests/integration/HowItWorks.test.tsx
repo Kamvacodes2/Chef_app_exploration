@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { HowItWorks } from "@/features/how-it-works/HowItWorks";
 import { HOW_IT_WORKS_STEPS } from "@/features/how-it-works/constants/steps";
 
@@ -20,53 +20,26 @@ describe("HowItWorks", () => {
   afterEach(() => {
     mockMatches(false);
   });
+  it("uses the white canvas with oxblood foreground colors", () => {
+    render(<HowItWorks />);
+
+    expect(screen.getByTestId("how-it-works-section")).toHaveClass("bg-white");
+    expect(screen.getByRole("heading", { name: "Your Evening, Made Simple" })).toHaveClass(
+      "text-[var(--color-oxblood)]",
+    );
+  });
+
+  it("distills the product story to exactly 3 steps", () => {
+    expect(HOW_IT_WORKS_STEPS).toHaveLength(3);
+  });
 
   describe("desktop layout", () => {
-    it("renders only a windowed 3-item slice of steps at a time", () => {
+    it("renders all 3 steps at once", () => {
       render(<HowItWorks />);
-      // Default active index is 0, so the initial window is steps [0, 1, 2].
-      [0, 1, 2].forEach((i) => {
-        const step = HOW_IT_WORKS_STEPS[i]!;
+      HOW_IT_WORKS_STEPS.forEach((step) => {
         expect(screen.getByText(step.title)).toBeInTheDocument();
         expect(screen.getByText(step.description)).toBeInTheDocument();
       });
-
-      // Steps outside the window are not rendered.
-      [3, 4, 5, 6, 7].forEach((i) => {
-        const step = HOW_IT_WORKS_STEPS[i]!;
-        expect(screen.queryByText(step.title)).not.toBeInTheDocument();
-      });
-    });
-
-    it("slides the window forward as later steps are selected, revealing previously hidden steps", () => {
-      render(<HowItWorks />);
-      const thirdStep = HOW_IT_WORKS_STEPS[2]!;
-      fireEvent.click(screen.getByRole("button", { name: new RegExp(thirdStep.title) }));
-
-      // Active index is now 2, so the window becomes steps [1, 2, 3].
-      const fourthStep = HOW_IT_WORKS_STEPS[3]!;
-      expect(screen.getByText(fourthStep.title)).toBeInTheDocument();
-
-      // Step 0 has scrolled out of the window.
-      const firstStep = HOW_IT_WORKS_STEPS[0]!;
-      expect(screen.queryByText(firstStep.title)).not.toBeInTheDocument();
-    });
-
-    it("slides the window backward when an earlier step is re-selected", () => {
-      render(<HowItWorks />);
-      const thirdStep = HOW_IT_WORKS_STEPS[2]!;
-      fireEvent.click(screen.getByRole("button", { name: new RegExp(thirdStep.title) }));
-
-      const firstStep = HOW_IT_WORKS_STEPS[0]!;
-      expect(screen.queryByText(firstStep.title)).not.toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole("button", { name: new RegExp(thirdStep.title) }));
-      fireEvent.click(
-        screen.getByRole("button", { name: new RegExp(HOW_IT_WORKS_STEPS[1]!.title) }),
-      );
-
-      // Window is back to [0, 1, 2], so step 0 is visible again.
-      expect(screen.getByText(firstStep.title)).toBeInTheDocument();
     });
 
     it("defaults to the first step being active", () => {
@@ -92,12 +65,10 @@ describe("HowItWorks", () => {
       expect(thirdButton).toHaveAttribute("aria-current", "step");
       expect(screen.getByRole("img", { name: thirdStep.alt })).toBeInTheDocument();
 
-      // Selecting step index 2 slides the window to [1, 2, 3], so step 0
-      // (index 0) is no longer rendered and step 1 is no longer active.
-      const secondButton = screen.getByRole("button", {
-        name: new RegExp(HOW_IT_WORKS_STEPS[1]!.title),
+      const firstButton = screen.getByRole("button", {
+        name: new RegExp(HOW_IT_WORKS_STEPS[0]!.title),
       });
-      expect(secondButton).not.toHaveAttribute("aria-current");
+      expect(firstButton).not.toHaveAttribute("aria-current");
     });
 
     it("activates a step via the keyboard (Enter)", () => {
@@ -116,7 +87,6 @@ describe("HowItWorks", () => {
 
     it("activates a step via the keyboard (Space)", () => {
       render(<HowItWorks />);
-      // Step index 1 is within the default window [0, 1, 2].
       const secondStep = HOW_IT_WORKS_STEPS[1]!;
       const secondButton = screen.getByRole("button", {
         name: new RegExp(secondStep.title),
@@ -143,7 +113,6 @@ describe("HowItWorks", () => {
 
     it("keeps click-to-select working even with the scroll listener attached", () => {
       render(<HowItWorks />);
-      // Step index 2 is within the default window [0, 1, 2].
       const thirdStep = HOW_IT_WORKS_STEPS[2]!;
       const thirdButton = screen.getByRole("button", {
         name: new RegExp(thirdStep.title),
@@ -157,7 +126,7 @@ describe("HowItWorks", () => {
   });
 
   describe("mobile story feed layout", () => {
-    it("renders a compact vertical feed with all 6 steps", () => {
+    it("renders a compact vertical feed with all 3 steps", () => {
       mockMatches(true);
       render(<HowItWorks />);
 

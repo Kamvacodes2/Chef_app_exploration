@@ -127,6 +127,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         ...state,
         customRequest: action.text,
         main: customMain,
+        step: "sides",
       };
     }
 

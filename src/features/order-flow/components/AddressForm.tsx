@@ -16,8 +16,8 @@ interface FieldProps {
 function Field({ id, label, value, onChange, placeholder, required, autoComplete }: FieldProps): ReactElement {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-bold uppercase tracking-wider text-[#F3E3B2]/80">
-        {label} {required ? <span className="text-[#E88D5F]">*</span> : <span className="normal-case text-[#F3E3B2]/50">(optional)</span>}
+      <label htmlFor={id} className="text-xs font-bold uppercase tracking-wider text-[var(--color-bone)]/80">
+        {label} {required ? <span className="text-[var(--color-maize)]">*</span> : <span className="normal-case text-[var(--color-bone)]/50">(optional)</span>}
       </label>
       <input
         id={id}
@@ -26,7 +26,7 @@ function Field({ id, label, value, onChange, placeholder, required, autoComplete
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl bg-white/90 p-3.5 text-sm text-[#1A1208] placeholder:text-[#1A1208]/40 focus:outline focus:outline-2 focus:outline-[#F3E3B2]"
+        className="w-full rounded-2xl bg-white/90 p-3.5 text-sm text-[var(--color-oxblood)] placeholder:text-[var(--color-oxblood)]/40 focus:outline focus:outline-2 focus:outline-[var(--color-bone)]"
       />
     </div>
   );
@@ -42,8 +42,8 @@ export function AddressForm(): ReactElement {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-3xl font-semibold text-[#F3E3B2] sm:text-4xl">Where to?</h2>
-        <p className="text-sm text-[#F3E3B2]/70">Your delivery address. Street is all we really need.</p>
+        <h2 className="font-display text-3xl font-semibold text-[var(--color-bone)] sm:text-4xl">Where to?</h2>
+        <p className="text-sm text-[var(--color-bone)]/70">Your delivery address. Street is all we really need.</p>
       </div>
 
       <div className="flex w-full max-w-md flex-col gap-4">

@@ -3,14 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { BrandMark } from "@/features/hero/components/BrandMark";
 
 describe("BrandMark", () => {
-  it("renders the chill chef wordmark with the brand typography class", () => {
+  it("renders the ChefMate logo lockup image", () => {
     render(<BrandMark onReset={() => {}} />);
-    const wordmark = screen.getByText("chill chef");
-    expect(wordmark).toBeInTheDocument();
-    expect(wordmark).toHaveClass("font-brand");
+    const logo = screen.getByRole("img", { name: "ChefMate" });
+    expect(logo).toBeInTheDocument();
   });
 
-  it("renders the logo icon image", () => {
+  it("renders the logo inside the brand mark button", () => {
     render(<BrandMark onReset={() => {}} />);
     expect(screen.getByTestId("brand-mark")).toBeInTheDocument();
   });

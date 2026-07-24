@@ -16,8 +16,8 @@ export function SidesSelect(): ReactElement {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-3xl font-semibold text-[#F3E3B2] sm:text-4xl">Add some sides?</h2>
-        <p className="text-sm text-[#F3E3B2]/70">
+        <h2 className="font-display text-3xl font-semibold text-[var(--color-bone)] sm:text-4xl">Add some sides?</h2>
+        <p className="text-sm text-[var(--color-bone)]/70">
           Optional — but the seven colours aren&apos;t going to eat themselves. Tap to add, tap again to remove.
         </p>
       </div>
@@ -35,7 +35,7 @@ export function SidesSelect(): ReactElement {
       </div>
 
       {state.sides.length > 0 && (
-        <p className="text-sm text-[#F3E3B2]/80" aria-live="polite">
+        <p className="text-sm text-[var(--color-bone)]/80" aria-live="polite">
           {state.sides.length} side{state.sides.length === 1 ? "" : "s"} added
         </p>
       )}

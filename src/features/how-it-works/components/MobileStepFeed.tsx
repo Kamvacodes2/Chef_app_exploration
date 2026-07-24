@@ -30,19 +30,15 @@ export function MobileStepFeed({ steps }: MobileStepFeedProps) {
   const fillScaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <ol
-      ref={containerRef}
-      className="relative flex flex-col pl-4"
-      data-testid="mobile-step-feed"
-    >
+    <ol ref={containerRef} className="relative flex flex-col pl-4" data-testid="mobile-step-feed">
       <span
         aria-hidden
-        className="absolute left-1 top-2 bottom-2 w-px bg-[#E1D5BF]/20"
+        className="absolute left-1 top-2 bottom-2 w-px bg-[var(--color-oxblood)]/20"
         data-testid="mobile-timeline-track"
       />
       <motion.span
         aria-hidden
-        className="absolute left-1 top-2 bottom-2 w-px origin-top bg-[#E88D5F]"
+        className="absolute left-1 top-2 bottom-2 w-px origin-top bg-[var(--color-maize)]"
         data-testid="mobile-timeline-fill"
         style={{ scaleY: fillScaleY }}
         transition={prefersReducedMotion ? { duration: 0 } : undefined}
@@ -57,15 +53,15 @@ export function MobileStepFeed({ steps }: MobileStepFeedProps) {
             transition={{ duration: 0.35 }}
           >
             <StepThumbnail step={step} />
-            <div className="min-w-0 flex-1 border-l border-[#E1D5BF]/20 pl-4">
-              <h3 className="font-sans flex items-center gap-2 text-base font-extrabold text-[#F3E3B2]">
+            <div className="min-w-0 flex-1 border-l border-[var(--color-oxblood)]/20 pl-4">
+              <h3 className="font-sans flex items-center gap-2 text-base font-extrabold text-[var(--color-oxblood)]">
                 {step.title}
               </h3>
-              <p className="mt-1 text-sm text-[#E1D5BF]/70">{step.description}</p>
+              <p className="mt-1 text-sm text-[var(--color-oxblood)]/70">{step.description}</p>
             </div>
           </motion.div>
           {index < steps.length - 1 && (
-            <div aria-hidden className="pl-[3.5rem] text-center text-[#E1D5BF]/40">
+            <div aria-hidden className="pl-[3.5rem] text-center text-[var(--color-oxblood)]/40">
               ↓
             </div>
           )}

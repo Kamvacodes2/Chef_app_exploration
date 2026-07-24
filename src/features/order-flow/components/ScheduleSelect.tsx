@@ -20,7 +20,7 @@ function friendlyDate(d: Date): string {
 }
 
 /**
- * Schedule: pick a delivery day (next 7 days) and a time slot. Both are
+ * Schedule: pick a session day (next 7 days) and a time slot. Both are
  * required before continuing.
  */
 export function ScheduleSelect(): ReactElement {
@@ -45,12 +45,12 @@ export function ScheduleSelect(): ReactElement {
   return (
     <div className="flex w-full flex-col gap-8">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-3xl font-semibold text-[#F3E3B2] sm:text-4xl">When should we deliver?</h2>
-        <p className="text-sm text-[#F3E3B2]/70">Pick a day and a time slot.</p>
+        <h2 className="font-display text-3xl font-semibold text-[var(--color-bone)] sm:text-4xl">What day and time works for you?</h2>
+        <p className="text-sm text-[var(--color-bone)]/70">Pick when your Chefmate should come by.</p>
       </div>
 
-      <section aria-label="Delivery day">
-        <h3 className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-[#F3E3B2]/80">Day</h3>
+      <section aria-label="Session day">
+        <h3 className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--color-bone)]/80">Day</h3>
         <div className="flex flex-wrap gap-2">
           {days.map((d) => {
             const selected = state.date === d.iso;
@@ -61,22 +61,22 @@ export function ScheduleSelect(): ReactElement {
                 onClick={() => setDate(d.iso)}
                 aria-pressed={selected}
                 className={cn(
-                  "flex min-w-[72px] flex-col items-center gap-0.5 rounded-2xl px-4 py-3 ring-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F3E3B2]",
+                  "flex min-w-[72px] flex-col items-center gap-0.5 rounded-2xl px-4 py-3 ring-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
                   selected
-                    ? "bg-[#F3E3B2] text-[#1A1208] ring-[#F3E3B2]"
-                    : "bg-white/[0.06] text-[#F3E3B2] ring-white/10 hover:bg-white/[0.12]",
+                    ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                    : "bg-white/[0.06] text-[var(--color-bone)] ring-white/10 hover:bg-white/[0.12]",
                 )}
               >
                 <span className="text-xs font-bold uppercase tracking-wide">{d.day}</span>
-                <span className={cn("text-xs", selected ? "text-[#1A1208]/70" : "text-[#F3E3B2]/60")}>{d.date}</span>
+                <span className={cn("text-xs", selected ? "text-[var(--color-oxblood)]/70" : "text-[var(--color-bone)]/60")}>{d.date}</span>
               </button>
             );
           })}
         </div>
       </section>
 
-      <section aria-label="Delivery time">
-        <h3 className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-[#F3E3B2]/80">Time slot</h3>
+      <section aria-label="Session time">
+        <h3 className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--color-bone)]/80">Time slot</h3>
         <div className="flex flex-wrap gap-2">
           {TIME_SLOTS.map((t) => {
             const selected = state.time === t;
@@ -87,10 +87,10 @@ export function ScheduleSelect(): ReactElement {
                 onClick={() => setTime(t)}
                 aria-pressed={selected}
                 className={cn(
-                  "rounded-full px-5 py-2.5 text-sm font-semibold ring-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F3E3B2]",
+                  "rounded-xl px-5 py-2.5 text-sm font-semibold ring-1 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
                   selected
-                    ? "bg-[#F3E3B2] text-[#1A1208] ring-[#F3E3B2]"
-                    : "bg-white/[0.06] text-[#F3E3B2] ring-white/10 hover:bg-white/[0.12]",
+                    ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                    : "bg-white/[0.06] text-[var(--color-bone)] ring-white/10 hover:bg-white/[0.12]",
                 )}
               >
                 {t}

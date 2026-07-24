@@ -4,11 +4,9 @@ import { useMemo } from "react";
 import type { Category, Meal } from "@/data/types/Meal";
 import { getPalette } from "./constants/palettes";
 import { BackgroundLayer } from "./components/BackgroundLayer";
-import { HeroHeadline } from "./components/HeroHeadline";
 import { MealNavigation } from "./components/MealNavigation";
 import { MealLoop } from "./components/MealLoop";
 import { MealStage } from "./components/MealStage";
-import { ModelLayer } from "./components/ModelLayer";
 import { ParallaxWrapper } from "./components/ParallaxWrapper";
 import { PrimaryCta } from "./components/PrimaryCta";
 import { PARALLAX_DEPTH } from "./constants/parallax";
@@ -17,12 +15,7 @@ import { useImagePreloader } from "./hooks/useImagePreloader";
 import { useIsMobile, usePrefersReducedMotion } from "./hooks/useMediaQuery";
 import { useMealNavigation } from "./hooks/useMealNavigation";
 import { useParallax } from "./hooks/useParallax";
-import {
-  selectActiveMeal,
-  selectActivePaletteId,
-  selectFrameNumber,
-  selectMealsForActiveCategory,
-} from "./state/selectors";
+import { selectActiveMeal, selectMealsForActiveCategory } from "./state/selectors";
 import { useHeroController } from "./state/useHeroController";
 
 export interface HeroProps {
@@ -38,9 +31,7 @@ export function Hero({ categories, meals }: HeroProps) {
   const parallax = useParallax(parallaxEnabled);
 
   const isBrowsing = state.phase !== "WAITING";
-  const paletteId = selectActivePaletteId(state, categories);
-  const palette = getPalette(paletteId);
-  const frameNumber = selectFrameNumber(state);
+  const palette = getPalette("blood-red");
   const categoryMeals = useMemo(
     () => selectMealsForActiveCategory(state, categories, meals),
     [state, categories, meals],
@@ -52,46 +43,42 @@ export function Hero({ categories, meals }: HeroProps) {
     onNavigate: (direction) => navigate(direction, categoryMeals.length),
   });
 
-  useImagePreloader(
-    useMemo(() => [1, 2, 3].map((n) => `/images/model/frame-${n}.webp`), []),
-  );
-
-  useImagePreloader(
-    useMemo(() => MEAL_LOOP_ITEMS.map((item) => item.imageSrc), []),
-  );
+  useImagePreloader(useMemo(() => MEAL_LOOP_ITEMS.map((item) => item.imageSrc), []));
 
   return (
     <div className="relative w-full">
-      <main className="relative flex min-h-dvh w-full flex-col sm:h-dvh sm:overflow-hidden" data-phase={state.phase}>
-        <ParallaxWrapper parallax={parallax} depth={PARALLAX_DEPTH.background} className="absolute inset-0">
+      <main
+        className="relative flex min-h-dvh w-full flex-col sm:h-dvh sm:overflow-hidden"
+        data-phase={state.phase}
+      >
+        <ParallaxWrapper
+          parallax={parallax}
+          depth={PARALLAX_DEPTH.background}
+          className="absolute inset-0"
+        >
           <BackgroundLayer palette={palette} />
         </ParallaxWrapper>
 
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-start gap-6 px-6 pb-8 pt-10 sm:gap-2 sm:pb-2 sm:pt-36">
-          {!isBrowsing && <HeroHeadline textColor={palette.textColor} />}
-
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-10 sm:py-16">
           <ParallaxWrapper
             parallax={parallax}
             depth={PARALLAX_DEPTH.model}
-            className="relative flex w-full flex-1 flex-col self-stretch min-h-0 translate-y-[40px] sm:mx-auto sm:block sm:w-full sm:max-w-md sm:flex-none sm:self-auto sm:translate-y-4"
+            className="relative flex min-h-[60vh] w-full max-w-5xl items-center justify-center"
           >
-            <ModelLayer frameNumber={frameNumber}>
-              {isBrowsing && (
+            {isBrowsing && (
+              <>
                 <ParallaxWrapper
                   parallax={parallax}
                   depth={PARALLAX_DEPTH.meal}
-                  className="absolute left-1/2 top-[56%] z-10 w-[90%] -translate-x-1/2 sm:top-[32%] sm:w-[82%]"
+                  className="relative z-10 w-full max-w-sm sm:max-w-md"
                 >
                   <MealStage meal={activeMeal} />
                 </ParallaxWrapper>
-              )}
-            </ModelLayer>
-
-            {isBrowsing && (
-              <MealNavigation
-                onPrev={() => navigate(-1, categoryMeals.length)}
-                onNext={() => navigate(1, categoryMeals.length)}
-              />
+                <MealNavigation
+                  onPrev={() => navigate(-1, categoryMeals.length)}
+                  onNext={() => navigate(1, categoryMeals.length)}
+                />
+              </>
             )}
           </ParallaxWrapper>
 
@@ -109,19 +96,18 @@ export function Hero({ categories, meals }: HeroProps) {
 
       {!isBrowsing && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-[5%] z-30 flex flex-col items-center gap-4 sm:bottom-auto sm:top-[424px]"
+          className="pointer-events-none absolute inset-x-0 top-[18%] z-30 flex flex-col items-center gap-5 sm:top-[20%]"
           aria-hidden={false}
         >
           <div className="pointer-events-auto px-6">
             <PrimaryCta onClick={chooseMeal} />
           </div>
           {/* Full-width moving food loop, edge-to-edge (no horizontal padding), on both mobile and desktop. */}
-          <div className="pointer-events-auto w-full sm:mt-[64px]">
-            <MealLoop
-              loopIndex={state.loopIndex}
-              onPause={pauseLoop}
-              onResume={resumeLoop}
-            />
+          <div
+            className="pointer-events-auto mt-5 w-full sm:mt-8"
+            data-testid="hero-meal-loop-stage"
+          >
+            <MealLoop loopIndex={state.loopIndex} onPause={pauseLoop} onResume={resumeLoop} />
           </div>
         </div>
       )}

@@ -22,7 +22,7 @@ describe("MealCard", () => {
     expect(screen.getByTestId("steam-effect")).toBeInTheDocument();
     expect(screen.getByTestId("cutlery-sheen")).toBeInTheDocument();
     expect(screen.getByText("Steaming Meal")).toBeInTheDocument();
-    expect(screen.getByText("R42")).toBeInTheDocument();
+    expect(screen.queryByText("R42")).not.toBeInTheDocument();
   });
 
   it("renders nutrition facts for the active meal", () => {

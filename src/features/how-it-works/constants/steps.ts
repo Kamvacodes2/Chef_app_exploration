@@ -6,61 +6,32 @@ export interface HowItWorksStep {
   readonly alt: string;
 }
 
+/**
+ * The product story distilled to 3 steps: choose/book, a chef cooks in your
+ * kitchen, then you sit down while the kitchen's already clean. Anything
+ * more granular (matching, shopping lists, plating) is true but reads as
+ * logistics, not the pitch.
+ */
 export const HOW_IT_WORKS_STEPS: readonly HowItWorksStep[] = [
   {
-    id: "choose-what-youre-craving",
-    title: "Choose What You're Craving",
-    description: "Browse meals you'll love.",
+    id: "choose-and-book",
+    title: "Choose & Book",
+    description: "Pick a meal you're craving and a time that suits you — we'll send the exact shopping list.",
     image: "/images/how-it-works/choose-what-youre-craving.webp",
-    alt: "Choose What You're Craving",
+    alt: "Choose & Book",
   },
   {
-    id: "book-a-time",
-    title: "Book a Time",
-    description: "Pick a day that suits you.",
-    image: "/images/how-it-works/book-a-time.webp",
-    alt: "Book a Time",
-  },
-  {
-    id: "shop-with-confidence",
-    title: "Shop with Confidence",
-    description: "We'll send you the exact ingredient list. (No guessing.)",
-    image: "/images/how-it-works/shop-with-confidence.webp",
-    alt: "Shop with Confidence",
-  },
-  {
-    id: "we-match-you",
-    title: "We Match You",
-    description: "We'll pair you with the perfect chef. (No browsing hundreds of profiles.)",
-    image: "/images/how-it-works/we-match-you.webp",
-    alt: "We Match You",
-  },
-  {
-    id: "your-chef-arrives",
-    title: "Your Chef Arrives",
-    description: "Right on time. Ready to cook.",
+    id: "a-chef-cooks-in-your-kitchen",
+    title: "A Chef Cooks in Your Kitchen",
+    description: "We match you with a chef who arrives on time and cooks everything fresh, right there.",
     image: "/images/how-it-works/your-chef-arrives.webp",
-    alt: "Your Chef Arrives",
+    alt: "A Chef Cooks in Your Kitchen",
   },
   {
-    id: "freshly-cooked",
-    title: "Freshly Cooked",
-    description: "Everything prepared in your own kitchen.",
-    image: "/images/how-it-works/freshly-cooked.webp",
-    alt: "Freshly Cooked",
-  },
-  {
-    id: "kitchen-left-spotless",
-    title: "Kitchen Left Spotless",
-    description: "No dishes. No mess.",
-    image: "/images/how-it-works/kitchen-left-spotless.webp",
-    alt: "Kitchen Left Spotless",
-  },
-  {
-    id: "enjoy-your-evening",
-    title: "Enjoy Your Evening",
-    description: "Spend time with family. Watch a movie. Read. Rest. Just be home.",
+    id: "sit-down-we-clean-up",
+    title: "Sit Down. We Clean Up.",
+    description: "Dinner's served and the kitchen's spotless — you just enjoy the evening.",
     image: "/images/how-it-works/enjoy-your-evening.webp",
-    alt: "Enjoy Your Evening",
+    alt: "Sit Down. We Clean Up.",
   },
 ] as const;

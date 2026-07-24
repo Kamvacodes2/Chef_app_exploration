@@ -21,7 +21,8 @@ describe("meal.schema", () => {
   });
 
   it("rejects a meal missing required fields", () => {
-    const { name: _name, ...withoutName } = validMeal;
+    const withoutName: Partial<typeof validMeal> = { ...validMeal };
+    delete withoutName.name;
     expect(() => mealSchema.parse(withoutName)).toThrow();
   });
 
@@ -44,7 +45,8 @@ describe("meal.schema", () => {
   });
 
   it("rejects a meal missing nutrition", () => {
-    const { nutrition: _nutrition, ...withoutNutrition } = validMeal;
+    const withoutNutrition: Partial<typeof validMeal> = { ...validMeal };
+    delete withoutNutrition.nutrition;
     expect(() => mealSchema.parse(withoutNutrition)).toThrow();
   });
 });

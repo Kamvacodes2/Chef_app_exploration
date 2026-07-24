@@ -27,8 +27,8 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Chill Chef",
-  description: "Cinematic hero experience for Chill Chef meal discovery.",
+  title: "ChefMate",
+  description: "Cinematic hero experience for ChefMate meal discovery.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
