@@ -12,7 +12,8 @@ next safe handoff.
 | Code baseline | `88f1aadc464ee1552eb03205f857b9f286972f46` |
 | Baseline branch | `main` |
 | Baseline remote | `origin/main` |
-| Planning controls | `P00`, `P01` passed; `P02` in progress |
+| Planning controls | `P00`–`P02` passed |
+| Reviewed planning commit | `84a620d9464933b4552ae9e297e301a191f2f039` |
 | Implementation | `NOT_STARTED` |
 | Next executable step | `S00 — Green baseline` |
 | Last ledger update | 2026-07-28 (`Africa/Johannesburg`) |
@@ -54,6 +55,9 @@ implies a pass in either of the other namespaces.
 - At this ledger's creation, tracked code was synchronized; the new `plans/`
   documents were untracked planning work and are not covered by baseline commit
   `88f1aad`.
+- The blueprint and ledger were subsequently committed as reviewed planning
+  content at `84a620d9464933b4552ae9e297e301a191f2f039`; the assessed application
+  baseline remains `88f1aad`.
 
 ## Baseline push and verification snapshot
 
@@ -69,8 +73,11 @@ git status --short --branch -> ## main...origin/main
 The push target was
 `https://github.com/Kamvacodes2/Chef_app_exploration.git`. This records the
 successful baseline push followed by matching local and remote-tracking SHAs
-with no ahead/behind delta. It does not claim that planning documents created
-afterward were already committed or pushed.
+with no ahead/behind delta. Historically, it did not claim that planning
+documents created afterward were already committed or pushed. Those documents
+were subsequently committed as reviewed content at
+`84a620d9464933b4552ae9e297e301a191f2f039`; this did not change the application
+baseline SHA.
 
 | Check | Baseline result at `88f1aad` | Completion effect |
 |---|---|---|
@@ -97,14 +104,12 @@ last code change.
 |---|---|---|---|
 | `P00` | Whole-repository frontend/backend capability assessment and executable platform planning | `PASSED` | Blueprint current-state assessment plus `E001`–`E005` |
 | `P01` | Assessed code baseline synchronized to GitHub remote | `PASSED` | `E000`: successful push followed by `HEAD == origin/main` |
+| `P02` | Final adversarial, security/privacy, code-plan, and database/finance review remediation | `PASSED` | `E006`–`E008` against reviewed planning commit `84a620d9464933b4552ae9e297e301a191f2f039` |
 
 ## Awaiting
 
-| ID | Item | Status | Evidence / next condition |
-|---|---|---|---|
-| `P02` | Final adversarial, security, and code-review remediation | `IN_PROGRESS` | Requested corrections are being applied; final re-review evidence is still required |
-
-- `S00` is the only next executable implementation step after planning handoff.
+- No planning control awaits review; `P00`–`P02` are `PASSED`.
+- `S00` is the only next executable implementation step.
 - `S01`–`S17` remain `NOT_STARTED` and must respect the dependency DAG below.
 - Every release acceptance gate `A01`–`A26` remains `NOT_STARTED`; no `Axx`
   gate is passed.
@@ -236,6 +241,9 @@ produces the zero-difference reconciliation required by `A26`.
 Evidence IDs are immutable. Corrections append a new row; they do not rewrite a
 past result.
 
+`E006`–`E008` are independent final read-only full-document re-reviews. This
+ledger is their durable review record; they do not claim implementation testing.
+
 | Evidence | Date | Scope | Reproducible command or source | Result | Commit / artifact |
 |---|---|---|---|---|---|
 | `E000` | 2026-07-28 | Git baseline | `git push origin main`; post-push `git status --short --branch`; `git rev-parse HEAD`; `git rev-parse origin/main`; `git log -1 --oneline --decorate` | Push reported `b223eee..88f1aad main -> main`; `HEAD == origin/main == 88f1aad` afterward | `88f1aadc464ee1552eb03205f857b9f286972f46`; GitHub `main` |
@@ -244,14 +252,18 @@ past result.
 | `E003` | 2026-07-28 | Coverage snapshot | `pnpm test:coverage` | Exit 0; 88.15% statements/lines, 81.91% branches, 82% functions | `88f1aad`; supervisor baseline assessment |
 | `E004` | 2026-07-28 | Build snapshot | `pnpm build` | Exit 0 | `88f1aad`; supervisor baseline assessment |
 | `E005` | 2026-07-28 | E2E snapshot | `pnpm test:e2e` | Not green: 10/14 test executions passed across 2 Playwright projects; two regressions each fail in both projects | `88f1aad`; supervisor baseline assessment |
+| `E006` | 2026-07-28 | Final code-plan consistency review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
+| `E007` | 2026-07-28 | Final security/privacy review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
+| `E008` | 2026-07-28 | Final database/finance review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
 
 ## Evidence and status rules
 
 1. `Pxx` planning controls, `Sxx` implementation steps, and `Axx` release gates
    are independent. A pass in one namespace never implies a pass in another.
-2. `P02` remains `IN_PROGRESS` until the final adversarial, security, and code
-   re-review confirms remediation and its review artifact is logged. `P00` and
-   `P01` do not pass any `Sxx` or `Axx` item.
+2. `P02` passed only after `E006`–`E008` independently re-reviewed both complete
+   planning documents at commit `84a620d9464933b4552ae9e297e301a191f2f039`
+   with zero unresolved Critical/High findings. This planning pass does not pass
+   any `Sxx` or `Axx` item and is not implementation-test evidence.
 3. A step may be `PASSED` only when all of its blueprint exit criteria, review
    gates, and this ledger's verification gate pass against the last relevant
    commit.
@@ -328,18 +340,19 @@ past result.
 
 ```text
 Active implementation step: none
-Active planning control: P02 — remediation applied; final re-review pending
+Active planning control: none — P02 PASSED via E006-E008
 Next implementation step: S00 — Green baseline
-Last verified code SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
-Tracked code vs origin/main: synchronized at baseline
+Reviewed planning SHA: 84a620d9464933b4552ae9e297e301a191f2f039
+Last verified application baseline SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
+Application baseline vs origin/main: synchronized in E000
 Known failing gate: pnpm test:e2e (10/14 test executions passed across 2
 Playwright projects; two regressions duplicated across both projects)
-Uncommitted scope at ledger creation: new planning documents under plans/
+Uncommitted planning scope: none after final planning commit
 Open engineering blocker: none
-First action: complete and evidence P02 final adversarial/security/code re-review.
-After planning handoff, reproduce both S00 regressions, fix or update stale
-expectations according to intended UX, then run lint, type-check, build, all 205
-current tests, coverage, and all 14 executions in both Playwright projects.
+First action: execute S00 by reproducing both baseline regressions, fixing or
+updating stale expectations according to intended UX, then running lint,
+type-check, build, all 205 current tests, coverage, and all 14 executions in both
+Playwright projects.
 ```
 
 Handoff updates must preserve these fields: active step, owner/branch, baseline
