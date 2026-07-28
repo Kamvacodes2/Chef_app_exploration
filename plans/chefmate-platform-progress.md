@@ -109,8 +109,12 @@ last code change.
 ## Awaiting
 
 - No planning control awaits review; `P00`–`P02` are `PASSED`.
-- `S00` is the only next executable implementation step.
-- `S01`–`S17` remain `NOT_STARTED` and must respect the dependency DAG below.
+- `S00` and `S01` are `PASSED` (see evidence `E009`-`E016`); `S01`'s branch
+  (`feat/s01-legacy-contracts-adrs`) is published to `origin` with its PR
+  pending review/merge.
+- `S02` is the next executable implementation step, subject to its
+  operational-facts check-in below; `S03`–`S17` remain `NOT_STARTED` and must
+  respect the dependency DAG below.
 - Every release acceptance gate `A01`–`A26` remains `NOT_STARTED`; no `Axx`
   gate is passed.
 - Production launch decisions `G001`–`G011` must be resolved before their
@@ -360,18 +364,25 @@ Last verified application baseline SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
 S00 completion commit: 396b9c672a4e55b87d12eb46afee33c1899893a4 (main, pushed)
 S00 ledger-update commit: 089cfdab89e4c2d51aa26bf9be924a7a0dbb8eb4 (main,
 pushed; HEAD == origin/main confirmed)
-S01 completion commit: a3d758e on feat/s01-legacy-contracts-adrs (local,
-not yet pushed; branch not yet merged to main)
+S01 completion commits: a3d758e (deliverables), c281875 (ledger update) on
+feat/s01-legacy-contracts-adrs — branch published to origin, PR pending
+manual open/merge (no gh CLI available per D020; merge must use "Create a
+merge commit", never squash/rebase, to preserve a3d758e/c281875 as evidence
+references)
 Application baseline vs origin/main: synchronized through 089cfda (E000);
-feat/s01-legacy-contracts-adrs is one commit ahead of that, unpushed
+feat/s01-legacy-contracts-adrs is published and 2 commits ahead of that
 Known failing gate: none — lint, build, test, test:coverage, and test:e2e
 (14/14 across both Playwright projects) all pass on both main (089cfda) and
-feat/s01-legacy-contracts-adrs (a3d758e); contract suite (59/59) also passes
+feat/s01-legacy-contracts-adrs (c281875); contract suite (59/59) also passes
 Uncommitted planning scope: none after this ledger update
 Open engineering blocker: none
-First action: push feat/s01-legacy-contracts-adrs, open a PR for review/merge
-per D020, then hold the S02 operational-facts check-in before scaffolding the
-monorepo/API/worker/database per the blueprint's already-accepted architecture.
+First action: open the S01 PR, merge via merge commit (not squash/rebase),
+then git switch main / git pull --ff-only origin main / git switch -c
+feat/s02-platform-scaffold and begin S02 per the blueprint's already-accepted
+architecture using provider-neutral operational defaults (GitHub Actions CI,
+pinned PostgreSQL/PostGIS container, DATABASE_URL abstraction, KMS deferred
+to S09). G011 (POPIA baseline) work starts in parallel; it does not block S02
+but blocks S03's schema freeze.
 ```
 
 Handoff updates must preserve these fields: active step, owner/branch, baseline
