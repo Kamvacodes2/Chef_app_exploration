@@ -15,7 +15,7 @@ next safe handoff.
 | Planning controls | `P00`–`P02` passed |
 | Reviewed planning commit | `84a620d9464933b4552ae9e297e301a191f2f039` |
 | Implementation | `IN_PROGRESS` |
-| Next executable step | `S01 — Legacy contract characterization and architecture decision records` |
+| Next executable step | `S02 — Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold` (S02 check-in on operational facts first — see handoff snapshot) |
 | Last ledger update | 2026-07-28 (`Africa/Johannesburg`) |
 
 ## Status vocabulary
@@ -109,8 +109,12 @@ last code change.
 ## Awaiting
 
 - No planning control awaits review; `P00`–`P02` are `PASSED`.
-- `S00` is the only next executable implementation step.
-- `S01`–`S17` remain `NOT_STARTED` and must respect the dependency DAG below.
+- `S00` and `S01` are `PASSED` (see evidence `E009`-`E016`); `S01`'s branch
+  (`feat/s01-legacy-contracts-adrs`) is published to `origin` with its PR
+  pending review/merge.
+- `S02` is the next executable implementation step, subject to its
+  operational-facts check-in below; `S03`–`S17` remain `NOT_STARTED` and must
+  respect the dependency DAG below.
 - Every release acceptance gate `A01`–`A26` remains `NOT_STARTED`; no `Axx`
   gate is passed.
 - Production launch decisions `G001`–`G011` must be resolved before their
@@ -132,7 +136,7 @@ Verification text states the minimum gate, not evidence that already exists.
 | Step | Deliverable | Depends on | Status | Owner / branch | Required verification before `PASSED` | Evidence |
 |---|---|---|---|---|---|---|
 | `S00` | Green baseline | — | `PASSED` | supervisor / e2e-runner, `main` | Lint, type-check, build, all 205 current tests, coverage, and all 14 current executions in both Playwright projects pass after the final change | `E009`-`E013`; commit `396b9c672a4e55b87d12eb46afee33c1899893a4` |
-| `S01` | Legacy contract characterization and architecture decision records | `S00` | `NOT_STARTED` | — | Dedicated `vitest.contract.config.ts` runs contract/snapshot tests for current APIs and compatibility aliases; ADRs are reviewed; no behavior drift | — |
+| `S01` | Legacy contract characterization and architecture decision records | `S00` | `PASSED` | supervisor / architect + general-purpose, `feat/s01-legacy-contracts-adrs` | Dedicated `vitest.contract.config.ts` runs contract/snapshot tests for current APIs and compatibility aliases; ADRs are reviewed; no behavior drift | `E014`-`E016`; commit `a3d758e` on `feat/s01-legacy-contracts-adrs` |
 | `S02` | Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold | `S01` | `NOT_STARTED` | — | Clean install/build/test; health checks; migrations apply from empty and supported prior schemas; production corrections use new forward migrations; any reversal check is limited to an unapplied disposable development database | — |
 | `S03` | Identity, secure sessions, RBAC, generic token primitives, core consent/suppression, privacy baseline, idempotency, and audit | `S02` | `NOT_STARTED` | — | Auth/RBAC and abuse tests; purpose-bound token hash/single-use/expiry tests; consent/suppression and privacy-contract tests; audit redaction tests | — |
 | `S04` | Four-plan catalog and server-authoritative pricing | `S02` | `NOT_STARTED` | — | DB/contract tests prove four plans and exact side/dessert rules; allocation is tested only as a pure deterministic allocator with locked vectors/property tests; quote snapshots remain immutable | — |
@@ -255,6 +259,9 @@ ledger is their durable review record; they do not claim implementation testing.
 | `E006` | 2026-07-28 | Final code-plan consistency review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
 | `E007` | 2026-07-28 | Final security/privacy review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
 | `E008` | 2026-07-28 | Final database/finance review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
+| `E014` | 2026-07-28 | S01 contract characterization and ADRs, initial gate | Backend-repository search (`git remote -v`; sibling-directory check confirmed no separate backend exists); 11-endpoint contract inventory traced to client source; 59 new fixture tests under `tests/contract/legacy/` via dedicated `vitest.contract.config.ts`; 10 ADRs under `docs/adr/0001`-`0010` plus index and characterization docs. Gate: `pnpm test` (205/205, full suite — noted that `pnpm test -- <files>` does not filter under pnpm), `pnpm exec vitest run --config vitest.contract.config.ts` (59/59), `pnpm lint` (0 errors, 1 pre-existing non-blocking warning), `pnpm test:e2e` (14/14 both Playwright projects), `pnpm build`, `pnpm exec tsc --noEmit` | All pass; zero runtime/product code changed (confirmed via `git diff --stat` scoped to `docs/`, `tests/contract/`, `vitest.contract.config.ts` only) | pre-fix working tree on `feat/s01-legacy-contracts-adrs` |
+| `E015` | 2026-07-28 | S01 independent reviews: architect, security, code | `architect` (Opus): traced every ADR clause to blueprint `D001`-`D020`/section 4 anchors and source line references; found 2 substantive overclaims (R1: ADR-0002/0006 wrongly stated worker-only for ALL provider egress, contradicting §5.2/§9.2's synchronous API-owned payment-session call; R2: ADR-0008 implied the durable `plan_aliases` row is deleted at S04, contradicting `D002`/§8.4/§17) plus 2 completeness gaps (R3: ADR-0004 dropped `D007`'s negative-allocation finance-approval clause; R4: ADR-0004 omitted the default six-side cap from `D003`/§6.4). `security-reviewer`: approved with zero findings — fixtures confirmed fully synthetic (fabricated bank/account/token values), no infrastructure leakage, ADR-0007/0009 confirmed to accurately preserve blueprint §4.2/§4.3 security invariants without dilution. `code-reviewer`: approved with one optional LOW note (minor duplication in empty-base-URL test assertions across client test files, non-blocking); confirmed all 11 contracts have genuine (non-tautological) characterization tests against real client code, and confirmed zero `src/` diff via `git diff --stat` | Architect: approve-with-required-changes (R1-R4); security: approve; code: approve | `feat/s01-legacy-contracts-adrs` pre-fix state |
+| `E016` | 2026-07-28 | S01 required-fix remediation and final gate | Applied R1-R4 exactly as specified in `docs/adr/0002`, `docs/adr/0004`, `docs/adr/0006`, `docs/adr/0008` (no other files touched); re-ran `pnpm lint` (pass) and `pnpm exec vitest run --config vitest.contract.config.ts` (59/59 pass) as a docs-only sanity check | Pass; all 4 required architect changes applied, zero regressions | commit `a3d758e` on `feat/s01-legacy-contracts-adrs` |
 | `E009` | 2026-07-28 | S00 lint/build/unit/coverage re-verification | `pnpm lint`; `pnpm build`; `pnpm test`; `pnpm test:coverage` | Exit 0 each; lint has 1 pre-existing non-blocking `react-hooks/exhaustive-deps` warning (`SurveyPage.tsx:126`, unchanged); 40 files / 205 tests passed; coverage 88.15% statements/lines, 81.91% branches, 82% functions (unchanged from baseline) | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `E010` | 2026-07-28 | S00 E2E regression 1 fix: tablet CTA hit-test | `pnpm test:e2e` before/after; root cause: CTA renders below the fold at 768x1024, so `document.elementFromPoint` returned `null` (not a real layout/overlap bug). Test fix: added `scrollIntoViewIfNeeded()` before the hit-test in `tests/e2e/hero-state-progression.spec.ts` | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `E011` | 2026-07-28 | S00 E2E regression 2 fix: order-flow stale heading assertion | `pnpm test:e2e` before/after; root cause: test asserted the old "Find what you want to eat." heading immediately after "Book a chef", but the flow now starts on a goal-selection step (`GoalSelect.tsx`, heading "What are you feeding?"). Test fix in `tests/e2e/multi-input-navigation.spec.ts`: assert the goal step first and select a goal tile, then proceed to the meal step | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
@@ -344,23 +351,38 @@ ledger is their durable review record; they do not claim implementation testing.
 ### Current handoff snapshot
 
 ```text
-Active implementation step: none — S00 PASSED via E009-E013
+Active implementation step: none — S00 PASSED via E009-E013; S01 PASSED via
+E014-E016
 Active planning control: none — P02 PASSED via E006-E008
-Next implementation step: S01 — Legacy contract characterization and
-architecture decision records
+Next implementation step: S02 — Monorepo, API, worker, PostgreSQL, migration,
+local runtime, and CI scaffold. Per plan, hold a check-in first on
+operational facts only (existing backend ownership — none found per S01
+Step 0; deployment target; PostgreSQL hosting; CI; secrets/KMS; environments)
+— not a reopening of architecture already accepted in the blueprint/ADRs.
 Reviewed planning SHA: 84a620d9464933b4552ae9e297e301a191f2f039
 Last verified application baseline SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
-S00 completion commit: 396b9c672a4e55b87d12eb46afee33c1899893a4 (main)
-Application baseline vs origin/main: synchronized in E000; commit
-396b9c6 is a local, unpushed follow-up on main (push not yet requested)
+S00 completion commit: 396b9c672a4e55b87d12eb46afee33c1899893a4 (main, pushed)
+S00 ledger-update commit: 089cfdab89e4c2d51aa26bf9be924a7a0dbb8eb4 (main,
+pushed; HEAD == origin/main confirmed)
+S01 completion commits: a3d758e (deliverables), c281875 (ledger update) on
+feat/s01-legacy-contracts-adrs — branch published to origin, PR pending
+manual open/merge (no gh CLI available per D020; merge must use "Create a
+merge commit", never squash/rebase, to preserve a3d758e/c281875 as evidence
+references)
+Application baseline vs origin/main: synchronized through 089cfda (E000);
+feat/s01-legacy-contracts-adrs is published and 2 commits ahead of that
 Known failing gate: none — lint, build, test, test:coverage, and test:e2e
-(14/14 across both Playwright projects) all pass after 396b9c6
+(14/14 across both Playwright projects) all pass on both main (089cfda) and
+feat/s01-legacy-contracts-adrs (c281875); contract suite (59/59) also passes
 Uncommitted planning scope: none after this ledger update
 Open engineering blocker: none
-First action: begin S01 by inventorying current browser API contracts
-(src/features/auth/api, src/features/order-flow/api, src/features/survey)
-against NEXT_PUBLIC_CHEFMATE_API_URL, writing ADRs, and adding a dedicated
-vitest.contract.config.ts contract/snapshot suite with no behavior drift.
+First action: open the S01 PR, merge via merge commit (not squash/rebase),
+then git switch main / git pull --ff-only origin main / git switch -c
+feat/s02-platform-scaffold and begin S02 per the blueprint's already-accepted
+architecture using provider-neutral operational defaults (GitHub Actions CI,
+pinned PostgreSQL/PostGIS container, DATABASE_URL abstraction, KMS deferred
+to S09). G011 (POPIA baseline) work starts in parallel; it does not block S02
+but blocks S03's schema freeze.
 ```
 
 Handoff updates must preserve these fields: active step, owner/branch, baseline
