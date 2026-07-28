@@ -31,6 +31,11 @@ body {
   margin: 0;
   overflow-x: hidden;
   font-family: var(--font-sans);
+  /* Disable the browser's automatic scroll-anchoring adjustments. Without
+     this, a layout shift elsewhere on the page (e.g. late-settling web
+     fonts) can silently nudge the scroll position after we've deliberately
+     scrolled a step (like the order flow) into view. */
+  overflow-anchor: none;
 }
 
 .font-display {

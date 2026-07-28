@@ -47,6 +47,7 @@ for (const viewport of VIEWPORTS) {
 
     const cta = page.getByRole("link", { name: "Book a Chefmate" }).first();
     await expect(cta).toBeVisible();
+    await cta.scrollIntoViewIfNeeded();
 
     const box = await cta.boundingBox();
     if (!box) {
