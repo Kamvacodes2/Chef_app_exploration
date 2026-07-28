@@ -14,8 +14,8 @@ next safe handoff.
 | Baseline remote | `origin/main` |
 | Planning controls | `P00`–`P02` passed |
 | Reviewed planning commit | `84a620d9464933b4552ae9e297e301a191f2f039` |
-| Implementation | `NOT_STARTED` |
-| Next executable step | `S00 — Green baseline` |
+| Implementation | `IN_PROGRESS` |
+| Next executable step | `S01 — Legacy contract characterization and architecture decision records` |
 | Last ledger update | 2026-07-28 (`Africa/Johannesburg`) |
 
 ## Status vocabulary
@@ -131,7 +131,7 @@ Verification text states the minimum gate, not evidence that already exists.
 
 | Step | Deliverable | Depends on | Status | Owner / branch | Required verification before `PASSED` | Evidence |
 |---|---|---|---|---|---|---|
-| `S00` | Green baseline | — | `NOT_STARTED` | — | Lint, type-check, build, all 205 current tests, coverage, and all 14 current executions in both Playwright projects pass after the final change | — |
+| `S00` | Green baseline | — | `PASSED` | supervisor / e2e-runner, `main` | Lint, type-check, build, all 205 current tests, coverage, and all 14 current executions in both Playwright projects pass after the final change | `E009`-`E013`; commit `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `S01` | Legacy contract characterization and architecture decision records | `S00` | `NOT_STARTED` | — | Dedicated `vitest.contract.config.ts` runs contract/snapshot tests for current APIs and compatibility aliases; ADRs are reviewed; no behavior drift | — |
 | `S02` | Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold | `S01` | `NOT_STARTED` | — | Clean install/build/test; health checks; migrations apply from empty and supported prior schemas; production corrections use new forward migrations; any reversal check is limited to an unapplied disposable development database | — |
 | `S03` | Identity, secure sessions, RBAC, generic token primitives, core consent/suppression, privacy baseline, idempotency, and audit | `S02` | `NOT_STARTED` | — | Auth/RBAC and abuse tests; purpose-bound token hash/single-use/expiry tests; consent/suppression and privacy-contract tests; audit redaction tests | — |
@@ -255,6 +255,11 @@ ledger is their durable review record; they do not claim implementation testing.
 | `E006` | 2026-07-28 | Final code-plan consistency review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
 | `E007` | 2026-07-28 | Final security/privacy review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
 | `E008` | 2026-07-28 | Final database/finance review | Independent read-only full-document re-review of `plans/chefmate-platform-execution-blueprint.md` and `plans/chefmate-platform-progress.md` | `READY`; zero unresolved Critical/High findings; no implementation testing claimed | `84a620d9464933b4552ae9e297e301a191f2f039`; both planning paths; this ledger is the durable record |
+| `E009` | 2026-07-28 | S00 lint/build/unit/coverage re-verification | `pnpm lint`; `pnpm build`; `pnpm test`; `pnpm test:coverage` | Exit 0 each; lint has 1 pre-existing non-blocking `react-hooks/exhaustive-deps` warning (`SurveyPage.tsx:126`, unchanged); 40 files / 205 tests passed; coverage 88.15% statements/lines, 81.91% branches, 82% functions (unchanged from baseline) | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
+| `E010` | 2026-07-28 | S00 E2E regression 1 fix: tablet CTA hit-test | `pnpm test:e2e` before/after; root cause: CTA renders below the fold at 768x1024, so `document.elementFromPoint` returned `null` (not a real layout/overlap bug). Test fix: added `scrollIntoViewIfNeeded()` before the hit-test in `tests/e2e/hero-state-progression.spec.ts` | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
+| `E011` | 2026-07-28 | S00 E2E regression 2 fix: order-flow stale heading assertion | `pnpm test:e2e` before/after; root cause: test asserted the old "Find what you want to eat." heading immediately after "Book a chef", but the flow now starts on a goal-selection step (`GoalSelect.tsx`, heading "What are you feeding?"). Test fix in `tests/e2e/multi-input-navigation.spec.ts`: assert the goal step first and select a goal tile, then proceed to the meal step | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
+| `E012` | 2026-07-28 | S00 product fix: scroll-anchoring drift | Repeated instrumented `pnpm test:e2e` runs isolated a ~41px post-scroll drift after `OrderFlow.tsx`'s programmatic `scrollIntoView` calls, caused by the browser's automatic CSS scroll-anchoring re-adjusting `scrollY`, not by timing/flakiness. Fix: added `overflow-anchor: none;` to `body` in `src/app/globals.css`. Re-verified no other scrollable/chat/infinite-scroll surface in the app depends on scroll anchoring (code-reviewer scan) | Scroll settles exactly at target with no further drift across repeated runs; code-reviewer approved with 0 Critical/High/Medium/Low findings | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
+| `E013` | 2026-07-28 | S00 final full-gate re-run after last code change | `pnpm lint`; `pnpm build`; `pnpm test`; `pnpm test:coverage`; `pnpm test:e2e` (run twice more for stability) | All exit 0; 40 files / 205 tests; coverage unchanged; 14/14 E2E executions passed across both Playwright projects, consistent across repeated runs | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 
 ## Evidence and status rules
 
@@ -339,20 +344,23 @@ ledger is their durable review record; they do not claim implementation testing.
 ### Current handoff snapshot
 
 ```text
-Active implementation step: none
+Active implementation step: none — S00 PASSED via E009-E013
 Active planning control: none — P02 PASSED via E006-E008
-Next implementation step: S00 — Green baseline
+Next implementation step: S01 — Legacy contract characterization and
+architecture decision records
 Reviewed planning SHA: 84a620d9464933b4552ae9e297e301a191f2f039
 Last verified application baseline SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
-Application baseline vs origin/main: synchronized in E000
-Known failing gate: pnpm test:e2e (10/14 test executions passed across 2
-Playwright projects; two regressions duplicated across both projects)
-Uncommitted planning scope: none after final planning commit
+S00 completion commit: 396b9c672a4e55b87d12eb46afee33c1899893a4 (main)
+Application baseline vs origin/main: synchronized in E000; commit
+396b9c6 is a local, unpushed follow-up on main (push not yet requested)
+Known failing gate: none — lint, build, test, test:coverage, and test:e2e
+(14/14 across both Playwright projects) all pass after 396b9c6
+Uncommitted planning scope: none after this ledger update
 Open engineering blocker: none
-First action: execute S00 by reproducing both baseline regressions, fixing or
-updating stale expectations according to intended UX, then running lint,
-type-check, build, all 205 current tests, coverage, and all 14 executions in both
-Playwright projects.
+First action: begin S01 by inventorying current browser API contracts
+(src/features/auth/api, src/features/order-flow/api, src/features/survey)
+against NEXT_PUBLIC_CHEFMATE_API_URL, writing ADRs, and adding a dedicated
+vitest.contract.config.ts contract/snapshot suite with no behavior drift.
 ```
 
 Handoff updates must preserve these fields: active step, owner/branch, baseline
