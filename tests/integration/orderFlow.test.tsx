@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   INITIAL_ORDER_STATE,
   orderReducer,
@@ -9,9 +9,14 @@ import {
   type OrderState,
 } from "@/features/order-flow/state/orderReducer";
 import { MAINS, SIDES, DESSERTS } from "@/features/order-flow/constants/menu";
+import {
+  buildBookingRequestPayload,
+  submitBookingRequestPayload,
+} from "@/features/order-flow/api/bookingRequestClient";
+import { buildPricingQuotePayload } from "@/features/order-flow/api/pricingQuoteClient";
 
 const main = MAINS.find((m) => m.id === "chicken-peri-peri")!;
-const side = SIDES.find((s) => s.id === "side-chakalaka")!;
+const side = SIDES.find((s) => s.id === "side-coleslaw")!;
 const dessert = DESSERTS.find((d) => d.id === "dessert-malva")!;
 
 /** Drive the reducer through a complete order and assert every transition. */
@@ -54,7 +59,13 @@ describe("order flow end-to-end", () => {
     expect(s.step).toBe("address");
     expect(selectCanContinue(s)).toBe(false);
     s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "street", value: "12 Jacaranda Ave" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "area", value: "Fourways" });
     s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "estate", value: "Dainfern" });
+    // Signed-in customers use the account identity instead of duplicate contact fields.
+    expect(selectCanContinue(s, true)).toBe(true);
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "name", value: "Test Customer" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "email", value: "customer@example.test" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "phone", value: "082 123 4567" });
     expect(selectCanContinue(s)).toBe(true);
 
     s = orderReducer(s, { type: "NEXT" }); // address -> review
@@ -102,5 +113,308 @@ describe("order flow end-to-end", () => {
     expect(s.step).toBe("meal");
     s = orderReducer(s, { type: "BACK" });
     expect(s.step).toBe("goal");
+  });
+
+  it("guides recurring plans through preferred days and a favourite first meal", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "family" });
+    expect(s.step).toBe("plan-days");
+    expect(selectCanContinue(s)).toBe(false);
+
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "monday" });
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "thursday" });
+    expect(s.preferredDays).toEqual(["monday", "thursday"]);
+    expect(selectCanContinue(s)).toBe(true);
+
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("plan-favorite");
+
+    s = orderReducer(s, { type: "SELECT_PLAN_FAVORITE", item: main });
+    expect(s.favoriteMealId).toBe("chicken-peri-peri");
+    expect(s.main?.id).toBe("chicken-peri-peri");
+
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("sides");
+  });
+
+  it("lets a customer defer a plan day and first-meal choice without blocking the flow", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "rhythm" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_DAYS" });
+    expect(s.planScheduleDeferred).toBe(true);
+    expect(selectCanContinue(s)).toBe(true);
+
+    s = orderReducer(s, { type: "NEXT" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_FAVORITE" });
+    expect(s.favoriteMealDeferred).toBe(true);
+    expect(selectCanContinue(s)).toBe(true);
+
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("meal");
+  });
+
+  it("takes the one-off package straight to its favourite meal", () => {
+    const s = orderReducer(INITIAL_ORDER_STATE, { type: "START_PLAN_SETUP", planId: "tonight" });
+
+    expect(s.step).toBe("plan-favorite");
+  });
+
+  it("returns recurring customers to their day choices from favourite selection", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "family" });
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "monday" });
+    s = orderReducer(s, { type: "NEXT" });
+    s = orderReducer(s, { type: "SELECT_PLAN_FAVORITE", item: main });
+    s = orderReducer(s, { type: "BACK" });
+
+    expect(s.step).toBe("plan-days");
+    expect(s.preferredDays).toEqual(["monday"]);
+    expect(s.planId).toBe("family");
+  });
+  it("clears package choices when a customer backs out of package setup", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "rhythm" });
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "monday" });
+    s = orderReducer(s, { type: "BACK" });
+
+    expect(s).toEqual(INITIAL_ORDER_STATE);
+
+    s = orderReducer(s, { type: "SELECT_GOAL", goalId: "just-good-food" });
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "BACK" });
+    s = orderReducer(s, { type: "BACK" });
+
+    expect(s.step).toBe("goal");
+    expect(s.planId).toBeNull();
+  });
+
+  it("starts direct meal discovery only for explicit meal links", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "TOGGLE_SIDE", item: side });
+
+    s = orderReducer(s, { type: "START_MEAL_DISCOVERY" });
+
+    expect(s.step).toBe("meal");
+    expect(s.goalId).toBe("just-good-food");
+    expect(s.main).toBeNull();
+    expect(s.sides).toHaveLength(0);
+  });
+  it("builds the backend booking payload from the completed order flow", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "SELECT_GOAL", goalId: "just-good-food" });
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "TOGGLE_SIDE", item: side });
+    s = orderReducer(s, { type: "SELECT_DESSERT", item: dessert });
+    s = orderReducer(s, { type: "SET_DATE", date: "2026-08-15" });
+    s = orderReducer(s, { type: "SET_TIME", time: "18:30" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "street", value: "12 Jacaranda Ave" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "area", value: "Fourways" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "estate", value: "Dainfern" });
+    // Signed-in customers use the account identity instead of duplicate contact fields.
+    expect(selectCanContinue(s, true)).toBe(true);
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "name", value: "Test Customer" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "email", value: "customer@example.test" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "phone", value: "082 123 4567" });
+
+    expect(buildBookingRequestPayload(s)).toMatchObject({
+      source: "landing-order-flow",
+      goalId: "just-good-food",
+      mainSlug: "chicken-peri-peri",
+      sideSlugs: ["side-coleslaw"],
+      dessertSlug: "dessert-malva",
+      scheduledDate: "2026-08-15",
+      timeSlot: "18:30",
+      address: {
+        estate: "Dainfern",
+        street: "12 Jacaranda Ave",
+      },
+    });
+  });
+  it("includes package preferences in quote and booking payloads", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "family" });
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "monday" });
+    s = orderReducer(s, { type: "TOGGLE_PREFERRED_DAY", day: "thursday" });
+    s = orderReducer(s, { type: "NEXT" });
+    s = orderReducer(s, { type: "SELECT_PLAN_FAVORITE", item: main });
+    s = orderReducer(s, { type: "NEXT" });
+    s = orderReducer(s, { type: "SELECT_DESSERT", item: dessert });
+    s = orderReducer(s, { type: "SET_DATE", date: "2026-08-15" });
+    s = orderReducer(s, { type: "SET_TIME", time: "18:30" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "street", value: "12 Jacaranda Ave" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "area", value: "Fourways" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "name", value: "Test Customer" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "email", value: "customer@example.test" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "phone", value: "082 123 4567" });
+
+    const expectedPlanSelection = {
+      planId: "family",
+      preferredDays: ["monday", "thursday"],
+      schedulePreference: "SELECTED_DAYS",
+      favoriteMealSlug: "chicken-peri-peri",
+    };
+
+    expect(buildPricingQuotePayload(s)).toMatchObject({ planSelection: expectedPlanSelection });
+    expect(buildBookingRequestPayload(s)).toMatchObject({ planSelection: expectedPlanSelection });
+  });
+
+  it("sends the backend booking request with an idempotency key before confirming", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        data: {
+          id: "booking-1",
+          reference: "CM-20260815-ABCD1234",
+          status: "REQUESTED",
+          subtotalCents: 18000,
+          discountCents: 0,
+          totalCents: 18000,
+          payment: { method: "BANK_TRANSFER", status: "PENDING", bankTransfer: null },
+        },
+      }),
+    }) as Response);
+
+    const payload = buildBookingRequestPayload({
+      ...INITIAL_ORDER_STATE,
+      main,
+      sides: [side],
+      dessert,
+      date: "2026-08-15",
+      time: "18:30",
+      address: { estate: "Dainfern", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+    });
+
+    await expect(
+      submitBookingRequestPayload(payload, {
+        idempotencyKey: "flow-submit-1",
+        baseUrl: "https://api.example.com",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).resolves.toMatchObject({ reference: "CM-20260815-ABCD1234" });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.example.com/api/v1/booking-requests",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "Idempotency-Key": "flow-submit-1" }),
+      }),
+    );
+  });
+
+  it("keeps failed Send request attempts from becoming confirmations", async () => {
+    const payload = buildBookingRequestPayload({
+      ...INITIAL_ORDER_STATE,
+      main,
+      date: "2026-08-15",
+      time: "18:30",
+      address: { estate: "", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+    });
+    const fetchImpl = vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) }) as Response);
+
+    await expect(
+      submitBookingRequestPayload(payload, {
+        idempotencyKey: "flow-submit-fail",
+        baseUrl: "https://api.example.com",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
+    ).rejects.toThrow("Chefmate booking request failed (503)");
+  });
+  it("uses the safe local backend default when no API URL is configured", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        data: {
+          id: "booking-local-default",
+          reference: "CM-LOCAL-0001",
+          status: "REQUESTED",
+          subtotalCents: 18000,
+          discountCents: 0,
+          totalCents: 18000,
+          payment: { method: "BANK_TRANSFER", status: "PENDING", bankTransfer: null },
+        },
+      }),
+    }) as Response);
+
+    const payload = buildBookingRequestPayload({
+      ...INITIAL_ORDER_STATE,
+      main,
+      sides: [side],
+      dessert,
+      date: "2026-08-15",
+      time: "18:30",
+      address: { estate: "Dainfern", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+    });
+
+    await submitBookingRequestPayload(payload, {
+      idempotencyKey: "flow-submit-local-default",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://localhost:3001/api/v1/booking-requests",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+  it("does not turn a legacy catalog URL into the booking endpoint", async () => {
+    const originalChefmateApiUrl = process.env.NEXT_PUBLIC_CHEFMATE_API_URL;
+    const originalMealsApiUrl = process.env.NEXT_PUBLIC_MEALS_API_URL;
+    delete process.env.NEXT_PUBLIC_CHEFMATE_API_URL;
+    process.env.NEXT_PUBLIC_MEALS_API_URL = "https://catalog.example/api/v1/catalog";
+
+    try {
+      const fetchImpl = vi.fn(async () => ({
+        ok: true,
+        status: 201,
+        json: async () => ({
+          data: {
+            id: "booking-no-catalog-leak",
+            reference: "CM-NO-CATALOG-0001",
+            status: "REQUESTED",
+            subtotalCents: 18000,
+            discountCents: 0,
+            totalCents: 18000,
+            payment: { method: "BANK_TRANSFER", status: "PENDING", bankTransfer: null },
+          },
+        }),
+      }) as Response);
+
+      const payload = buildBookingRequestPayload({
+        ...INITIAL_ORDER_STATE,
+        main,
+        sides: [side],
+        dessert,
+        date: "2026-08-15",
+        time: "18:30",
+        address: { estate: "Dainfern", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+      });
+
+      await submitBookingRequestPayload(payload, {
+        idempotencyKey: "flow-submit-catalog-url-isolated",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      });
+
+      expect(fetchImpl).toHaveBeenCalledWith(
+        "http://localhost:3001/api/v1/booking-requests",
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(fetchImpl).not.toHaveBeenCalledWith(
+        "https://catalog.example/api/v1/catalog/api/v1/booking-requests",
+        expect.anything(),
+      );
+    } finally {
+      if (originalChefmateApiUrl === undefined) delete process.env.NEXT_PUBLIC_CHEFMATE_API_URL;
+      else process.env.NEXT_PUBLIC_CHEFMATE_API_URL = originalChefmateApiUrl;
+      if (originalMealsApiUrl === undefined) delete process.env.NEXT_PUBLIC_MEALS_API_URL;
+      else process.env.NEXT_PUBLIC_MEALS_API_URL = originalMealsApiUrl;
+    }
   });
 });

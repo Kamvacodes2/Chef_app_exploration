@@ -30,7 +30,7 @@ function GoalTile({ goal, onSelect }: { readonly goal: Goal; readonly onSelect: 
     >
       <span
         className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-white transition-transform group-hover:scale-105"
-        style={{ boxShadow: `inset 0 0 0 999px ${palette.from}1f` }}
+        style={{ boxShadow: "inset 0 0 0 999px " + palette.from + "1f" }}
       >
         <Image src={goal.image} alt={goal.imageAlt} fill sizes="80px" className="object-contain" />
       </span>
@@ -40,24 +40,20 @@ function GoalTile({ goal, onSelect }: { readonly goal: Goal; readonly onSelect: 
   );
 }
 
-/**
- * Onboarding: pick a body/lifestyle goal. The first view keeps the decision
- * light with three full tiles and a partial fourth tile cue. "See all"
- * expands to the full set.
- */
+/** Pick a goal from the complete, arrow-controlled rail without a browser scrollbar. */
 export function GoalSelect(): ReactElement {
   const { selectGoal } = useOrder();
-  const [showAll, setShowAll] = useState(false);
+  const [activeGoalIndex, setActiveGoalIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const visibleGoals = showAll ? GOALS : GOALS.slice(0, 4);
 
-  function scrollGoalsForward(): void {
+  function moveGoals(direction: -1 | 1): void {
+    const nextIndex = Math.min(Math.max(activeGoalIndex + direction, 0), GOALS.length - 1);
+    if (nextIndex === activeGoalIndex) return;
+
+    setActiveGoalIndex(nextIndex);
     const track = trackRef.current;
-    if (!track) return;
-
-    const firstTile = track.firstElementChild as HTMLElement | null;
-    const scrollAmount = firstTile ? firstTile.getBoundingClientRect().width + 16 : track.clientWidth * 0.8;
-    track.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    const nextTile = track?.children.item(nextIndex) as HTMLElement | null;
+    track?.scrollTo({ left: nextTile?.offsetLeft ?? 0, behavior: "smooth" });
   }
 
   return (
@@ -71,58 +67,54 @@ export function GoalSelect(): ReactElement {
         </p>
       </div>
 
+      <div className="flex w-full justify-center gap-3 sm:justify-end" aria-label="Goal carousel controls">
+        <button
+          type="button"
+          onClick={() => moveGoals(-1)}
+          disabled={activeGoalIndex === 0}
+          aria-label="Previous goal"
+          aria-controls="goal-tile-track"
+          title="Previous goal"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-bone)] text-2xl leading-none text-[var(--color-oxblood)] shadow-sm transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-bone)]"
+        >
+          &larr;
+        </button>
+        <button
+          type="button"
+          onClick={() => moveGoals(1)}
+          disabled={activeGoalIndex === GOALS.length - 1}
+          aria-label="Next goal"
+          aria-controls="goal-tile-track"
+          title="Next goal"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-bone)] text-2xl leading-none text-[var(--color-oxblood)] shadow-sm transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-bone)]"
+        >
+          &rarr;
+        </button>
+        <span className="sr-only" aria-live="polite">Showing goal {activeGoalIndex + 1} of {GOALS.length}</span>
+      </div>
+
       <motion.div
         ref={trackRef}
         data-testid="goal-tile-track"
+        id="goal-tile-track"
+        data-active-goal-index={activeGoalIndex}
         variants={container}
         initial="hidden"
         animate="show"
-        className={
-          showAll
-            ? "grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
-            : "-mx-4 flex w-[calc(100%+2rem)] snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:w-full sm:gap-4 sm:overflow-hidden sm:px-0 sm:pb-0"
-        }
+        className="flex w-full gap-3 overflow-hidden scroll-smooth sm:gap-4"
       >
-        {visibleGoals.map((goal, index) => {
-          const isPeekTile = !showAll && index === 3;
-          return (
-            <motion.div
-              key={goal.id}
-              variants={item}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.96 }}
-              className={
-                showAll
-                  ? "relative w-full"
-                  : "relative w-[76vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:basis-[30%]"
-              }
-            >
-              <GoalTile goal={goal} onSelect={() => selectGoal(goal.id)} />
-              {isPeekTile ? (
-                <button
-                  type="button"
-                  onClick={scrollGoalsForward}
-                  aria-label="Scroll goals"
-                  className="absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-oxblood)] text-2xl leading-none text-[var(--color-bone)] shadow-lg ring-2 ring-[var(--color-bone)]/80 transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-bone)]"
-                >
-                  &rarr;
-                </button>
-              ) : null}
-            </motion.div>
-          );
-        })}
+        {GOALS.map((goal) => (
+          <motion.div
+            key={goal.id}
+            variants={item}
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.96 }}
+            className="relative w-full shrink-0 sm:w-auto sm:basis-[30%]"
+          >
+            <GoalTile goal={goal} onSelect={() => selectGoal(goal.id)} />
+          </motion.div>
+        ))}
       </motion.div>
-
-      {!showAll ? (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          aria-expanded={showAll}
-          className="inline-flex min-h-11 items-center rounded-2xl bg-[var(--color-bone)] px-5 py-3 text-sm font-bold text-[var(--color-oxblood)] shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-bone)]"
-        >
-          See all
-        </button>
-      ) : null}
     </div>
   );
 }

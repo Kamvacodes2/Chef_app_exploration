@@ -16,9 +16,9 @@ const FRAME_SOURCES = [
 
 const MEAL_SOURCES = [
   // olive
-  { src: "Assets/Meals/Healthy EasyChef/chicken_gyro_bowl.jpg", out: "public/images/meals/healthy/chicken-gyro-bowl.webp" },
-  { src: "Assets/Meals/Healthy EasyChef/Burger_bowl.jpg", out: "public/images/meals/healthy/burger-bowl.webp" },
-  { src: "Assets/Meals/Healthy EasyChef/chicken_salad_bowl.jpg", out: "public/images/meals/healthy/chicken-salad-bowl.webp" },
+  { src: "Assets/Meals/Healthy Meals/chicken_gyro_bowl.jpg", out: "public/images/meals/healthy/chicken-gyro-bowl.webp" },
+  { src: "Assets/Meals/Healthy Meals/Burger_bowl.jpg", out: "public/images/meals/healthy/burger-bowl.webp" },
+  { src: "Assets/Meals/Healthy Meals/chicken_salad_bowl.jpg", out: "public/images/meals/healthy/chicken-salad-bowl.webp" },
   // persimmon
   { src: "Assets/Meals/Chicken Meals/peri_peri_chicken.jpg", out: "public/images/meals/chicken/peri-peri-chicken.webp" },
   { src: "Assets/Meals/Chicken Meals/bbq_chicken.jpg", out: "public/images/meals/chicken/bbq-chicken.webp" },

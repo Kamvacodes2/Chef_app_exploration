@@ -16,7 +16,7 @@ export function DessertSelect(): ReactElement {
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-3xl font-semibold text-[var(--color-bone)] sm:text-4xl">Something sweet?</h2>
-        <p className="text-sm text-[var(--color-bone)]/70">Optional. Go on — malva counts as a food group.</p>
+        <p className="text-sm text-[var(--color-bone)]/70">Optional. Go on - malva counts as a food group.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -27,6 +27,7 @@ export function DessertSelect(): ReactElement {
             selected={state.dessert?.id === d.id}
             onSelect={() => selectDessert(d)}
             badge={d.isSignature ? "SA classic" : undefined}
+            showImage={false}
           />
         ))}
       </div>

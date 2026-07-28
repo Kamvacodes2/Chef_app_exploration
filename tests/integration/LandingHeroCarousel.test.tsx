@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LandingHeroCarousel } from "@/features/landing/LandingHeroCarousel";
 
@@ -7,78 +7,63 @@ describe("LandingHeroCarousel", () => {
     vi.useRealTimers();
   });
 
-  it("keeps the booking actions fixed while advancing the image and matching story every 3.5 seconds", () => {
+  it("uses the Denim Wide-style split hero and rotates the story without moving CTAs", () => {
     vi.useFakeTimers();
     render(<LandingHeroCarousel />);
 
+    expect(screen.queryByText("CHEFMATE")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Dinner's handled\.\s+Your evening\s+is yours\./ })).toHaveClass(
+      "font-display-wide",
+    );
     expect(
-      screen.getByRole("heading", { name: "Dinner is handled. Your evening is yours." }),
+      screen.getByText("A trusted Chefmate cooks fresh meals in your kitchen and cleans up before they leave."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Book a chef" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Book a Chefmate" })).toHaveAttribute(
       "href",
       "#order-flow",
     );
+    expect(screen.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "#how-it-works");
 
-    act(() => vi.advanceTimersByTime(3500));
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
 
+    expect(screen.getByRole("heading", { name: /More time\s+to hear about\s+their day\./ })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "More time to hear about their day." }),
+      screen.getByAltText("A parent helping a child with homework while a Chefmate chef cooks in the background"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByAltText(
-        "A parent helping a child with homework while a Chefmate chef cooks in the background",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Book a chef" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Book a Chefmate" })).toHaveAttribute("href", "#order-flow");
   });
 
-  it("keeps story dots below the image without side arrows or a numeric counter", () => {
-    vi.useFakeTimers();
+  it("flows from image into the themed copy panel and keeps actions at its bottom", () => {
     render(<LandingHeroCarousel />);
 
     const media = screen.getByTestId("landing-hero-media");
+    const copy = screen.getByTestId("landing-hero-copy");
+    const actions = screen.getByTestId("landing-hero-actions");
+    const colourWash = screen.getByTestId("landing-hero-colour-wash");
     const dots = screen.getByTestId("landing-hero-dots");
 
-    expect(media).toContainElement(dots);
+    expect(media).toHaveClass("order-1", "overflow-hidden", "lg:order-2", "lg:h-[690px]");
+    expect(copy).toHaveClass("order-2", "bg-[var(--color-oxblood)]", "lg:order-1");
+    expect(actions).toHaveClass("lg:mt-auto");
+    expect(colourWash).toHaveClass("bg-gradient-to-b", "to-[var(--color-oxblood)]", "lg:hidden");
+    expect(
+      screen.getByAltText("A family relaxing on the sofa while a Chefmate chef cooks in their home kitchen"),
+    ).toBeInTheDocument();
+    expect(within(dots).getAllByRole("tab")).toHaveLength(4);
     expect(screen.queryByRole("button", { name: "Previous story" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next story" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /story rotation/i })).not.toBeInTheDocument();
     expect(screen.queryByText("1 / 4")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: "Show story 2: More time to hear about their day." }));
+    fireEvent.click(within(dots).getByRole("tab", { name: /Show story 3:/ }));
+
     expect(
-      screen.getByRole("heading", { name: "More time to hear about their day." }),
+      screen.getByRole("heading", { name: /Come home\.\s+Switch off\.\s+Let someone\s+else cook\./ }),
     ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Pause story rotation" }));
-    act(() => vi.advanceTimersByTime(7000));
     expect(
-      screen.getByRole("heading", { name: "More time to hear about their day." }),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Play story rotation" }));
-    act(() => vi.advanceTimersByTime(3500));
-    expect(
-      screen.getByRole("heading", {
-        name: "Come home. Switch off. Let someone else cook.",
-      }),
-    ).toBeInTheDocument();
-  });
-
-  it("pauses while the hero is being hovered", () => {
-    vi.useFakeTimers();
-    render(<LandingHeroCarousel />);
-
-    const carousel = screen.getByTestId("landing-hero-carousel");
-    fireEvent.mouseEnter(carousel);
-    act(() => vi.advanceTimersByTime(7000));
-    expect(
-      screen.getByRole("heading", { name: "Dinner is handled. Your evening is yours." }),
-    ).toBeInTheDocument();
-
-    fireEvent.mouseLeave(carousel);
-    act(() => vi.advanceTimersByTime(3500));
-    expect(
-      screen.getByRole("heading", { name: "More time to hear about their day." }),
+      screen.getByAltText("A customer relaxing on the sofa after work while a chef cooks dinner in the kitchen"),
     ).toBeInTheDocument();
   });
 });

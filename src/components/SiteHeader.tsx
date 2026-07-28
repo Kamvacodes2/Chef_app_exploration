@@ -26,19 +26,24 @@ export function SiteHeader() {
           <a className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]" href="#meals">
             Meals
           </a>
-          <a className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]" href="#kitchen-trust">
-            Chefs
-          </a>
-          <a className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]" href="#order-flow">
-            Gift cards
+          <a className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]" href="#plans">
+            Plans
           </a>
         </nav>
-        <a
-          href="#order-flow"
-          className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-        >
-          Book a chef
-        </a>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <a
+            href="#order-flow"
+            className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-oxblood)] px-3 text-xs font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-5 sm:text-sm"
+          >
+            Book a chef
+          </a>
+          <a
+            href="/login"
+            className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
+          >
+            Login
+          </a>
+        </div>
       </div>
     </header>
   );

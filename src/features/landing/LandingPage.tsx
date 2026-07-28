@@ -8,6 +8,7 @@ import {
   POPULAR_MEALS,
 } from "./content";
 import { LandingHeroCarousel } from "./LandingHeroCarousel";
+import { PricingPlans } from "./PricingPlans";
 
 function Container({ children, className = "" }: { readonly children: React.ReactNode; readonly className?: string }) {
   return <div className={`mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>;
@@ -70,8 +71,10 @@ function HowItWorksCompact(): ReactElement {
   );
 }
 
+const POPULAR_MEAL_SEGMENT_COUNT = 5;
+
 function PopularMealsGrid(): ReactElement {
-  const mealGroups = [POPULAR_MEALS, POPULAR_MEALS] as const;
+  const mealGroups = Array.from({ length: POPULAR_MEAL_SEGMENT_COUNT }, () => POPULAR_MEALS);
 
   return (
     <section id="meals" className="bg-[var(--color-warm-white)] py-14 sm:py-18 lg:py-20" aria-labelledby="popular-meals-title" data-testid="popular-meals">
@@ -87,7 +90,7 @@ function PopularMealsGrid(): ReactElement {
       <div className="overflow-hidden" data-testid="popular-meal-loop">
         <div className="popular-meals-marquee flex w-max py-1">
           {mealGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className="flex shrink-0 gap-4 px-2" aria-hidden={groupIndex === 1}>
+            <div key={groupIndex} className="popular-meals-marquee-segment" aria-hidden={groupIndex > 0 || undefined}>
               {group.map((meal) => {
                 const cardClassName =
                   "group w-[245px] shrink-0 rounded-[22px] border border-[var(--color-oxblood)]/12 bg-[var(--color-warm-cream)] p-4 text-left transition hover:-translate-y-1 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:w-[270px]";
@@ -108,16 +111,15 @@ function PopularMealsGrid(): ReactElement {
                   </>
                 );
 
-                if (groupIndex === 1) {
-                  return (
-                    <div key={`${meal.id}-loop`} className={cardClassName}>
-                      {content}
-                    </div>
-                  );
-                }
-
                 return (
-                  <a key={meal.id} href="#order-flow" className={cardClassName} data-testid="popular-meal-card">
+                  <a
+                    key={`${meal.id}-${groupIndex}`}
+                    href={`#order-flow?meal=${meal.id}`}
+                    className={cardClassName}
+                    data-order-meal-id={meal.id}
+                    data-testid={groupIndex === 0 ? "popular-meal-card" : undefined}
+                    tabIndex={groupIndex === 0 ? undefined : -1}
+                  >
                     {content}
                   </a>
                 );
@@ -152,8 +154,8 @@ function KitchenTrustSection(): ReactElement {
               </p>
             </div>
           </article>
-          <article className="grid overflow-hidden rounded-[28px] border border-[var(--color-oxblood)]/12 bg-[var(--color-warm-white)] sm:grid-cols-[1fr_0.86fr]">
-            <div className="relative min-h-[300px]">
+          <article className="grid overflow-hidden rounded-[28px] border border-[var(--color-oxblood)]/12 bg-[var(--color-warm-white)] lg:grid-cols-[1fr_0.86fr]">
+            <div className="relative aspect-[4/3] bg-[var(--color-soft-beige)] lg:aspect-auto lg:min-h-[360px]" data-testid="kitchen-trust-chef-image">
               <Image src={LANDING_ASSETS.chefCooking.src} alt={LANDING_ASSETS.chefCooking.alt} fill loading="lazy" sizes="(max-width: 1023px) 100vw, 38vw" className="object-cover object-center" />
             </div>
             <div className="flex flex-col justify-center p-7">
@@ -161,6 +163,9 @@ function KitchenTrustSection(): ReactElement {
               <p className="mt-4 leading-7 text-[var(--color-charcoal)]/75">
                 Fresh ingredients, familiar flavours and everyday meals prepared at home by someone who knows what they&apos;re doing.
               </p>
+              <div className="mt-7">
+                <PrimaryLink href="#order-flow">Get Started</PrimaryLink>
+              </div>
             </div>
           </article>
         </div>
@@ -208,7 +213,7 @@ function FinalCallToAction(): ReactElement {
     <section className="bg-[var(--color-warm-cream)] py-14 sm:py-18 lg:py-20" aria-labelledby="final-cta-heading">
       <Container>
         <div className="grid overflow-hidden rounded-[28px] bg-[var(--color-oxblood)] text-white lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12">
+          <div className="flex flex-col justify-center p-8 max-sm:order-2 sm:p-10 lg:p-12">
             <h2 id="final-cta-heading" className="font-display text-4xl leading-tight sm:text-5xl">
               Give yourself the evening back.
             </h2>
@@ -222,7 +227,7 @@ function FinalCallToAction(): ReactElement {
               </a>
             </div>
           </div>
-          <div className="relative min-h-[300px]">
+          <div className="relative min-h-[300px] max-sm:order-1">
             <Image src={LANDING_ASSETS.familyDinner.src} alt={LANDING_ASSETS.familyDinner.alt} fill loading="lazy" sizes="(max-width: 1023px) 100vw, 50vw" className="object-cover object-center" />
           </div>
         </div>
@@ -240,6 +245,7 @@ export function LandingPage(): ReactElement {
       <KitchenTrustSection />
       <CategoryGrid />
       <OrderFlow />
+      <PricingPlans />
       <FinalCallToAction />
     </main>
   );

@@ -21,6 +21,10 @@ pnpm dev
 
 Open http://localhost:3000.
 
+## Backend API configuration
+
+Local development defaults Chefmate booking API calls to `http://localhost:3001` when `NEXT_PUBLIC_CHEFMATE_API_URL` is unset. Booking submission uses `NEXT_PUBLIC_CHEFMATE_API_URL` only; it never reuses `NEXT_PUBLIC_MEALS_API_URL`. HTTP catalog mode may set `NEXT_PUBLIC_MEALS_API_URL` to either a backend base URL or a catalog URL ending in `/api/v1/catalog`. Production builds that use HTTP catalog or booking submission must configure the relevant API URL; there is no hard-coded production host and no silent same-origin fallback.
+
 ## Testing
 
 ```bash
@@ -38,9 +42,9 @@ pnpm test:e2e          # Playwright (builds + serves the app first)
   timer, media queries, image preloading), and constants (palettes,
   transition timings, parallax depths).
 - `src/data` — schema (Zod), types, and the repository layer
-  (`MealsRepository` interface, `LocalMealsRepository`, a stubbed
-  `HttpMealsRepository` for a future API swap, and a factory that picks one
-  based on `NEXT_PUBLIC_MEALS_DATA_SOURCE`).
+  (`MealsRepository` interface, `LocalMealsRepository`, `HttpMealsRepository` for
+  the Chefmate API, and a factory that picks one based on
+  `NEXT_PUBLIC_MEALS_DATA_SOURCE`).
 - `data/meals.json` — seed content: 6 categories (one per palette) with real
   meal photography converted from `Assets/Meals/*`.
 - `scripts/convert-assets.mjs` — sharp-based WebP conversion for the 4 model
@@ -54,7 +58,7 @@ pnpm test:e2e          # Playwright (builds + serves the app first)
   and are converted to WebP in `public/images/model/`.
 - Real meal photography already existed under `Assets/Meals/**`, so
   `data/meals.json` uses genuine photos (no placeholder divs were needed).
-  6 categories were curated, one per required palette: Healthy EasyChef
+  6 categories were curated, one per required palette: Healthy Meals
   (olive), Chicken Meals (persimmon), Beef & Meat Premium (espresso),
   Overnight Oats (vanilla), Pasta Bakes & Kid Friendly (strawberry), Seven
   Colours Sunday Lunch (blood-red).

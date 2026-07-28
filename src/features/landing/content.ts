@@ -22,7 +22,7 @@ export const LANDING_ASSETS = {
     alt: "A customer and Chefmate chef reviewing fresh groceries together in the kitchen",
   },
   chefCooking: {
-    src: "/images/chefmate/trust-chef-cooking.png",
+    src: "/images/chefmate/trust-chef-sprinkling-salt.png",
     alt: "A Chefmate chef seasoning food in a pan with fresh ingredients on the counter",
   },
   familyDinner: {

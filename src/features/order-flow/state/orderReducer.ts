@@ -1,9 +1,16 @@
-import type { Address, GoalId, OrderMenuItem } from "../types";
+import {
+  isRecurringChefmatePlan,
+  type ChefmatePlanId,
+  type PreferredDayId,
+} from "@/features/plans/planCatalog";
+import type { Address, ContactDetails, GoalId, OrderMenuItem } from "../types";
 import { ALL_MENU_ITEMS } from "../constants/menu";
 import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
 
 export type OrderStep =
   | "goal"
+  | "plan-days"
+  | "plan-favorite"
   | "meal"
   | "sides"
   | "dessert"
@@ -14,15 +21,20 @@ export type OrderStep =
 
 export interface OrderState {
   readonly step: OrderStep;
+  readonly planId: ChefmatePlanId | null;
+  readonly preferredDays: readonly PreferredDayId[];
+  readonly planScheduleDeferred: boolean;
+  readonly favoriteMealId: string | null;
+  readonly favoriteMealDeferred: boolean;
   readonly goalId: GoalId | null;
   readonly main: OrderMenuItem | null;
   readonly sides: readonly OrderMenuItem[];
   readonly dessert: OrderMenuItem | null;
-  /** True when the guest picked "can't find what you want" and described a dish. */
   readonly customRequest: string | null;
-  readonly date: string | null; // ISO yyyy-mm-dd
-  readonly time: string | null; // "18:30"
+  readonly date: string | null;
+  readonly time: string | null;
   readonly address: Address;
+  readonly contact: ContactDetails;
   readonly giftCodeInput: string;
   readonly appliedGift: { code: string; discountFraction: number } | null;
   readonly giftMessage: string;
@@ -30,6 +42,11 @@ export interface OrderState {
 
 export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   step: "goal",
+  planId: null,
+  preferredDays: Object.freeze([]),
+  planScheduleDeferred: false,
+  favoriteMealId: null,
+  favoriteMealDeferred: false,
   goalId: null,
   main: null,
   sides: Object.freeze([]),
@@ -37,7 +54,8 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   customRequest: null,
   date: null,
   time: null,
-  address: Object.freeze({ estate: "", unit: "", street: "" }),
+  address: Object.freeze({ estate: "", unit: "", street: "", area: "", latitude: null, longitude: null }),
+  contact: Object.freeze({ name: "", email: "", phone: "" }),
   giftCodeInput: "",
   appliedGift: null,
   giftMessage: "",
@@ -45,6 +63,12 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
 
 export type OrderAction =
   | { type: "SELECT_GOAL"; goalId: GoalId }
+  | { type: "START_MEAL_DISCOVERY" }
+  | { type: "START_PLAN_SETUP"; planId: ChefmatePlanId }
+  | { type: "TOGGLE_PREFERRED_DAY"; day: PreferredDayId }
+  | { type: "DECIDE_PLAN_DAYS" }
+  | { type: "SELECT_PLAN_FAVORITE"; item: OrderMenuItem }
+  | { type: "DECIDE_PLAN_FAVORITE" }
   | { type: "SELECT_MAIN"; item: OrderMenuItem }
   | { type: "TOGGLE_SIDE"; item: OrderMenuItem }
   | { type: "SELECT_DESSERT"; item: OrderMenuItem }
@@ -52,8 +76,9 @@ export type OrderAction =
   | { type: "SET_CUSTOM_REQUEST"; text: string }
   | { type: "CLEAR_CUSTOM_REQUEST" }
   | { type: "SET_DATE"; date: string }
-  | { type: "SET_TIME"; time: string }
+  | { type: "SET_TIME"; time: string | null }
   | { type: "SET_ADDRESS_FIELD"; field: keyof Address; value: string }
+  | { type: "SET_CONTACT_FIELD"; field: keyof ContactDetails; value: string }
   | { type: "SET_GIFT_INPUT"; value: string }
   | { type: "APPLY_GIFT" }
   | { type: "REMOVE_GIFT" }
@@ -65,6 +90,8 @@ export type OrderAction =
 
 export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
   "goal",
+  "plan-days",
+  "plan-favorite",
   "meal",
   "sides",
   "dessert",
@@ -73,44 +100,86 @@ export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
   "review",
 ]);
 
+const NEUTRAL_DISCOVERY_GOAL_ID: GoalId = "just-good-food";
+
 function findItem(id: string): OrderMenuItem | undefined {
   return ALL_MENU_ITEMS.find((item) => item.id === id);
 }
 
-function stepAfter(current: OrderStep): OrderStep {
-  const idx = STEP_ORDER.indexOf(current);
+function stepAfter(state: OrderState): OrderStep {
+  if (state.step === "plan-favorite") {
+    return state.main ? "sides" : "meal";
+  }
+
+  const idx = STEP_ORDER.indexOf(state.step);
   return STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)] ?? "review";
 }
 
-function stepBefore(current: OrderStep): OrderStep {
-  const idx = STEP_ORDER.indexOf(current);
+function stepBefore(state: OrderState): OrderStep {
+  if (state.step === "sides" && state.planId && !state.favoriteMealDeferred) {
+    return "plan-favorite";
+  }
+
+  if (state.step === "meal" && !state.planId) {
+    return "goal";
+  }
+
+  if (state.step === "plan-favorite") {
+    return state.planId && isRecurringChefmatePlan(state.planId) ? "plan-days" : "goal";
+  }
+
+  const idx = STEP_ORDER.indexOf(state.step);
   return STEP_ORDER[Math.max(idx - 1, 0)] ?? "goal";
 }
 
 export function orderReducer(state: OrderState, action: OrderAction): OrderState {
   switch (action.type) {
     case "SELECT_GOAL":
-      return { ...state, goalId: action.goalId, step: "meal" };
-
+      return { ...INITIAL_ORDER_STATE, goalId: action.goalId, step: "meal" };
+    case "START_MEAL_DISCOVERY":
+      return { ...INITIAL_ORDER_STATE, goalId: NEUTRAL_DISCOVERY_GOAL_ID, step: "meal" };
+    case "START_PLAN_SETUP":
+      return {
+        ...INITIAL_ORDER_STATE,
+        planId: action.planId,
+        step: isRecurringChefmatePlan(action.planId) ? "plan-days" : "plan-favorite",
+      };
+    case "TOGGLE_PREFERRED_DAY": {
+      const preferredDays = state.preferredDays.includes(action.day)
+        ? state.preferredDays.filter((day) => day !== action.day)
+        : [...state.preferredDays, action.day];
+      return { ...state, preferredDays, planScheduleDeferred: false };
+    }
+    case "DECIDE_PLAN_DAYS":
+      return { ...state, preferredDays: [], planScheduleDeferred: true };
+    case "SELECT_PLAN_FAVORITE":
+      return {
+        ...state,
+        favoriteMealId: action.item.id,
+        favoriteMealDeferred: false,
+        main: action.item,
+        customRequest: null,
+      };
+    case "DECIDE_PLAN_FAVORITE":
+      return {
+        ...state,
+        favoriteMealId: null,
+        favoriteMealDeferred: true,
+        main: null,
+        customRequest: null,
+      };
     case "SELECT_MAIN":
       return { ...state, main: action.item, customRequest: null, step: "sides" };
-
     case "TOGGLE_SIDE": {
-      const exists = state.sides.some((s) => s.id === action.item.id);
-      const sides = exists
-        ? state.sides.filter((s) => s.id !== action.item.id)
-        : [...state.sides, action.item];
+      const exists = state.sides.some((side) => side.id === action.item.id);
+      const sides = exists ? state.sides.filter((side) => side.id !== action.item.id) : [...state.sides, action.item];
       return { ...state, sides };
     }
-
     case "SELECT_DESSERT":
       return { ...state, dessert: action.item, step: "schedule" };
-
     case "SKIP_DESSERT":
       return { ...state, dessert: null, step: "schedule" };
-
     case "SET_CUSTOM_REQUEST": {
-      // A custom request replaces a chosen main; the kitchen confirms it.
       const customMain: OrderMenuItem = {
         id: "custom-request",
         name: "Custom Request",
@@ -123,29 +192,20 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         paletteId: "persimmon",
         goalTags: Object.freeze([]),
       };
-      return {
-        ...state,
-        customRequest: action.text,
-        main: customMain,
-        step: "sides",
-      };
+      return { ...state, customRequest: action.text, main: customMain, step: "sides" };
     }
-
     case "CLEAR_CUSTOM_REQUEST":
       return { ...state, customRequest: null, main: null };
-
     case "SET_DATE":
       return { ...state, date: action.date };
-
     case "SET_TIME":
       return { ...state, time: action.time };
-
     case "SET_ADDRESS_FIELD":
       return { ...state, address: { ...state.address, [action.field]: action.value } };
-
+    case "SET_CONTACT_FIELD":
+      return { ...state, contact: { ...state.contact, [action.field]: action.value } };
     case "SET_GIFT_INPUT":
       return { ...state, giftCodeInput: action.value, giftMessage: "" };
-
     case "APPLY_GIFT": {
       const result = validateGiftCode(state.giftCodeInput);
       if (result.valid) {
@@ -157,35 +217,32 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       }
       return { ...state, appliedGift: null, giftMessage: result.message };
     }
-
     case "REMOVE_GIFT":
       return { ...state, appliedGift: null, giftCodeInput: "", giftMessage: "" };
-
     case "NEXT":
-      return { ...state, step: stepAfter(state.step) };
-
+      return { ...state, step: stepAfter(state) };
     case "BACK":
-      return { ...state, step: stepBefore(state.step) };
-
+      if (state.step === "plan-days") {
+        return INITIAL_ORDER_STATE;
+      }
+      if (state.step === "plan-favorite" && (!state.planId || !isRecurringChefmatePlan(state.planId))) {
+        return INITIAL_ORDER_STATE;
+      }
+      return { ...state, step: stepBefore(state) };
     case "GO_TO":
       return { ...state, step: action.step };
-
     case "CONFIRM":
       return { ...state, step: "confirmed" };
-
     case "RESET":
       return INITIAL_ORDER_STATE;
-
     default:
       return state;
   }
 }
 
-// --- Selectors / derived helpers ---
-
 export function selectSubtotal(state: OrderState): number {
   const mains = state.main ? state.main.price : 0;
-  const sides = state.sides.reduce((sum, s) => sum + s.price, 0);
+  const sides = state.sides.reduce((sum, side) => sum + side.price, 0);
   const dessert = state.dessert ? state.dessert.price : 0;
   return mains + sides + dessert;
 }
@@ -199,20 +256,28 @@ export function selectTotal(state: OrderState): number {
   return selectSubtotal(state) - selectDiscount(state);
 }
 
-export function selectCanContinue(state: OrderState): boolean {
+export function selectCanContinue(state: OrderState, usesAccountContact = false): boolean {
   switch (state.step) {
     case "goal":
       return state.goalId !== null;
+    case "plan-days":
+      return state.planScheduleDeferred || state.preferredDays.length > 0;
+    case "plan-favorite":
+      return state.favoriteMealDeferred || state.favoriteMealId !== null;
     case "meal":
       return state.main !== null;
     case "sides":
-      return true; // optional
     case "dessert":
-      return true; // optional
+      return true;
     case "schedule":
       return state.date !== null && state.time !== null;
     case "address":
-      return state.address.street.trim().length > 2; // street is the minimum viable field
+      if (state.address.street.trim().length <= 2 || state.address.area.trim().length <= 1) return false;
+      return usesAccountContact || (
+        state.contact.name.trim().length > 1
+        && /^\S+@\S+\.\S+$/.test(state.contact.email)
+        && state.contact.phone.replace(/\s/g, "").length >= 8
+      );
     case "review":
       return true;
     default:
