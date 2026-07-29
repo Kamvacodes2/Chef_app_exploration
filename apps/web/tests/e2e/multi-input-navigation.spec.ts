@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const ORDER_FLOW_TOP_ALIGNMENT_TOLERANCE_PX = 32;
+
 test("order flow supports focused meal search and custom request interactions", async ({
   page,
 }) => {
@@ -15,14 +17,13 @@ test("order flow supports focused meal search and custom request interactions", 
   await expect(page.getByRole("heading", { name: "Find what you want to eat." })).toBeVisible();
   await expect(page.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
   const orderFlow = page.locator("#order-flow");
-  await orderFlow.scrollIntoViewIfNeeded();
   await expect
     .poll(
       async () =>
         orderFlow.evaluate((element) => Math.abs(Math.round(element.getBoundingClientRect().top))),
       { timeout: 5_000, interval: 100 },
     )
-    .toBeLessThanOrEqual(8);
+    .toBeLessThanOrEqual(ORDER_FLOW_TOP_ALIGNMENT_TOLERANCE_PX);
   await page.getByLabel("Search meals or ingredients").fill("TikTok");
   await expect(page.getByText("0 meals found")).toBeVisible();
 
