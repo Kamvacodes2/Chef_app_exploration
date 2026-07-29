@@ -58,11 +58,15 @@ describe("legacy contract: survey", () => {
 
     render(createElement(SurveyPage, { token: LEGACY_SURVEY_TOKEN }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument(),
+    );
   });
 
   it("collapses a non-2xx retrieval into the single unavailable message", async () => {
-    stubSurveyFetch(async () => fakeResponse({ status: 404, body: { message: "This detail is discarded" } }));
+    stubSurveyFetch(async () =>
+      fakeResponse({ status: 404, body: { message: "This detail is discarded" } }),
+    );
 
     render(createElement(SurveyPage, { token: LEGACY_SURVEY_TOKEN }));
 
@@ -94,11 +98,15 @@ describe("legacy contract: survey", () => {
 
   it("pins the survey submission wire shape: JSON body of ratings plus comment, no credentials", async () => {
     const fetchMock = stubSurveyFetch(async (_input, init) =>
-      init?.method === "POST" ? fakeResponse({ status: 204 }) : fakeResponse({ body: legacySurveyResponse }),
+      init?.method === "POST"
+        ? fakeResponse({ status: 204 })
+        : fakeResponse({ body: legacySurveyResponse }),
     );
 
     render(createElement(SurveyPage, { token: LEGACY_SURVEY_TOKEN }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Rate 4 out of 5" }));
     fireEvent.click(screen.getByRole("button", { name: /save rating/i }));
@@ -114,17 +122,23 @@ describe("legacy contract: survey", () => {
 
   it("uses a distinct message when submission fails", async () => {
     stubSurveyFetch(async (_input, init) =>
-      init?.method === "POST" ? fakeResponse({ status: 500 }) : fakeResponse({ body: legacySurveyResponse }),
+      init?.method === "POST"
+        ? fakeResponse({ status: 500 })
+        : fakeResponse({ body: legacySurveyResponse }),
     );
 
     render(createElement(SurveyPage, { token: LEGACY_SURVEY_TOKEN }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "How did the session go?" })).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Rate 4 out of 5" }));
     fireEvent.click(screen.getByRole("button", { name: /save rating/i }));
 
     await waitFor(() =>
-      expect(screen.getByText("We could not save your feedback. Please try again.")).toBeInTheDocument(),
+      expect(
+        screen.getByText("We could not save your feedback. Please try again."),
+      ).toBeInTheDocument(),
     );
   });
 });

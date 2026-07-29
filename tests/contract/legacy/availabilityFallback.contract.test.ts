@@ -30,7 +30,9 @@ function renderScheduleAtDate(date: string): void {
     setDate: vi.fn(),
   } as unknown as OrderController;
 
-  render(createElement(OrderContext.Provider, { value: controller }, createElement(ScheduleSelect)));
+  render(
+    createElement(OrderContext.Provider, { value: controller }, createElement(ScheduleSelect)),
+  );
 }
 
 describe("legacy contract: availability is advisory, not authoritative", () => {

@@ -1,0 +1,16 @@
+{
+  "//": "Solution file. `tsc -b` walks these in dependency order and enforces the ADR-0001 dependency direction at build time.",
+  "files": [],
+  "references": [
+    { "path": "./packages/contracts" },
+    { "path": "./packages/domain" },
+    { "path": "./packages/application" },
+    { "path": "./packages/config" },
+    { "path": "./packages/observability" },
+    { "path": "./packages/database" },
+    { "path": "./packages/integrations" },
+    { "path": "./packages/testkit" },
+    { "path": "./apps/api" },
+    { "path": "./apps/worker" }
+  ]
+}

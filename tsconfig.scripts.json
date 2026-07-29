@@ -1,0 +1,17 @@
+{
+  "//": "Type-checks the root CLI scripts and the root test suites, which are run by tsx/vitest rather than compiled.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "tests/db/**/*.ts",
+    "tests/integration/**/*.ts",
+    "tests/security/**/*.ts"
+  ]
+}

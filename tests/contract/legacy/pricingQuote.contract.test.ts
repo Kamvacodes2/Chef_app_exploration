@@ -21,7 +21,10 @@ describe("legacy contract: pricing quote", () => {
   it("pins the quote request wire shape", async () => {
     const fetchImpl = fakeFetch({ body: legacyQuoteResponse });
 
-    await fetchPricingQuote(payload, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch });
+    await fetchPricingQuote(payload, {
+      baseUrl: LEGACY_BASE_URL,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
 
     expect(wireRequest(fetchImpl)).toMatchInlineSnapshot(`
       {
@@ -53,7 +56,10 @@ describe("legacy contract: pricing quote", () => {
     const fetchImpl = fakeFetch({ body: legacyQuoteResponse });
 
     await expect(
-      fetchPricingQuote(payload, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
+      fetchPricingQuote(payload, {
+        baseUrl: LEGACY_BASE_URL,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
     ).resolves.toEqual(legacyQuoteResponse.data);
   });
 
@@ -91,7 +97,10 @@ describe("legacy contract: pricing quote", () => {
     });
 
     await expect(
-      fetchPricingQuote(payload, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
+      fetchPricingQuote(payload, {
+        baseUrl: LEGACY_BASE_URL,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
     ).rejects.toThrow();
   });
 
@@ -108,16 +117,24 @@ describe("legacy contract: pricing quote", () => {
     await expect(
       fetchPricingQuote(payload, {
         baseUrl: LEGACY_BASE_URL,
-        fetchImpl: fakeFetch({ body: { data: { ...withoutPlan, plan: null } } }) as unknown as typeof fetch,
+        fetchImpl: fakeFetch({
+          body: { data: { ...withoutPlan, plan: null } },
+        }) as unknown as typeof fetch,
       }),
     ).resolves.toMatchObject({ plan: null });
   });
 
   it("uses a flat status-only error message and never reads the error body", async () => {
-    const fetchImpl = fakeFetch({ status: 422, body: { message: "This detailed message is ignored" } });
+    const fetchImpl = fakeFetch({
+      status: 422,
+      body: { message: "This detailed message is ignored" },
+    });
 
     await expect(
-      fetchPricingQuote(payload, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
+      fetchPricingQuote(payload, {
+        baseUrl: LEGACY_BASE_URL,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
     ).rejects.toThrow("Chefmate pricing quote failed (422)");
   });
 

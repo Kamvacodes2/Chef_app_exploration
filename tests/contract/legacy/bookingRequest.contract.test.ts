@@ -32,8 +32,19 @@ function guestOrderState(): OrderState {
     sides: [side],
     date: "2026-08-15",
     time: "18:30",
-    address: { estate: "  Dainfern  ", unit: "  Unit 12  ", street: "  12 Jacaranda Avenue  ", area: "  Fourways  ", latitude: null, longitude: null },
-    contact: { name: "  Thandi Customer  ", email: "  Thandi.Customer@Example.TEST  ", phone: "082 123 4567" },
+    address: {
+      estate: "  Dainfern  ",
+      unit: "  Unit 12  ",
+      street: "  12 Jacaranda Avenue  ",
+      area: "  Fourways  ",
+      latitude: null,
+      longitude: null,
+    },
+    contact: {
+      name: "  Thandi Customer  ",
+      email: "  Thandi.Customer@Example.TEST  ",
+      phone: "082 123 4567",
+    },
   };
 }
 
@@ -47,7 +58,11 @@ const wirePayload: BookingRequestPayload = {
   scheduledDate: "2026-08-15",
   timeSlot: "18:30",
   address: { estate: "Dainfern", unit: "Unit 12", street: "12 Jacaranda Avenue", area: "Fourways" },
-  contact: { name: "Thandi Customer", email: "thandi.customer@example.test", phone: "+27821234567" },
+  contact: {
+    name: "Thandi Customer",
+    email: "thandi.customer@example.test",
+    phone: "+27821234567",
+  },
   giftCode: null,
 };
 
@@ -75,8 +90,17 @@ describe("legacy contract: booking submission", () => {
 
   it("pins client-side normalization: trimmed address, lowercased email, +27 phone", () => {
     expect(buildBookingRequestPayload(guestOrderState())).toMatchObject({
-      address: { estate: "Dainfern", unit: "Unit 12", street: "12 Jacaranda Avenue", area: "Fourways" },
-      contact: { name: "Thandi Customer", email: "thandi.customer@example.test", phone: "+27821234567" },
+      address: {
+        estate: "Dainfern",
+        unit: "Unit 12",
+        street: "12 Jacaranda Avenue",
+        area: "Fourways",
+      },
+      contact: {
+        name: "Thandi Customer",
+        email: "thandi.customer@example.test",
+        phone: "+27821234567",
+      },
     });
   });
 
@@ -92,7 +116,10 @@ describe("legacy contract: booking submission", () => {
 
     for (const [input, expected] of cases) {
       const state = guestOrderState();
-      const built = buildBookingRequestPayload({ ...state, contact: { ...state.contact, phone: input } });
+      const built = buildBookingRequestPayload({
+        ...state,
+        contact: { ...state.contact, phone: input },
+      });
       expect(built.contact?.phone).toBe(expected);
     }
   });
@@ -192,7 +219,10 @@ describe("legacy contract: booking submission", () => {
   });
 
   it("uses readApiErrorMessage on failure, unlike the quote and availability clients", async () => {
-    const fetchImpl = fakeFetch({ status: 409, body: { error: { message: "A matching request already exists" } } });
+    const fetchImpl = fakeFetch({
+      status: 409,
+      body: { error: { message: "A matching request already exists" } },
+    });
 
     await expect(
       submitBookingRequestPayload(wirePayload, {

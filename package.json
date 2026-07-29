@@ -1,52 +1,60 @@
 {
-  "name": "chill-chef-hero",
+  "name": "chefmate-platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "convert-assets": "node scripts/convert-assets.mjs"
+  "packageManager": "pnpm@11.5.3",
+  "engines": {
+    "node": ">=22.11.0"
   },
-  "dependencies": {
-    "framer-motion": "^11.15.0",
-    "next": "^15.1.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zod": "^3.24.1"
+  "scripts": {
+    "dev": "pnpm --filter @chefmate/web dev",
+    "dev:api": "pnpm --filter @chefmate/api dev",
+    "dev:worker": "pnpm --filter @chefmate/worker dev",
+    "start": "pnpm --filter @chefmate/web start",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . && pnpm --filter @chefmate/web lint",
+    "typecheck": "tsc -b tsconfig.build.json && tsc -p tsconfig.scripts.json && pnpm --filter @chefmate/web typecheck",
+    "build": "tsc -b tsconfig.build.json && pnpm --filter @chefmate/web build",
+    "clean": "tsc -b tsconfig.build.json --clean",
+    "db:migrate": "tsx scripts/db-migrate.ts migrate",
+    "db:migrate:check": "tsx scripts/db-migrate.ts check",
+    "db:migrate:status": "tsx scripts/db-migrate.ts status",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down -v",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --config vitest.unit.config.ts && pnpm --filter @chefmate/web test:unit",
+    "test:contract": "vitest run --config vitest.contract.config.ts",
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:security": "vitest run --config vitest.security.config.ts",
+    "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage && pnpm --filter @chefmate/web test:coverage",
+    "test:e2e": "pnpm --filter @chefmate/web test:e2e",
+    "test:a11y": "pnpm --filter @chefmate/web test:a11y",
+    "test:ci": "tsx scripts/ci.ts"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@playwright/test": "^1.49.1",
-    "@tailwindcss/postcss": "^4.0.0",
+    "@eslint/js": "^9.17.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.1.4",
     "jsdom": "^25.0.1",
+    "pg": "^8.13.1",
     "prettier": "^3.4.2",
-    "sharp": "^0.33.5",
-    "tailwindcss": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^2.1.8",
+    "zod": "^3.24.1"
   }
 }

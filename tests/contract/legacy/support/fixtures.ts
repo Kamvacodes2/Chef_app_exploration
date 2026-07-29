@@ -67,11 +67,29 @@ export const legacyQuoteResponse = {
     discountCents: 0,
     totalCents: 67285,
     items: [
-      { kind: "main", slug: "roast-chicken-seven-colours", name: "Roast Chicken Seven Colours", priceCents: 52785, sortOrder: 0 },
-      { kind: "side", slug: "creamed-spinach", name: "Creamed Spinach", priceCents: 0, sortOrder: 1 },
+      {
+        kind: "main",
+        slug: "roast-chicken-seven-colours",
+        name: "Roast Chicken Seven Colours",
+        priceCents: 52785,
+        sortOrder: 0,
+      },
+      {
+        kind: "side",
+        slug: "creamed-spinach",
+        name: "Creamed Spinach",
+        priceCents: 0,
+        sortOrder: 1,
+      },
       { kind: "side", slug: "mielies", name: "Mielies", priceCents: 0, sortOrder: 2 },
       { kind: "side", slug: "coleslaw", name: "Coleslaw", priceCents: 5500, sortOrder: 3 },
-      { kind: "dessert", slug: "malva-pudding", name: "Malva Pudding", priceCents: 9000, sortOrder: 4 },
+      {
+        kind: "dessert",
+        slug: "malva-pudding",
+        name: "Malva Pudding",
+        priceCents: 9000,
+        sortOrder: 4,
+      },
     ],
     plan: {
       // `full-house` — not `PREMIUM` — is the live legacy plan id (D002 / ADR-0008).

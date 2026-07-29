@@ -11,3 +11,6 @@ test-results
 .DS_Store
 next-env.d.ts
 *.tsbuildinfo
+
+# Scratch directory written and removed by the database suite's rollback test.
+tests/db/.scratch-migrations

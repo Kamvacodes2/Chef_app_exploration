@@ -18,7 +18,10 @@ describe("legacy contract: authentication", () => {
   it("pins the login request wire shape", async () => {
     const fetchImpl = fakeFetch({ body: legacyAuthResponse });
 
-    await signIn(credentials, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch });
+    await signIn(credentials, {
+      baseUrl: LEGACY_BASE_URL,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
 
     expect(wireRequest(fetchImpl)).toMatchInlineSnapshot(`
       {
@@ -55,7 +58,10 @@ describe("legacy contract: authentication", () => {
   it("pins the parsed authenticated-user projection, retaining the legacy COOK role value", async () => {
     const fetchImpl = fakeFetch({ body: legacyAuthResponse });
 
-    const user = await getCurrentUser({ baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch });
+    const user = await getCurrentUser({
+      baseUrl: LEGACY_BASE_URL,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
 
     expect(user).toMatchInlineSnapshot(`
       {
@@ -84,7 +90,10 @@ describe("legacy contract: authentication", () => {
   });
 
   it("propagates a non-401 session-probe failure as an error", async () => {
-    const fetchImpl = fakeFetch({ status: 503, body: { message: "Chefmate is offline for maintenance" } });
+    const fetchImpl = fakeFetch({
+      status: 503,
+      body: { message: "Chefmate is offline for maintenance" },
+    });
 
     await expect(
       getCurrentUser({ baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
@@ -93,9 +102,15 @@ describe("legacy contract: authentication", () => {
 
   it("pins readApiErrorMessage precedence: message, then string error, then error.message, then fallback", async () => {
     const cases = [
-      { body: { message: "Top level message wins", error: "ignored" }, expected: "Top level message wins" },
+      {
+        body: { message: "Top level message wins", error: "ignored" },
+        expected: "Top level message wins",
+      },
       { body: { error: "String error is second" }, expected: "String error is second" },
-      { body: { error: { message: "Nested error message is third" } }, expected: "Nested error message is third" },
+      {
+        body: { error: { message: "Nested error message is third" } },
+        expected: "Nested error message is third",
+      },
       { body: { error: {} }, expected: "Chefmate could not complete this request (409)." },
       { bodyThrows: true, expected: "Chefmate could not complete this request (409)." },
     ] as const;
@@ -103,7 +118,10 @@ describe("legacy contract: authentication", () => {
     for (const testCase of cases) {
       const fetchImpl = fakeFetch({ status: 409, ...testCase });
       await expect(
-        signIn(credentials, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
+        signIn(credentials, {
+          baseUrl: LEGACY_BASE_URL,
+          fetchImpl: fetchImpl as unknown as typeof fetch,
+        }),
       ).rejects.toThrow(testCase.expected);
     }
   });
@@ -112,7 +130,10 @@ describe("legacy contract: authentication", () => {
     const fetchImpl = fakeFetch({ body: { data: { user: { id: "usr_1" } } } });
 
     await expect(
-      signIn(credentials, { baseUrl: LEGACY_BASE_URL, fetchImpl: fetchImpl as unknown as typeof fetch }),
+      signIn(credentials, {
+        baseUrl: LEGACY_BASE_URL,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      }),
     ).rejects.toThrow();
   });
 
@@ -122,7 +143,9 @@ describe("legacy contract: authentication", () => {
       const fetchImpl = vi.fn(
         (_url: string, init: RequestInit) =>
           new Promise<Response>((_resolve, reject) => {
-            init.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
           }),
       );
 
@@ -130,7 +153,9 @@ describe("legacy contract: authentication", () => {
         baseUrl: LEGACY_BASE_URL,
         fetchImpl: fetchImpl as unknown as typeof fetch,
       });
-      const assertion = expect(pending).rejects.toThrow("Chefmate is taking longer than expected. Please try again.");
+      const assertion = expect(pending).rejects.toThrow(
+        "Chefmate is taking longer than expected. Please try again.",
+      );
 
       await vi.advanceTimersByTimeAsync(15_000);
       await assertion;

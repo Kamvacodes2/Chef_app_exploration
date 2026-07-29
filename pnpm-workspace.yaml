@@ -1,4 +1,29 @@
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
-  - unrs-resolver
+packages:
+  - apps/*
+  - packages/*
+
+# Native/postinstall builds are opt-in. Only these three are needed:
+# esbuild (vite/vitest), sharp (asset conversion), unrs-resolver (eslint).
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Transitive security pins (pnpm 11 reads overrides from here, not package.json).
+#   postcss: next@15.5.22 pins postcss to exact 8.4.31, which is vulnerable to
+#            GHSA-r28c-9q8g-f849 (high), GHSA-6g55-p6wh-862q (high) and
+#            GHSA-qx2v-qp2m-jg93 (moderate). Patched minimum is 8.5.18.
+#   sharp:   next@15.5.22 declares optional sharp ^0.34.3, vulnerable to
+#            GHSA-f88m-g3jw-g9cj (high). Patched minimum is 0.35.0.
+#   brace-expansion@5: GHSA-mh99-v99m-4gvg (high) declares every version <=5.0.7
+#            vulnerable and only 5.0.8 patched. The override is scoped to the
+#            5.x line (reached via minimatch@10) because brace-expansion 5.x
+#            exports `{ expand }` instead of a callable default: an unscoped
+#            `brace-expansion: ^5.0.8` override was tested and breaks eslint
+#            ("TypeError: expand is not a function" in minimatch@3.1.5) and the
+#            minimatch@9 chain under @vitest/coverage-v8. Those two dev-only
+#            chains are tracked in tests/security/dev-dependency-exceptions.json.
+overrides:
+  postcss: ^8.5.18
+  sharp: ^0.35.0
+  brace-expansion@5: ^5.0.8

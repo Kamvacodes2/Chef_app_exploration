@@ -15,7 +15,7 @@ next safe handoff.
 | Planning controls | `P00`–`P02` passed |
 | Reviewed planning commit | `84a620d9464933b4552ae9e297e301a191f2f039` |
 | Implementation | `IN_PROGRESS` |
-| Next executable step | `S02 — Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold` (S02 check-in on operational facts first — see handoff snapshot) |
+| Next executable step | `S03 — Identity, secure sessions, RBAC, generic token primitives, core consent/suppression, privacy baseline, idempotency, and audit`, gated on `G011` closing before schema freeze (see handoff snapshot) |
 | Last ledger update | 2026-07-28 (`Africa/Johannesburg`) |
 
 ## Status vocabulary
@@ -109,12 +109,16 @@ last code change.
 ## Awaiting
 
 - No planning control awaits review; `P00`–`P02` are `PASSED`.
-- `S00` and `S01` are `PASSED` (see evidence `E009`-`E016`); `S01`'s branch
-  (`feat/s01-legacy-contracts-adrs`) is published to `origin` with its PR
-  pending review/merge.
-- `S02` is the next executable implementation step, subject to its
-  operational-facts check-in below; `S03`–`S17` remain `NOT_STARTED` and must
-  respect the dependency DAG below.
+- `S00`, `S01`, and `S02` are `PASSED` (see evidence `E009`-`E024`). `S01` is
+  merged to `main` (merge commit `4c052f3`). `S02`'s branch
+  (`feat/s02-platform-scaffold`) is committed (`16d873a`) and awaiting push
+  and PR open/merge.
+- `S03` is the next executable implementation step, but its schema/contract
+  freeze remains gated on `G011` (POPIA baseline) closing first — a
+  preparatory decision pack exists (see `docs/privacy/g011-popia-decision-pack.md`
+  on branch `docs/g011-popia-decision-pack`, pushed, PR pending) but `G011`
+  itself is still `OPEN` pending human privacy/legal sign-off.
+- `S04`–`S17` remain `NOT_STARTED` and must respect the dependency DAG below.
 - Every release acceptance gate `A01`–`A26` remains `NOT_STARTED`; no `Axx`
   gate is passed.
 - Production launch decisions `G001`–`G011` must be resolved before their
@@ -137,7 +141,7 @@ Verification text states the minimum gate, not evidence that already exists.
 |---|---|---|---|---|---|---|
 | `S00` | Green baseline | — | `PASSED` | supervisor / e2e-runner, `main` | Lint, type-check, build, all 205 current tests, coverage, and all 14 current executions in both Playwright projects pass after the final change | `E009`-`E013`; commit `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `S01` | Legacy contract characterization and architecture decision records | `S00` | `PASSED` | supervisor / architect + general-purpose, `feat/s01-legacy-contracts-adrs` | Dedicated `vitest.contract.config.ts` runs contract/snapshot tests for current APIs and compatibility aliases; ADRs are reviewed; no behavior drift | `E014`-`E016`; commit `a3d758e` on `feat/s01-legacy-contracts-adrs` |
-| `S02` | Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold | `S01` | `NOT_STARTED` | — | Clean install/build/test; health checks; migrations apply from empty and supported prior schemas; production corrections use new forward migrations; any reversal check is limited to an unapplied disposable development database | — |
+| `S02` | Monorepo, API, worker, PostgreSQL, migration, local runtime, and CI scaffold | `S01` | `PASSED` | supervisor / general-purpose + architect + database-reviewer + security-reviewer + e2e-runner + code-reviewer, `feat/s02-platform-scaffold` | Clean install/build/test; health checks; migrations apply from empty and supported prior schemas; production corrections use new forward migrations; any reversal check is limited to an unapplied disposable development database | `E017`-`E024`; commit `16d873a` on `feat/s02-platform-scaffold` |
 | `S03` | Identity, secure sessions, RBAC, generic token primitives, core consent/suppression, privacy baseline, idempotency, and audit | `S02` | `NOT_STARTED` | — | Auth/RBAC and abuse tests; purpose-bound token hash/single-use/expiry tests; consent/suppression and privacy-contract tests; audit redaction tests | — |
 | `S04` | Four-plan catalog and server-authoritative pricing | `S02` | `NOT_STARTED` | — | DB/contract tests prove four plans and exact side/dessert rules; allocation is tested only as a pure deterministic allocator with locked vectors/property tests; quote snapshots remain immutable | — |
 | `S05` | Transactional outbox, jobs, provider ports, retry policy, and provider fakes | `S02` | `NOT_STARTED` | — | Commit-with-event atomicity, lease/retry/dead-letter, idempotency, and fake-provider integration tests pass | — |
@@ -235,7 +239,7 @@ step effects. Every release gate remains independently blocking where
 | `G008` | Complete Paystack account/recipient readiness, webhook secrets, KYC, and PCI-scope review | Finance / engineering / Paystack administrator | Before provider sandbox gates in `S07` and `S13` | Paystack sandbox/provider smoke; fakes allowed | Provider/staging portions of `S07`, `S13` | Yes | `A04`, `A05`, `A12`, `A13`, `A21`, `A26` | `OPEN`; fake-adapter work allowed |
 | `G009` | Approve profiling, data-subject rights, incident duties, bank-data controls, campaign privacy, and key/access policy | Privacy / legal / data-protection owner | Before later `S09`, `S10`, `S15`, `S16`, and `S17` privacy gates | — | `S09`, `S10`, `S15`, `S16`, `S17` privacy gates | Yes | `A07`, `A08`, `A09`, `A11`, `A16`, `A17`, `A18`, `A19`, `A20`, `A21`, `A25` | `OPEN` / — |
 | `G010` | Complete WhatsApp business verification, template approval, opt-in/out wording, and channel policy | Marketing / privacy / operations | Before Meta/WhatsApp egress and production release | Meta/WhatsApp egress; fake adapters allowed | Live-egress gates only | Yes | `A08`, `A16`, `A21`, `A25` | `OPEN`; Meta egress disabled |
-| `G011` | Approve POPIA baseline data inventory, lawful bases, minimization, processors/cross-border flows, and retention | Privacy / legal / data-protection owner | Before `S03` schema and contract freeze | `S03` schema/contract freeze | `S03` | Yes | `A16`, `A19`, `A20`, `A22` | `OPEN` / — |
+| `G011` | Approve POPIA baseline data inventory, lawful bases, minimization, processors/cross-border flows, and retention | Privacy / legal / data-protection owner | Before `S03` schema and contract freeze | `S03` schema/contract freeze | `S03` | Yes | `A16`, `A19`, `A20`, `A22` | `OPEN` / preparatory decision pack drafted at `docs/privacy/g011-popia-decision-pack.md` (branch `docs/g011-popia-decision-pack`, commits `40dca9d`+`65c75d5`, pushed; technical-accuracy-reviewed, zero corrections needed). This is analysis and open questions only — it does not close the gate. Closes only when a human privacy/legal/data-protection owner answers the pack's numbered questions, confirms provider/operator and cross-border findings, records name/role/decision-date/retention-and-lawful-basis decisions, updates this ledger with evidence, and explicitly authorizes the `S03` schema freeze. |
 
 Refund egress remains disabled until both `G003` and `G004` close and `S13`
 produces the zero-difference reconciliation required by `A26`.
@@ -262,6 +266,14 @@ ledger is their durable review record; they do not claim implementation testing.
 | `E014` | 2026-07-28 | S01 contract characterization and ADRs, initial gate | Backend-repository search (`git remote -v`; sibling-directory check confirmed no separate backend exists); 11-endpoint contract inventory traced to client source; 59 new fixture tests under `tests/contract/legacy/` via dedicated `vitest.contract.config.ts`; 10 ADRs under `docs/adr/0001`-`0010` plus index and characterization docs. Gate: `pnpm test` (205/205, full suite — noted that `pnpm test -- <files>` does not filter under pnpm), `pnpm exec vitest run --config vitest.contract.config.ts` (59/59), `pnpm lint` (0 errors, 1 pre-existing non-blocking warning), `pnpm test:e2e` (14/14 both Playwright projects), `pnpm build`, `pnpm exec tsc --noEmit` | All pass; zero runtime/product code changed (confirmed via `git diff --stat` scoped to `docs/`, `tests/contract/`, `vitest.contract.config.ts` only) | pre-fix working tree on `feat/s01-legacy-contracts-adrs` |
 | `E015` | 2026-07-28 | S01 independent reviews: architect, security, code | `architect` (Opus): traced every ADR clause to blueprint `D001`-`D020`/section 4 anchors and source line references; found 2 substantive overclaims (R1: ADR-0002/0006 wrongly stated worker-only for ALL provider egress, contradicting §5.2/§9.2's synchronous API-owned payment-session call; R2: ADR-0008 implied the durable `plan_aliases` row is deleted at S04, contradicting `D002`/§8.4/§17) plus 2 completeness gaps (R3: ADR-0004 dropped `D007`'s negative-allocation finance-approval clause; R4: ADR-0004 omitted the default six-side cap from `D003`/§6.4). `security-reviewer`: approved with zero findings — fixtures confirmed fully synthetic (fabricated bank/account/token values), no infrastructure leakage, ADR-0007/0009 confirmed to accurately preserve blueprint §4.2/§4.3 security invariants without dilution. `code-reviewer`: approved with one optional LOW note (minor duplication in empty-base-URL test assertions across client test files, non-blocking); confirmed all 11 contracts have genuine (non-tautological) characterization tests against real client code, and confirmed zero `src/` diff via `git diff --stat` | Architect: approve-with-required-changes (R1-R4); security: approve; code: approve | `feat/s01-legacy-contracts-adrs` pre-fix state |
 | `E016` | 2026-07-28 | S01 required-fix remediation and final gate | Applied R1-R4 exactly as specified in `docs/adr/0002`, `docs/adr/0004`, `docs/adr/0006`, `docs/adr/0008` (no other files touched); re-ran `pnpm lint` (pass) and `pnpm exec vitest run --config vitest.contract.config.ts` (59/59 pass) as a docs-only sanity check | Pass; all 4 required architect changes applied, zero regressions | commit `a3d758e` on `feat/s01-legacy-contracts-adrs` |
+| `E017` | 2026-07-29 | S02 initial scaffold implementation and full gate | pnpm workspace conversion; mechanical move of the Next.js app to `apps/web` (448 pure renames + 74 renamed-with-Prettier-reformat, E2E 14/14 before and after); scaffolded `apps/{api,worker}` and all 8 `packages/*` boundaries with a tested dependency-direction check; custom forward-only migration runner (no down/rollback) with checksum-drift/out-of-order detection; first migration (extensions/schemas only, no domain tables); pinned PostGIS local+CI infra; typed env validation, redacted logging, health/shutdown; all 15 root commands wired, `test:ci` provisions/tears down a disposable PostGIS and fails on an absent/stub suite (demonstrated by removing `tests/security` and observing exit 1). Full gate: lint/typecheck/format clean, unit 170+245, contract 59, db 19, integration 20, e2e 14/14, a11y 9/9, coverage 94.37/82.85/**85.88**/94.37 (web) meeting the 85% function threshold via genuine new tests, build clean, `test:ci` pass in 417s | All pass; zero domain features, zero provider SDKs, zero core-dependency upgrades | pre-review working tree on `feat/s02-platform-scaffold` |
+| `E018` | 2026-07-29 | S02 architect review | Verified workspace topology matches blueprint §5.1 exactly; dependency-direction test confirmed real (not vacuous); migration runner confirmed genuinely forward-only; zero domain tables confirmed; API/worker boundaries confirmed structurally respected | Approve with 4 required follow-ups (non-blocking to S02 exit criteria): `apps/*` import direction unchecked + relative-path escapes undetected; migration SQL should reject embedded transaction-control statements; first migration's title overclaimed ungranted "default privileges"; no structural test for the §5.2 API/worker runtime-responsibility split | pre-fix working tree on `feat/s02-platform-scaffold` |
+| `E019` | 2026-07-29 | S02 database review | Verified migration runner has no down/rollback path, checksum-drift and out-of-order-migration hard failures, real transactional wrapping with rollback-on-failure; confirmed the single migration adds only extensions/schemas/`PUBLIC` revoke; confirmed pinned `postgis/postgis:16-3.4` used consistently; independently ran `pnpm test:db` against a real local PostgreSQL 18 instance (via the testkit's local-cluster fallback strategy, since no Docker was available) | Approve; 19/19 real-database tests passed; no required changes; one forward-looking note for S03/S04 (extend grep-the-source testing discipline to future `ON DELETE CASCADE` misuse on ledger tables) | pre-fix working tree on `feat/s02-platform-scaffold` |
+| `E020` | 2026-07-29 | S02 security review | Verified `.env.example` placeholder-only, no secrets anywhere in the diff, real redaction in logging (not aspirational), env validation fails closed, health endpoints/shutdown leak no internal state, CI workflow doesn't echo secrets | Approve; zero must-fix findings. Flagged for user risk-acceptance (not engineering-approvable): `test:security`'s dependency-audit gate at the time covered only CRITICAL advisories, leaving 6 pre-existing production HIGH advisories (next/postcss transitive) unaddressed | pre-fix working tree on `feat/s02-platform-scaffold` |
+| `E021` | 2026-07-29 | S02 code review | Verified all 15 root commands do real work (no stubs); spot-checked the 74 renamed-with-modification files as Prettier-only; verified `test:ci`'s anti-stub preflight check with the `tests/security`-removal test; verified coverage config excludes nothing to game the threshold; verified no provider SDK in any manifest; verified `next`/`react` versions unchanged | Approve; 0 Critical/High/Medium, 2 LOW informational notes (audit-severity scope — same item as `E020`; a narrow regex in the anti-stub preflight heuristic) | pre-fix working tree on `feat/s02-platform-scaffold` |
+| `E022` | 2026-07-29 | S02 E2E and accessibility independent verification | Independently re-ran (not just trusted) the full Playwright suite twice after the `apps/web` move: first run 13/14 (one isolated Mobile Safari timeout), second full run and a 3x-repeat isolation of the same spec all 14/14/3-for-3 — classified as transient worker-contention flakiness, not a move-induced regression; confirmed dev server boots cleanly from the new location; independently ran `pnpm test:a11y` (9/9) and inspected the ratcheting WCAG-violation baseline mechanism, confirming it fails on a new violation and fails on a stale entry that stops reproducing | Approve; E2E and a11y both genuinely green, baseline mechanism confirmed enforced, not aspirational | pre-fix working tree on `feat/s02-platform-scaffold` |
+| `E023` | 2026-07-29 | S02 dependency-security remediation (two rounds, per explicit user risk-acceptance decisions) | Round 1: upgraded `next`/`eslint-config-next` to 15.5.22, added `pnpm-workspace.yaml` overrides pinning `postcss` to `^8.5.18` and `sharp` to `^0.35.0`, tightened `tests/security/dependencies.test.ts` to fail on HIGH-or-CRITICAL (was CRITICAL-only) for `pnpm audit --prod`; demonstrated the tightened gate actually fails by temporarily reintroducing a HIGH advisory, observing the assertion failure, then restoring the clean state. Full production audit clean (0 critical, 0 high). Round 2 (per user decision on the resulting dev-only findings): fixed `brace-expansion` where possible (tested and rejected an unscoped `^5.0.8` override that broke ESLint; landed a scoped `brace-expansion@5: ^5.0.8` override clearing one of three vulnerable chains); created `tests/security/dev-dependency-exceptions.json` + `devDependencyExceptions.test.ts` (enforced, not just documented) naming the 6 remaining dev-only advisories (vitest CRITICAL, vite HIGH+2×MODERATE, esbuild MODERATE, residual brace-expansion HIGH) each with justification/scope/owner/createdOn/reviewBy/removalCondition, with owner and review-date fields confirmed by the user (Kamva kamva\@speccon.co.za; review-by 2026-08-26); verified via `tests/security/devServerExposure.test.ts` that no Vitest UI/Vite dev-server surface is ever exposed in CI or locally (also caught and fixed a real wildcard-interface bind in Playwright's `webServer` config); created `docs/dependency-maintenance/vitest-vite-migration.md` tracking the vitest 2→3/vite 5→6 migration, due before S03, owner Kamva | Full S02 gate re-run green after each round (unit 170+245, contract 59, db 19, integration 20, e2e 14/14, a11y 9/9, coverage ≥85% functions, `test:ci` pass); `pnpm audit --prod` clean; exception-register test 16/16 pass after owner-field update | pre-final-review working tree on `feat/s02-platform-scaffold` |
+| `E024` | 2026-07-29 | S02 architect-required follow-ups applied, plus final re-review | Applied all 4 items from `E018`: extended `tests/security/dependencyDirection.test.ts` with an `APP_ALLOWED` map for `apps/*` and relative-path-escape detection (proved via temporary violating probe files that failed with the expected messages, then removed); added transaction-control rejection (`assertNoTransactionControl`/`stripNonStatementText`) to the migration runner with passing/failing test cases including a dollar-quoted `DO` block negative test; fully implemented the blueprint §8.1 6-role model in the first migration (5 runtime roles — `chefmate_api`, `chefmate_notification_worker`, `chefmate_payout_worker`, `chefmate_analytics`, `chefmate_break_glass` — each `NOSUPERUSER NOBYPASSRLS`, idempotent creation, least-privilege grants incl. `private` schema restricted to payout-worker/break-glass only, `ALTER DEFAULT PRIVILEGES` per schema) with 7 new live-database role/grant assertion tests; added `tests/security/runtimeResponsibilitySplit.test.ts` enforcing the §5.2 API/worker structural split, proved against real content (not a vacuous empty-tree pass) via the same probe methodology. Final re-review: database-reviewer independently re-ran the role/grant tests against real PostgreSQL (26/26 db tests) and approved with zero required changes (one non-blocking observation: `chefmate_break_glass`'s `private`-schema access is standing, not yet session-scoped/time-bound as the blueprint's break-glass language implies — tracked as an S03 follow-up in-code); code-reviewer approved with zero findings across all severities, confirmed no leftover probe artifacts | Full gate green after follow-ups (unit 176+245, contract 59, db 26, integration 20, e2e 14/14, a11y 9/9, coverage 94.89%/85.88% functions, `test:ci` pass in 456s); both final reviews approve | commit `16d873a` on `feat/s02-platform-scaffold` |
 | `E009` | 2026-07-28 | S00 lint/build/unit/coverage re-verification | `pnpm lint`; `pnpm build`; `pnpm test`; `pnpm test:coverage` | Exit 0 each; lint has 1 pre-existing non-blocking `react-hooks/exhaustive-deps` warning (`SurveyPage.tsx:126`, unchanged); 40 files / 205 tests passed; coverage 88.15% statements/lines, 81.91% branches, 82% functions (unchanged from baseline) | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `E010` | 2026-07-28 | S00 E2E regression 1 fix: tablet CTA hit-test | `pnpm test:e2e` before/after; root cause: CTA renders below the fold at 768x1024, so `document.elementFromPoint` returned `null` (not a real layout/overlap bug). Test fix: added `scrollIntoViewIfNeeded()` before the hit-test in `tests/e2e/hero-state-progression.spec.ts` | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
 | `E011` | 2026-07-28 | S00 E2E regression 2 fix: order-flow stale heading assertion | `pnpm test:e2e` before/after; root cause: test asserted the old "Find what you want to eat." heading immediately after "Book a chef", but the flow now starts on a goal-selection step (`GoalSelect.tsx`, heading "What are you feeding?"). Test fix in `tests/e2e/multi-input-navigation.spec.ts`: assert the goal step first and select a goal tile, then proceed to the meal step | Failing before, passing after in both Chromium and Mobile Safari projects | `396b9c672a4e55b87d12eb46afee33c1899893a4` |
@@ -352,37 +364,57 @@ ledger is their durable review record; they do not claim implementation testing.
 
 ```text
 Active implementation step: none — S00 PASSED via E009-E013; S01 PASSED via
-E014-E016
+E014-E016; S02 PASSED via E017-E024
 Active planning control: none — P02 PASSED via E006-E008
-Next implementation step: S02 — Monorepo, API, worker, PostgreSQL, migration,
-local runtime, and CI scaffold. Per plan, hold a check-in first on
-operational facts only (existing backend ownership — none found per S01
-Step 0; deployment target; PostgreSQL hosting; CI; secrets/KMS; environments)
-— not a reopening of architecture already accepted in the blueprint/ADRs.
+Next implementation step: S03 — Identity, secure sessions, RBAC, generic
+token primitives, core consent/suppression, privacy baseline, idempotency,
+and audit. Its schema/contract freeze is gated on G011 closing (a
+preparatory decision pack exists but the gate itself is still OPEN pending
+human privacy/legal sign-off) — non-schema-freeze S03 prep work may proceed,
+but the freeze itself must wait.
 Reviewed planning SHA: 84a620d9464933b4552ae9e297e301a191f2f039
 Last verified application baseline SHA: 88f1aadc464ee1552eb03205f857b9f286972f46
-S00 completion commit: 396b9c672a4e55b87d12eb46afee33c1899893a4 (main, pushed)
-S00 ledger-update commit: 089cfdab89e4c2d51aa26bf9be924a7a0dbb8eb4 (main,
-pushed; HEAD == origin/main confirmed)
-S01 completion commits: a3d758e (deliverables), c281875 (ledger update) on
-feat/s01-legacy-contracts-adrs — branch published to origin, PR pending
-manual open/merge (no gh CLI available per D020; merge must use "Create a
-merge commit", never squash/rebase, to preserve a3d758e/c281875 as evidence
-references)
-Application baseline vs origin/main: synchronized through 089cfda (E000);
-feat/s01-legacy-contracts-adrs is published and 2 commits ahead of that
-Known failing gate: none — lint, build, test, test:coverage, and test:e2e
-(14/14 across both Playwright projects) all pass on both main (089cfda) and
-feat/s01-legacy-contracts-adrs (c281875); contract suite (59/59) also passes
+S00 completion commits: 396b9c672a4e55b87d12eb46afee33c1899893a4 (fix),
+089cfdab89e4c2d51aa26bf9be924a7a0dbb8eb4 (ledger) — both on main, pushed
+S01 completion commits: a3d758e (deliverables), c281875 (ledger update),
+15f6380 (stale-status fix) — merged to main via merge commit 4c052f3
+(GitHub PR #1); feat/s01-legacy-contracts-adrs left in place per instruction
+G011 preparatory work: docs/privacy/g011-popia-decision-pack.md, commits
+40dca9d + 65c75d5 on branch docs/g011-popia-decision-pack, pushed to origin,
+PR not yet opened/merged. Technical-accuracy reviewed (security-reviewer),
+zero corrections needed. This is NOT a gate closure — G011 remains OPEN
+until a human privacy/legal/data-protection owner signs off per the pack's
+own stated closure criteria.
+S02 completion commit: 16d873a on feat/s02-platform-scaffold (committed,
+NOT yet pushed) — full scaffold + dependency-security remediation (two
+rounds, per explicit user risk-acceptance decisions) + all 4 architect-
+required follow-ups, all independently re-reviewed and approved
+(architect, database-reviewer, security-reviewer, code-reviewer, e2e-runner,
+each run twice across the review/remediation cycle)
+Application baseline vs origin/main: origin/main is at 4c052f3 (S01 merged).
+feat/s02-platform-scaffold exists locally at 16d873a, one commit ahead of
+4c052f3, NOT yet pushed. docs/g011-popia-decision-pack is pushed and 3
+commits ahead of 4c052f3 (independent branch, does not depend on S02).
+Known failing gate: none — full S02 gate (install, audit --prod, format,
+lint, typecheck, db:migrate:check, unit 176+245, contract 59, db 26,
+integration 20, coverage >=85% functions both packages, e2e 14/14, a11y
+9/9, build, test:ci) all pass as of commit 16d873a
 Uncommitted planning scope: none after this ledger update
 Open engineering blocker: none
-First action: open the S01 PR, merge via merge commit (not squash/rebase),
-then git switch main / git pull --ff-only origin main / git switch -c
-feat/s02-platform-scaffold and begin S02 per the blueprint's already-accepted
-architecture using provider-neutral operational defaults (GitHub Actions CI,
-pinned PostgreSQL/PostGIS container, DATABASE_URL abstraction, KMS deferred
-to S09). G011 (POPIA baseline) work starts in parallel; it does not block S02
-but blocks S03's schema freeze.
+First action: push feat/s02-platform-scaffold, open its PR (base main,
+compare feat/s02-platform-scaffold), merge via "Create a merge commit" only
+(never squash/rebase, to preserve 16d873a's evidence reference) — no gh CLI
+available per D020, so PR open/merge is manual. Separately, open and merge
+the docs/g011-popia-decision-pack PR whenever convenient (independent of
+S02). After both land: git switch main / git pull --ff-only origin main /
+confirm clean diff, then git switch -c feat/s03-identity-sessions-rbac and
+begin S03 groundwork that does not require the schema freeze, while G011
+awaits its human privacy/legal decision separately. Two tracked follow-ups
+from S02 now live in the repo and need real owners/dates confirmed over
+time: docs/dependency-maintenance/vitest-vite-migration.md (due before S03
+begins) and the chefmate_break_glass standing-access note in
+packages/database/migrations/0001_extensions_and_schemas.sql (tracked for
+S03).
 ```
 
 Handoff updates must preserve these fields: active step, owner/branch, baseline
