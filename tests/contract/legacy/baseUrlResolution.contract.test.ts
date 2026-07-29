@@ -8,8 +8,12 @@ import { resolveCatalogApiUrl, resolveChefmateApiUrl } from "@/lib/env";
  */
 describe("legacy contract: API base URL resolution", () => {
   it("trims whitespace and exactly one trailing slash", () => {
-    expect(resolveChefmateApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "  http://api.test/  " })).toBe("http://api.test");
-    expect(resolveChefmateApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "http://api.test//" })).toBe("http://api.test/");
+    expect(resolveChefmateApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "  http://api.test/  " })).toBe(
+      "http://api.test",
+    );
+    expect(resolveChefmateApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "http://api.test//" })).toBe(
+      "http://api.test/",
+    );
   });
 
   it("falls back to http://localhost:3001 outside production", () => {
@@ -37,6 +41,8 @@ describe("legacy contract: API base URL resolution", () => {
       }),
     ).toBe("http://catalog.test/api/v1/catalog");
 
-    expect(resolveCatalogApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "http://api.test" })).toBe("http://api.test");
+    expect(resolveCatalogApiUrl({ NEXT_PUBLIC_CHEFMATE_API_URL: "http://api.test" })).toBe(
+      "http://api.test",
+    );
   });
 });

@@ -1,0 +1,35 @@
+# Local development database.
+#
+# The image tag is pinned deliberately (never `latest`) so a developer
+# workstation, a CI runner and a staging environment all agree on the exact
+# PostgreSQL and PostGIS versions. Changing it is a reviewable change.
+#
+# This file provisions LOCAL DEVELOPMENT ONLY. CI attaches the same pinned image
+# as a service container (see .github/workflows/ci.yml); nothing here is used
+# for staging or production.
+
+services:
+  postgres:
+    # PostgreSQL 16 + PostGIS 3.4 (blueprint section 8: "PostgreSQL 16 or later").
+    image: postgis/postgis:16-3.4
+    container_name: chefmate-postgres
+    restart: unless-stopped
+    environment:
+      # Local-only credentials. Not a secret, not reused anywhere else.
+      POSTGRES_USER: chefmate
+      POSTGRES_PASSWORD: CHANGE_ME_LOCAL_ONLY
+      POSTGRES_DB: chefmate
+      # Deterministic collation so index ordering matches CI.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - chefmate-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chefmate -d chefmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  chefmate-pgdata:

@@ -25,7 +25,10 @@ describe("legacy contract: availability slots", () => {
   }
 
   it("pins the availability request wire shape", async () => {
-    const fetchMock = stubEnvironment(LEGACY_BASE_URL, fakeResponse({ body: legacyAvailabilityResponse }));
+    const fetchMock = stubEnvironment(
+      LEGACY_BASE_URL,
+      fakeResponse({ body: legacyAvailabilityResponse }),
+    );
 
     await fetchAvailabilityForDate("2026-08-03");
 
@@ -44,7 +47,10 @@ describe("legacy contract: availability slots", () => {
   });
 
   it("forwards a caller-supplied AbortSignal instead of owning a timeout", async () => {
-    const fetchMock = stubEnvironment(LEGACY_BASE_URL, fakeResponse({ body: legacyAvailabilityResponse }));
+    const fetchMock = stubEnvironment(
+      LEGACY_BASE_URL,
+      fakeResponse({ body: legacyAvailabilityResponse }),
+    );
     const controller = new AbortController();
 
     await fetchAvailabilityForDate("2026-08-03", controller.signal);
@@ -92,7 +98,12 @@ describe("legacy contract: availability slots", () => {
     stubEnvironment(
       LEGACY_BASE_URL,
       fakeResponse({
-        body: { data: { date: "2026-08-03", slots: [{ period: "midnight", time: "9:00", label: "9", available: true }] } },
+        body: {
+          data: {
+            date: "2026-08-03",
+            slots: [{ period: "midnight", time: "9:00", label: "9", available: true }],
+          },
+        },
       }),
     );
 
@@ -100,7 +111,10 @@ describe("legacy contract: availability slots", () => {
   });
 
   it("encodes the date argument", async () => {
-    const fetchMock = stubEnvironment(LEGACY_BASE_URL, fakeResponse({ body: legacyAvailabilityResponse }));
+    const fetchMock = stubEnvironment(
+      LEGACY_BASE_URL,
+      fakeResponse({ body: legacyAvailabilityResponse }),
+    );
 
     await fetchAvailabilityForDate("2026-08-03").catch(() => undefined);
 

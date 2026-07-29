@@ -1,0 +1,38 @@
+{
+  "name": "@chefmate/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "lint": "eslint src",
+    "migrate": "tsx src/migrator/cli.ts migrate",
+    "migrate:check": "tsx src/migrator/cli.ts check",
+    "migrate:status": "tsx src/migrator/cli.ts status"
+  },
+  "dependencies": {
+    "@chefmate/application": "workspace:*",
+    "@chefmate/config": "workspace:*",
+    "@chefmate/contracts": "workspace:*",
+    "@chefmate/domain": "workspace:*",
+    "@chefmate/observability": "workspace:*",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@chefmate/testkit": "workspace:*",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

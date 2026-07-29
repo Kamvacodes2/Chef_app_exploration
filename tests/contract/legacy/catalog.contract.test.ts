@@ -14,7 +14,10 @@ import { LEGACY_BASE_URL, legacyCategory, legacyMeal } from "./support/fixtures"
 describe("legacy contract: catalog", () => {
   it("prefixes /api/v1/catalog when the configured base URL is a bare origin", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyCategory] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await repository.getCategories();
 
@@ -35,7 +38,10 @@ describe("legacy contract: catalog", () => {
 
   it("trims exactly one trailing slash from the configured base URL", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyCategory] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL + "/", fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL + "/",
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await repository.getCategories();
 
@@ -44,7 +50,10 @@ describe("legacy contract: catalog", () => {
 
   it("sends no credentials and no headers on catalog reads", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyCategory] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await repository.getCategories();
 
@@ -53,7 +62,10 @@ describe("legacy contract: catalog", () => {
 
   it("pins the category projection mapping (slug to id, sortOrder to order)", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyCategory] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await expect(repository.getCategories()).resolves.toMatchInlineSnapshot(`
       [
@@ -70,7 +82,10 @@ describe("legacy contract: catalog", () => {
 
   it("pins the meal projection mapping, including the synthesized zero nutrition block", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyMeal] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await expect(repository.findAll()).resolves.toMatchInlineSnapshot(`
       [
@@ -102,7 +117,10 @@ describe("legacy contract: catalog", () => {
 
   it("encodes the category filter as a query parameter", async () => {
     const fetchImpl = fakeFetch({ body: { data: [legacyMeal] } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await repository.findByCategory("seven colours/plates");
 
@@ -113,7 +131,10 @@ describe("legacy contract: catalog", () => {
 
   it("encodes the meal id in the path segment", async () => {
     const fetchImpl = fakeFetch({ body: { data: legacyMeal } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await repository.findById("roast chicken/seven colours");
 
@@ -124,23 +145,37 @@ describe("legacy contract: catalog", () => {
 
   it("maps 404 on a single meal to undefined rather than an error", async () => {
     const fetchImpl = fakeFetch({ status: 404 });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await expect(repository.findById("missing-meal")).resolves.toBeUndefined();
   });
 
   it("uses a flat status-only error message and never reads the error body", async () => {
-    const fetchImpl = fakeFetch({ status: 500, body: { message: "This detailed message is ignored" } });
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fetchImpl as unknown as typeof fetch);
+    const fetchImpl = fakeFetch({
+      status: 500,
+      body: { message: "This detailed message is ignored" },
+    });
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fetchImpl as unknown as typeof fetch,
+    );
 
     await expect(repository.findAll()).rejects.toThrow("Chefmate catalog request failed (500)");
-    await expect(repository.findById("any")).rejects.toThrow("Chefmate catalog request failed (500)");
+    await expect(repository.findById("any")).rejects.toThrow(
+      "Chefmate catalog request failed (500)",
+    );
   });
 
   it("throws a configuration error when the resolved base URL is empty", async () => {
     // A blank constructor argument falls through to the resolved catalog URL, so
     // the guard is characterized through a stubbed empty resolution instead.
-    const repository = new HttpMealsRepository(LEGACY_BASE_URL, fakeFetch() as unknown as typeof fetch);
+    const repository = new HttpMealsRepository(
+      LEGACY_BASE_URL,
+      fakeFetch() as unknown as typeof fetch,
+    );
     Object.defineProperty(repository, "resolvedBaseUrl", { value: "", writable: false });
 
     await expect(repository.getCategories()).rejects.toThrow("Chefmate API URL is not configured.");
