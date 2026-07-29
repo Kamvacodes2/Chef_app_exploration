@@ -127,7 +127,10 @@ export function SurveyPage({
     setRatings((current) => ({ ...current, [initialField]: String(rating) }));
   }, [details, initialField, initialRating]);
 
-  const ratingQuestions = details?.questions.filter((question) => question !== "comment") ?? [];
+  const ratingQuestions = useMemo(
+    () => details?.questions.filter((question) => question !== "comment") ?? [],
+    [details],
+  );
   const canSubmit = useMemo(
     () =>
       Boolean(
