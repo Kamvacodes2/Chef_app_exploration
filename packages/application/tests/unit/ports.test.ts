@@ -2,6 +2,12 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+// A *runtime* import of the barrel, deliberately not `import type`. Every other
+// consumer in the repository imports these ports type-only, which the TypeScript
+// transform erases entirely — so `src/index.ts` and its three `export *`
+// statements were never executed by any suite and reported 0% coverage. This
+// import executes them, and the assertion below turns that into a real check.
+import * as application from "../../src/index.js";
 import type {
   Clock,
   IdGenerator,
@@ -45,6 +51,15 @@ describe("the application layer contains no runtime implementation", () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("exposes nothing at runtime once loaded", () => {
+    // The barrel is imported for real above, so this asserts the erasure claim
+    // rather than merely reading the sources: a type-only layer must contribute
+    // no exported value. The moment a runtime export appears here this fails,
+    // and that export then needs tests of its own.
+    expect(application).toBeTypeOf("object");
+    expect(Object.keys(application)).toEqual([]);
   });
 
   it("imports no vendor package", () => {
