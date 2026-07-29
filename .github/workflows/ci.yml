@@ -66,7 +66,12 @@ jobs:
       # server and drop it afterwards.
       CHEFMATE_TEST_PG_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/postgres
       KMS_LOCAL_DEV_KEY: ci-only-not-a-real-key-value
-      NEXT_PUBLIC_CHEFMATE_API_URL: http://127.0.0.1:4000
+      # NEXT_PUBLIC_CHEFMATE_API_URL / NEXT_PUBLIC_MEALS_API_URL are deliberately
+      # NOT set here. Setting them job-wide leaks into the suites that pin the
+      # documented unset-environment default in apps/web/src/lib/env.ts
+      # (http://localhost:3001) and fails them for no product reason. `pnpm
+      # test:ci` scopes the S02 API URL to the suites that need it (build, e2e,
+      # a11y) and strips it from the rest -- see scripts/lib/pipeline.ts.
 
     steps:
       - uses: actions/checkout@v4

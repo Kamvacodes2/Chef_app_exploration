@@ -8,6 +8,7 @@ import {
   type DisposablePostgres,
 } from "../packages/testkit/src/index.js";
 import { repoRoot } from "./lib/dotenv.js";
+import { buildSuiteEnv, CI_PIPELINE as PIPELINE } from "./lib/pipeline.js";
 
 /**
  * `pnpm test:ci` — the single command CI runs.
@@ -107,23 +108,6 @@ const REQUIRED_SUITES: readonly SuiteRequirement[] = [
     suffix: ".spec.ts",
   },
 ];
-
-/** Ordered pipeline. Cheap, fast-failing checks run first. */
-const PIPELINE = [
-  "format:check",
-  "lint",
-  "typecheck",
-  "db:migrate:check",
-  "test:unit",
-  "test:contract",
-  "test:db",
-  "test:integration",
-  "test:security",
-  "test:coverage",
-  "build",
-  "test:e2e",
-  "test:a11y",
-] as const;
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -244,7 +228,7 @@ async function main(): Promise<void> {
       throw new Error("Expected at least one migration to be applied to an empty database");
     }
 
-    const env: NodeJS.ProcessEnv = {
+    const baseEnv: NodeJS.ProcessEnv = {
       ...process.env,
       CI: "true",
       DEPLOY_ENV: process.env.DEPLOY_ENV ?? "ci",
@@ -254,7 +238,10 @@ async function main(): Promise<void> {
     };
 
     for (const script of PIPELINE) {
-      await runScript(script, env);
+      // Public API base-URL variables are scoped per suite rather than shared:
+      // the default-sensitive suites must not inherit one, and only the app
+      // suites receive the configured S02 URL. See ./lib/pipeline.ts.
+      await runScript(script, buildSuiteEnv(script, baseEnv));
     }
 
     say(`\nAll checks passed in ${Math.round((Date.now() - started) / 1000)}s.`);
