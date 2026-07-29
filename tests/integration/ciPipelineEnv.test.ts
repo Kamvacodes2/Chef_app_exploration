@@ -79,7 +79,9 @@ function spawnAndReadPublicApiUrls(
         return;
       }
       try {
-        resolve(JSON.parse(stdout.trim()) as { chefmateUrl: string | null; mealsUrl: string | null });
+        resolve(
+          JSON.parse(stdout.trim()) as { chefmateUrl: string | null; mealsUrl: string | null },
+        );
       } catch (error) {
         reject(
           new Error(
@@ -195,29 +197,21 @@ describe("test:ci pipeline environment scoping", () => {
     }
   });
 
-  it(
-    "a spawned test:unit child process genuinely never sees the contaminated public API URLs",
-    async () => {
-      const env = buildSuiteEnv("test:unit", contaminatedParentEnv());
+  it("a spawned test:unit child process genuinely never sees the contaminated public API URLs", async () => {
+    const env = buildSuiteEnv("test:unit", contaminatedParentEnv());
 
-      const observed = await spawnAndReadPublicApiUrls(env);
+    const observed = await spawnAndReadPublicApiUrls(env);
 
-      expect(observed.chefmateUrl).toBeNull();
-      expect(observed.mealsUrl).toBeNull();
-    },
-    10_000,
-  );
+    expect(observed.chefmateUrl).toBeNull();
+    expect(observed.mealsUrl).toBeNull();
+  }, 10_000);
 
-  it(
-    "a spawned build child process genuinely observes the resolved S02 Chefmate API URL",
-    async () => {
-      const env = buildSuiteEnv("build", contaminatedParentEnv());
+  it("a spawned build child process genuinely observes the resolved S02 Chefmate API URL", async () => {
+    const env = buildSuiteEnv("build", contaminatedParentEnv());
 
-      const observed = await spawnAndReadPublicApiUrls(env);
+    const observed = await spawnAndReadPublicApiUrls(env);
 
-      expect(observed.chefmateUrl).toBe("http://127.0.0.1:4000");
-      expect(observed.mealsUrl).toBeNull();
-    },
-    10_000,
-  );
+    expect(observed.chefmateUrl).toBe("http://127.0.0.1:4000");
+    expect(observed.mealsUrl).toBeNull();
+  }, 10_000);
 });
