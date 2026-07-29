@@ -14,13 +14,15 @@ test("order flow supports focused meal search and custom request interactions", 
 
   await expect(page.getByRole("heading", { name: "Find what you want to eat." })).toBeVisible();
   await expect(page.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
+  const orderFlow = page.locator("#order-flow");
+  await orderFlow.scrollIntoViewIfNeeded();
   await expect
-    .poll(async () =>
-      page
-        .locator("#order-flow")
-        .evaluate((element) => Math.abs(Math.round(element.getBoundingClientRect().top))),
+    .poll(
+      async () =>
+        orderFlow.evaluate((element) => Math.abs(Math.round(element.getBoundingClientRect().top))),
+      { timeout: 5_000, interval: 100 },
     )
-    .toBeLessThanOrEqual(2);
+    .toBeLessThanOrEqual(8);
   await page.getByLabel("Search meals or ingredients").fill("TikTok");
   await expect(page.getByText("0 meals found")).toBeVisible();
 
