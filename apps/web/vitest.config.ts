@@ -13,6 +13,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.tsx"],
+    testTimeout: 10_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

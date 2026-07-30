@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { HowItWorks } from "@/features/how-it-works/HowItWorks";
 import { HOW_IT_WORKS_STEPS } from "@/features/how-it-works/constants/steps";
+import { StepTimeline } from "@/features/how-it-works/components/StepTimeline";
 
 function mockMatches(matches: boolean) {
   window.matchMedia = ((query: string) => ({
@@ -159,6 +160,59 @@ describe("HowItWorks", () => {
       // Initial scroll position (jsdom has no real layout/scroll), so the
       // fill should start unscaled/collapsed rather than fully filled.
       expect(fill).toHaveStyle({ transform: "scaleY(0)" });
+    });
+  });
+  describe("StepTimeline", () => {
+    const extendedSteps = Array.from({ length: 5 }, (_, index) => ({
+      id: `step-${index + 1}`,
+      title: `Step ${index + 1}`,
+      description: `Description ${index + 1}`,
+      image: `/step-${index + 1}.webp`,
+      alt: `Step ${index + 1}`,
+    }));
+
+    it("windows longer step lists around the active item", () => {
+      const onStepSelect = vi.fn();
+      const { rerender } = render(
+        <StepTimeline steps={extendedSteps} activeIndex={0} onStepSelect={onStepSelect} />,
+      );
+
+      expect(screen.getByText("Step 1")).toBeInTheDocument();
+      expect(screen.getByText("Step 3")).toBeInTheDocument();
+      expect(screen.queryByText("Step 4")).not.toBeInTheDocument();
+
+      rerender(<StepTimeline steps={extendedSteps} activeIndex={2} onStepSelect={onStepSelect} />);
+      expect(screen.queryByText("Step 1")).not.toBeInTheDocument();
+      expect(screen.getByText("Step 2")).toBeInTheDocument();
+      expect(screen.getByText("Step 4")).toBeInTheDocument();
+
+      rerender(<StepTimeline steps={extendedSteps} activeIndex={4} onStepSelect={onStepSelect} />);
+      expect(screen.queryByText("Step 2")).not.toBeInTheDocument();
+      expect(screen.getByText("Step 3")).toBeInTheDocument();
+      expect(screen.getByText("Step 5")).toBeInTheDocument();
+    });
+
+    it("ignores non-activation keys but still accepts pointer selection", () => {
+      const onStepSelect = vi.fn();
+      render(<StepTimeline steps={extendedSteps} activeIndex={2} onStepSelect={onStepSelect} />);
+      const activeButton = screen.getByRole("button", { name: /Step 3/ });
+
+      fireEvent.keyDown(activeButton, { key: "Tab", code: "Tab" });
+      expect(onStepSelect).not.toHaveBeenCalled();
+
+      fireEvent.click(activeButton);
+      expect(onStepSelect).toHaveBeenCalledWith(2);
+    });
+
+    it("renders the reduced-motion timeline path", () => {
+      mockMatches(true);
+      render(<StepTimeline steps={extendedSteps} activeIndex={1} onStepSelect={vi.fn()} />);
+
+      expect(screen.getByTestId("timeline-fill")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Step 2/ })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
     });
   });
 });

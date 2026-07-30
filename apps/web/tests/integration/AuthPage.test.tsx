@@ -89,7 +89,9 @@ describe("AuthPage", () => {
         password: "A-strong-password-2026",
       }),
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Signed in as Test Customer.");
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent(
+      "Signed in as Test Customer.",
+    );
   });
 
   it("shows useful backend auth errors", async () => {

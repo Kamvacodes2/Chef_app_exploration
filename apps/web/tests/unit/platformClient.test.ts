@@ -3,11 +3,22 @@ import {
   acceptChefOffer,
   completeChefBooking,
   consumeChefMagicLink,
+  declineChefOffer,
   fetchAdminDashboard,
+  fetchChefApplications,
+  fetchChefBookings,
   fetchChefOffers,
+  fetchChefProfile,
+  fetchChefs,
+  fetchCommunicationLogs,
+  fetchCustomers,
+  fetchPopularMeals,
   inviteChefApplication,
   logWhatsAppPreview,
+  markChefApplicationInterviewConducted,
+  markChefEnRoute,
   submitChefApplication,
+  updateChefApplication,
   updateChefBankDetails,
   updateChefProfile,
 } from "@/features/platform/api/platformClient";
@@ -334,6 +345,186 @@ describe("platformClient", () => {
         { baseUrl: "http://api.test", fetchImpl },
       ),
     ).resolves.toMatchObject({ channel: "WHATSAPP", status: "SKIPPED" });
+  });
+  it("loads chef portal read endpoints without request bodies", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: profile }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { items: [booking] } }),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      fetchChefProfile({ baseUrl: "http://api.test/", fetchImpl }),
+    ).resolves.toMatchObject({ userId: "chef-1" });
+    await expect(fetchChefBookings({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual([
+      expect.objectContaining({ reference: "CM-0001" }),
+    ]);
+
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      1,
+      "http://api.test/api/v1/chef/profile",
+      expect.objectContaining({ method: "GET", credentials: "include" }),
+    );
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      2,
+      "http://api.test/api/v1/chef/bookings",
+      expect.not.objectContaining({ body: expect.any(String) }),
+    );
+  });
+
+  it("posts chef action endpoints with encoded identifiers", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: { ...booking, status: "EN_ROUTE" } }))
+      .mockResolvedValueOnce({ ok: true, status: 204 }) as unknown as typeof fetch;
+
+    await expect(
+      markChefEnRoute("booking/with space", "On my way", { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toMatchObject({ status: "EN_ROUTE" });
+    await expect(
+      declineChefOffer("offer/with space", { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toBeUndefined();
+
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      1,
+      "http://api.test/api/v1/chef/bookings/booking%2Fwith%20space/en-route",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ note: "On my way" }) }),
+    );
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      2,
+      "http://api.test/api/v1/chef/offers/offer%2Fwith%20space/decline",
+      expect.objectContaining({ method: "POST", credentials: "include" }),
+    );
+  });
+
+  it("loads admin lists, analytics, and application state transitions", async () => {
+    const customer = {
+      id: "customer-1",
+      email: "customer@example.test",
+      displayName: "Test Customer",
+      roles: ["CUSTOMER"],
+      status: "ACTIVE",
+      createdAt: "2026-07-30T08:00:00.000Z",
+    };
+    const chef = {
+      ...user,
+      profile: { ...profile, bankAccount: undefined },
+      bankAccount,
+    };
+    const communicationLog = {
+      id: "log-1",
+      channel: "EMAIL",
+      status: "SENT",
+      recipient: "customer@example.test",
+      subject: "Chefmate booking update",
+      templateKey: "booking.customer.confirmed",
+      bodyPreview: "Your chef is confirmed.",
+      provider: "resend",
+      relatedBookingRequestId: "booking-1",
+      relatedUserId: "customer-1",
+      metadata: { reference: "CM-0001" },
+      sentAt: "2026-07-30T10:00:00.000Z",
+      createdAt: "2026-07-30T09:59:00.000Z",
+    };
+    const popularMeal = {
+      slug: "chicken-peri-peri",
+      name: "Chicken peri-peri",
+      kind: "main",
+      orderCount: 6,
+      grossCents: 597000,
+    };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: { items: [application] } }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { ...application, status: "INTERVIEW_SCHEDULED" } }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { ...application, status: "INTERVIEW_CONDUCTED" } }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: { items: [customer] } }))
+      .mockResolvedValueOnce(jsonResponse({ data: { items: [chef] } }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { items: [communicationLog], nextCursor: null } }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { items: [popularMeal] } }),
+      ) as unknown as typeof fetch;
+
+    await expect(fetchChefApplications({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(
+      [expect.objectContaining({ id: "application-1" })],
+    );
+    await expect(
+      updateChefApplication(
+        "application/with space",
+        { status: "INTERVIEW_SCHEDULED", interviewScheduledAt: "2026-08-01T10:00:00.000Z" },
+        { baseUrl: "http://api.test", fetchImpl },
+      ),
+    ).resolves.toMatchObject({ status: "INTERVIEW_SCHEDULED" });
+    await expect(
+      markChefApplicationInterviewConducted("application-1", {
+        baseUrl: "http://api.test",
+        fetchImpl,
+      }),
+    ).resolves.toMatchObject({ status: "INTERVIEW_CONDUCTED" });
+    await expect(fetchCustomers({ baseUrl: "http://api.test", fetchImpl })).resolves.toHaveLength(
+      1,
+    );
+    await expect(fetchChefs({ baseUrl: "http://api.test", fetchImpl })).resolves.toHaveLength(1);
+    await expect(
+      fetchCommunicationLogs({ baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toEqual([expect.objectContaining({ templateKey: "booking.customer.confirmed" })]);
+    await expect(fetchPopularMeals({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual([
+      expect.objectContaining({ orderCount: 6 }),
+    ]);
+
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      2,
+      "http://api.test/api/v1/operations/chef-applications/application%2Fwith%20space",
+      expect.objectContaining({ method: "PATCH" }),
+    );
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      6,
+      "http://api.test/api/v1/operations/communications?limit=50",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("preserves API error messages and rejects empty API URLs", async () => {
+    const failedDataRequest = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ message: "Applications are closed for this week" }),
+    }) as unknown as typeof fetch;
+    const failedNoContentRequest = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: "Offer already expired" }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      submitChefApplication(
+        {
+          fullName: application.fullName,
+          email: application.email,
+          phone: application.phone,
+          city: application.city,
+          serviceAreas: application.serviceAreas,
+          experience: application.experience,
+        },
+        { baseUrl: "http://api.test", fetchImpl: failedDataRequest },
+      ),
+    ).rejects.toThrow("Applications are closed for this week");
+    await expect(
+      declineChefOffer("offer-1", {
+        baseUrl: "http://api.test",
+        fetchImpl: failedNoContentRequest,
+      }),
+    ).rejects.toThrow("Offer already expired");
+    await expect(fetchAdminDashboard({ baseUrl: "   ", fetchImpl: vi.fn() })).rejects.toThrow(
+      "Chefmate API URL is not configured",
+    );
   });
 });
 
