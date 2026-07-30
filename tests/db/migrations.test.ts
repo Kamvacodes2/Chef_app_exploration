@@ -72,13 +72,17 @@ describe("migration set", () => {
     ).rejects.toBeInstanceOf(MigrationError);
   });
 
-  it("contains no domain tables yet — S03 owns identity and S04 owns pricing", async () => {
+  it("keeps the S02 baseline infrastructure-only while S03 introduces purchase-flow tables", async () => {
     const files = await loadMigrations(MIGRATIONS_DIR);
-    const sql = files
-      .map((file) => file.sql)
-      .join("\n")
-      .toLowerCase();
-    expect(sql).not.toMatch(/create\s+table/);
+    const baseline = files.find((file) => file.filename === "0001_extensions_and_schemas.sql");
+    const purchaseFlow = files.find((file) => file.filename === "0002_purchase_flow_core.sql");
+
+    expect(baseline?.sql.toLowerCase()).not.toMatch(/create\s+table\s+app\./);
+    expect(purchaseFlow?.sql).toContain("CREATE TABLE app.bookings");
+    expect(purchaseFlow?.sql).toContain("CREATE TABLE app.booking_items");
+    expect(purchaseFlow?.sql).toContain("CREATE TABLE app.catalog_items");
+    expect(purchaseFlow?.sql).toContain("CREATE TABLE app.pricing_plans");
+    expect(purchaseFlow?.sql).toContain("full-house");
   });
 });
 

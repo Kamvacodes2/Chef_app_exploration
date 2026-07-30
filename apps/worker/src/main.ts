@@ -1,4 +1,4 @@
-import { loadWorkerEnv } from "@chefmate/config";
+import { loadLocalDotEnv, loadWorkerEnv } from "@chefmate/config";
 import { createPoolFromEnv } from "@chefmate/database";
 import { createLogger, installGracefulShutdown } from "@chefmate/observability";
 import { createOutboxLoop } from "./outbox/loop.js";
@@ -15,6 +15,7 @@ export const WORKER_SERVICE_NAME = "chefmate-worker";
  * SIGTERM so a rolling deploy never interrupts a send mid-flight.
  */
 async function main(): Promise<void> {
+  loadLocalDotEnv();
   const env = loadWorkerEnv();
   const logger = createLogger({ name: WORKER_SERVICE_NAME, level: env.LOG_LEVEL });
 

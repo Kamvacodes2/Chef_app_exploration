@@ -8,12 +8,17 @@ import {
   type Logger,
 } from "@chefmate/observability";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerCatalogRoutes } from "./routes/catalog.js";
+import { registerAvailabilityRoutes } from "./routes/availability.js";
+import { registerBookingRequestRoutes } from "./routes/bookingRequests.js";
 
 /**
  * Fastify application factory.
  *
- * S02 scaffolds transport concerns only. There is no business route here by
- * design: authentication is S03, catalog and pricing are S04, checkout is S07.
+ * S03 starts the real browser-consumed API surface: catalog, availability,
+ * pricing quotes and idempotent booking requests. Later slices add identity,
+ * chef assignment, payouts and admin operations on top of these persisted
+ * booking records.
  */
 
 export interface BuildAppOptions {
@@ -24,6 +29,27 @@ export interface BuildAppOptions {
 }
 
 export const SERVICE_NAME = "chefmate-api";
+
+function localBrowserOrigin(origin: string | undefined): string | null {
+  if (!origin) return null;
+  return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin) ? origin : null;
+}
+
+function applyCors(
+  requestOrigin: string | undefined,
+  reply: { header: (name: string, value: string) => unknown },
+): void {
+  const origin = localBrowserOrigin(requestOrigin);
+  if (!origin) return;
+  void reply.header("Access-Control-Allow-Origin", origin);
+  void reply.header("Access-Control-Allow-Credentials", "true");
+  void reply.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Idempotency-Key, X-Correlation-Id",
+  );
+  void reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  void reply.header("Vary", "Origin");
+}
 
 function problem(
   status: number,
@@ -57,13 +83,22 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
    * identifier up from async local storage.
    */
   app.addHook("onRequest", (request, reply, done) => {
+    applyCors(request.headers.origin, reply);
     const correlationId = normaliseCorrelationId(
       request.headers[CORRELATION_ID_HEADER] ?? request.id,
     );
     request.id = correlationId;
     void reply.header(CORRELATION_ID_HEADER, correlationId);
+
+    if (request.method === "OPTIONS") {
+      void reply.status(204).send();
+      return;
+    }
+
     runWithCorrelation({ correlationId }, done);
   });
+
+  app.options("/*", (_request, reply) => reply.status(204).send());
 
   app.setNotFoundHandler((request, reply) => {
     void reply
@@ -97,6 +132,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     serviceName,
     startedAt: options.startedAt ?? Date.now(),
   });
+  await app.register(registerCatalogRoutes, options.pool);
+  await app.register(registerAvailabilityRoutes);
+  await app.register(registerBookingRequestRoutes, options.pool);
 
   return app;
 }
