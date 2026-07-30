@@ -41,6 +41,12 @@ export function SiteHeader() {
           >
             Plans
           </a>
+          <a
+            className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
+            href="/chef/apply"
+          >
+            Apply as chef
+          </a>
         </nav>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <a
@@ -54,6 +60,12 @@ export function SiteHeader() {
             className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
           >
             Login
+          </a>
+          <a
+            href="/chef/portal"
+            className="hidden min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/20 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:inline-flex sm:px-4 sm:text-sm"
+          >
+            Chef portal
           </a>
         </div>
       </div>

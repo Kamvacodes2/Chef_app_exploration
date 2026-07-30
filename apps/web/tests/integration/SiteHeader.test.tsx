@@ -17,6 +17,10 @@ describe("SiteHeader", () => {
     );
     expect(screen.getByRole("link", { name: "Meals" })).toHaveAttribute("href", "#meals");
     expect(screen.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "#plans");
+    expect(screen.getByRole("link", { name: "Apply as chef" })).toHaveAttribute(
+      "href",
+      "/chef/apply",
+    );
     expect(screen.queryByRole("link", { name: "Chefs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Gift cards" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Book a chef" })).toHaveAttribute(
@@ -24,5 +28,9 @@ describe("SiteHeader", () => {
       "#order-flow",
     );
     expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Chef portal" })).toHaveAttribute(
+      "href",
+      "/chef/portal",
+    );
   });
 });

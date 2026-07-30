@@ -1,0 +1,631 @@
+import { z } from "zod";
+import { readApiErrorMessage } from "@/lib/apiError";
+import { getChefmateApiUrl } from "@/lib/env";
+
+export interface PlatformRequestOptions {
+  readonly baseUrl?: string;
+  readonly fetchImpl?: typeof fetch;
+}
+
+export interface ChefApplicationInput {
+  readonly fullName: string;
+  readonly email: string;
+  readonly phone: string;
+  readonly city: string | null;
+  readonly serviceAreas: readonly string[];
+  readonly experience: string;
+}
+
+export interface ChefApplicationUpdateInput {
+  readonly status?: ChefApplicationStatus;
+  readonly interviewScheduledAt?: string | null;
+  readonly interviewConductedAt?: string | null;
+  readonly interviewConducted?: boolean;
+  readonly adminNotes?: string | null;
+}
+
+export interface ChefProfileInput {
+  readonly isAvailable: boolean;
+  readonly serviceArea: string | null;
+  readonly serviceAreas: readonly string[];
+  readonly bio: string | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+  readonly maxTravelKm: number;
+  readonly availability: Record<string, unknown> | null;
+}
+
+export interface ChefBankDetailsInput {
+  readonly accountHolder: string;
+  readonly bankName: string;
+  readonly branchCode: string;
+  readonly accountNumber: string;
+  readonly accountType: string | null;
+}
+
+export interface WhatsAppPreviewInput {
+  readonly recipient: string;
+  readonly templateKey: string;
+  readonly bodyPreview: string;
+  readonly relatedBookingRequestId?: string | null;
+  readonly relatedUserId?: string | null;
+}
+
+const chefApplicationStatusSchema = z.enum([
+  "APPLIED",
+  "INTERVIEW_SCHEDULED",
+  "INTERVIEW_CONDUCTED",
+  "APPROVED",
+  "INVITED",
+  "REJECTED",
+]);
+
+const communicationChannelSchema = z.enum(["EMAIL", "WHATSAPP"]);
+const communicationStatusSchema = z.enum(["QUEUED", "SENT", "SKIPPED", "FAILED"]);
+
+const platformUserSchema = z.object({
+  id: z.string().min(1),
+  email: z.string().email(),
+  displayName: z.string().min(1),
+  roles: z.array(z.string()),
+  status: z.string().min(1),
+  createdAt: z.string(),
+});
+
+const bankAccountPreviewSchema = z.object({
+  accountHolder: z.string().min(1),
+  bankName: z.string().min(1),
+  branchCode: z.string().min(1),
+  accountNumberLast4: z.string().min(1),
+  accountType: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
+const chefApplicationSchema = z.object({
+  id: z.string().min(1),
+  fullName: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().min(1),
+  city: z.string().nullable(),
+  serviceAreas: z.array(z.string()),
+  experience: z.string(),
+  status: chefApplicationStatusSchema,
+  interviewScheduledAt: z.string().nullable(),
+  interviewConductedAt: z.string().nullable(),
+  adminNotes: z.string().nullable(),
+  invitedUserId: z.string().nullable(),
+  invitedAt: z.string().nullable(),
+  rejectedAt: z.string().nullable(),
+  appliedAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const chefProfileSchema = z.object({
+  userId: z.string().min(1),
+  displayName: z.string().min(1),
+  email: z.string().email(),
+  isAvailable: z.boolean(),
+  serviceArea: z.string().nullable(),
+  serviceAreas: z.array(z.string()),
+  bio: z.string().nullable(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  maxTravelKm: z.number().int().nonnegative(),
+  availability: z.record(z.unknown()).nullable(),
+  bankAccount: bankAccountPreviewSchema.nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const bookingStatusSchema = z.enum([
+  "REQUESTED",
+  "NEEDS_REVIEW",
+  "CONFIRMED",
+  "AWAITING_CHEF",
+  "CHEF_MATCHED",
+  "EN_ROUTE",
+  "CANCELLED",
+  "COMPLETED",
+]);
+
+const bookingPricingSchema = z.object({
+  subtotalCents: z.number().int().nonnegative(),
+  discountCents: z.number().int().nonnegative(),
+  totalCents: z.number().int().nonnegative(),
+  items: z.array(
+    z.object({
+      kind: z.enum(["main", "side", "dessert"]),
+      slug: z.string().min(1),
+      name: z.string().min(1),
+      priceCents: z.number().int(),
+      sortOrder: z.number().int(),
+    }),
+  ),
+  plan: z
+    .object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      sessions: z.string().min(1),
+      recurring: z.boolean(),
+      priceCents: z.number().int().nonnegative(),
+    })
+    .optional(),
+});
+
+const chefBookingSchema = z.object({
+  id: z.string().min(1),
+  reference: z.string().min(1),
+  status: bookingStatusSchema,
+  type: z.string().min(1),
+  source: z.literal("LANDING_ORDER_FLOW"),
+  idempotencyKey: z.string(),
+  idempotencyPayloadHash: z.string(),
+  customerId: z.string().nullable(),
+  mainMealSlug: z.string().min(1),
+  mainName: z.string().min(1),
+  customRequest: z.string().nullable(),
+  scheduledDate: z.string().min(1),
+  timeSlot: z.string().min(1),
+  estate: z.string().nullable(),
+  unit: z.string().nullable(),
+  street: z.string().min(1),
+  serviceArea: z.string().nullable(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  contactName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  contactPhone: z.string().nullable(),
+  goalId: z.string().nullable(),
+  promotionCodeHash: z.string().nullable(),
+  pricing: bookingPricingSchema,
+  createdAt: z.string(),
+  cook: platformUserSchema
+    .pick({ id: true, email: true, displayName: true, roles: true })
+    .nullable(),
+  transitions: z.array(
+    z.object({
+      id: z.string().min(1),
+      fromStatus: bookingStatusSchema.nullable(),
+      toStatus: bookingStatusSchema,
+      actor: z.enum(["SYSTEM", "CUSTOMER", "ADMIN", "COOK"]),
+      actorUserId: z.string().nullable(),
+      note: z.string().nullable(),
+      metadata: z.record(z.unknown()).nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+
+const chefOfferSchema = z.object({
+  id: z.string().min(1),
+  bookingRequestId: z.string().min(1),
+  cookUserId: z.string().min(1),
+  status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "WITHDRAWN"]),
+  rank: z.number().int(),
+  distanceKm: z.number().nullable(),
+  chefPayoutCents: z.number().int().nonnegative(),
+  expiresAt: z.string(),
+  createdAt: z.string(),
+  booking: z.object({
+    id: z.string().min(1),
+    reference: z.string().min(1),
+    mainName: z.string().min(1),
+    scheduledDate: z.string().min(1),
+    timeSlot: z.string().min(1),
+    serviceArea: z.string().nullable(),
+    totalCents: z.number().int().nonnegative(),
+  }),
+});
+
+const chefEarningSchema = z.object({
+  id: z.string().min(1),
+  bookingRequestId: z.string().min(1),
+  bookingReference: z.string().min(1),
+  cookUserId: z.string().min(1),
+  cookDisplayName: z.string().min(1),
+  grossCents: z.number().int().nonnegative(),
+  chefPayoutCents: z.number().int().nonnegative(),
+  platformRevenueCents: z.number().int().nonnegative(),
+  chefPayoutShareBasisPoints: z.number().int().nonnegative(),
+  status: z.enum(["PENDING", "PAID"]),
+  payoutReference: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+const adminDashboardSchema = z.object({
+  customersCount: z.number().int().nonnegative(),
+  chefsCount: z.number().int().nonnegative(),
+  chefApplicationsCount: z.number().int().nonnegative(),
+  chefApplicationStatusCounts: z.record(z.string(), z.number().int().nonnegative()),
+  bookingsThisMonthCount: z.number().int().nonnegative(),
+  collectedThisMonthCents: z.number().int().nonnegative(),
+  chefPayableCents: z.number().int().nonnegative(),
+  platformRevenueCents: z.number().int().nonnegative(),
+  communicationsQueuedCount: z.number().int().nonnegative(),
+  communicationsSentCount: z.number().int().nonnegative(),
+  whatsAppReady: z.boolean(),
+});
+
+const chefSummarySchema = platformUserSchema.extend({
+  profile: chefProfileSchema.omit({ displayName: true, email: true, bankAccount: true }).nullable(),
+  bankAccount: bankAccountPreviewSchema.nullable(),
+});
+
+const communicationLogSchema = z.object({
+  id: z.string().min(1),
+  channel: communicationChannelSchema,
+  status: communicationStatusSchema,
+  recipient: z.string().min(1),
+  subject: z.string().nullable(),
+  templateKey: z.string().min(1),
+  bodyPreview: z.string().nullable(),
+  provider: z.string().nullable(),
+  relatedBookingRequestId: z.string().nullable(),
+  relatedUserId: z.string().nullable(),
+  metadata: z.record(z.unknown()).nullable(),
+  sentAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+const popularMealSchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  kind: z.string().min(1),
+  orderCount: z.number().int().nonnegative(),
+  grossCents: z.number().int().nonnegative(),
+});
+
+const authUserSchema = platformUserSchema.extend({
+  status: z.enum(["ACTIVE", "SUSPENDED"]),
+  roles: z.array(z.enum(["CUSTOMER", "COOK", "ADMIN", "SUPPORT"])),
+  emailVerifiedAt: z.string().nullable(),
+});
+
+const envelope = <Schema extends z.ZodTypeAny>(schema: Schema) => z.object({ data: schema });
+const itemsEnvelope = <Schema extends z.ZodTypeAny>(schema: Schema) =>
+  envelope(z.object({ items: z.array(schema) }));
+
+export type ChefApplicationStatus = z.infer<typeof chefApplicationStatusSchema>;
+export type ChefApplication = z.infer<typeof chefApplicationSchema>;
+export type ChefProfile = z.infer<typeof chefProfileSchema>;
+export type BankAccountPreview = z.infer<typeof bankAccountPreviewSchema>;
+export type ChefOffer = z.infer<typeof chefOfferSchema>;
+export type ChefEarning = z.infer<typeof chefEarningSchema>;
+export type ChefBooking = z.infer<typeof chefBookingSchema>;
+export type AdminDashboard = z.infer<typeof adminDashboardSchema>;
+export type CommunicationLog = z.infer<typeof communicationLogSchema>;
+export type PopularMeal = z.infer<typeof popularMealSchema>;
+export type PlatformUser = z.infer<typeof platformUserSchema>;
+export type ChefSummary = z.infer<typeof chefSummarySchema>;
+
+export async function submitChefApplication(
+  input: ChefApplicationInput,
+  options: PlatformRequestOptions = {},
+): Promise<ChefApplication> {
+  return requestData({
+    path: "/api/v1/chef-applications",
+    method: "POST",
+    body: input,
+    schema: envelope(chefApplicationSchema),
+    options,
+  });
+}
+
+export async function consumeChefMagicLink(
+  token: string,
+  options: PlatformRequestOptions = {},
+): Promise<z.infer<typeof authUserSchema>> {
+  return requestData({
+    path: "/api/v1/chef/magic-login",
+    method: "POST",
+    body: { token },
+    schema: envelope(z.object({ user: authUserSchema })),
+    options,
+    select: (data) => data.user,
+  });
+}
+
+export async function fetchChefProfile(options: PlatformRequestOptions = {}): Promise<ChefProfile> {
+  return requestData({
+    path: "/api/v1/chef/profile",
+    method: "GET",
+    schema: envelope(chefProfileSchema),
+    options,
+  });
+}
+
+export async function updateChefProfile(
+  input: ChefProfileInput,
+  options: PlatformRequestOptions = {},
+): Promise<ChefProfile> {
+  return requestData({
+    path: "/api/v1/chef/profile",
+    method: "PUT",
+    body: input,
+    schema: envelope(chefProfileSchema),
+    options,
+  });
+}
+
+export async function updateChefBankDetails(
+  input: ChefBankDetailsInput,
+  options: PlatformRequestOptions = {},
+): Promise<BankAccountPreview> {
+  return requestData({
+    path: "/api/v1/chef/bank-details",
+    method: "PUT",
+    body: input,
+    schema: envelope(bankAccountPreviewSchema),
+    options,
+  });
+}
+
+export async function fetchChefOffers(options: PlatformRequestOptions = {}): Promise<ChefOffer[]> {
+  return requestData({
+    path: "/api/v1/chef/offers",
+    method: "GET",
+    schema: itemsEnvelope(chefOfferSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function acceptChefOffer(
+  offerId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{ booking: ChefBooking; offer: ChefOffer }> {
+  return requestData({
+    path: `/api/v1/chef/offers/${encodeURIComponent(offerId)}/accept`,
+    method: "POST",
+    schema: envelope(z.object({ booking: chefBookingSchema, offer: chefOfferSchema })),
+    options,
+  });
+}
+
+export async function declineChefOffer(
+  offerId: string,
+  options: PlatformRequestOptions = {},
+): Promise<void> {
+  await requestNoContent({
+    path: `/api/v1/chef/offers/${encodeURIComponent(offerId)}/decline`,
+    method: "POST",
+    options,
+  });
+}
+
+export async function fetchChefBookings(
+  options: PlatformRequestOptions = {},
+): Promise<ChefBooking[]> {
+  return requestData({
+    path: "/api/v1/chef/bookings",
+    method: "GET",
+    schema: itemsEnvelope(chefBookingSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function markChefEnRoute(
+  bookingId: string,
+  note: string | null,
+  options: PlatformRequestOptions = {},
+): Promise<ChefBooking> {
+  return requestData({
+    path: `/api/v1/chef/bookings/${encodeURIComponent(bookingId)}/en-route`,
+    method: "POST",
+    body: { note },
+    schema: envelope(chefBookingSchema),
+    options,
+  });
+}
+
+export async function completeChefBooking(
+  bookingId: string,
+  note: string | null,
+  options: PlatformRequestOptions = {},
+): Promise<{ booking: ChefBooking; surveysIssued: number; earning: ChefEarning }> {
+  return requestData({
+    path: `/api/v1/chef/bookings/${encodeURIComponent(bookingId)}/complete`,
+    method: "POST",
+    body: { note },
+    schema: envelope(
+      z.object({
+        booking: chefBookingSchema,
+        surveysIssued: z.number().int().nonnegative(),
+        earning: chefEarningSchema,
+      }),
+    ),
+    options,
+    select: (data) => ({
+      booking: data.booking,
+      surveysIssued: data.surveysIssued,
+      earning: data.earning,
+    }),
+  });
+}
+
+export async function fetchAdminDashboard(
+  options: PlatformRequestOptions = {},
+): Promise<AdminDashboard> {
+  return requestData({
+    path: "/api/v1/operations/dashboard",
+    method: "GET",
+    schema: envelope(adminDashboardSchema),
+    options,
+  });
+}
+
+export async function fetchChefApplications(
+  options: PlatformRequestOptions = {},
+): Promise<ChefApplication[]> {
+  return requestData({
+    path: "/api/v1/operations/chef-applications",
+    method: "GET",
+    schema: itemsEnvelope(chefApplicationSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function updateChefApplication(
+  applicationId: string,
+  input: ChefApplicationUpdateInput,
+  options: PlatformRequestOptions = {},
+): Promise<ChefApplication> {
+  return requestData({
+    path: `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}`,
+    method: "PATCH",
+    body: input,
+    schema: envelope(chefApplicationSchema),
+    options,
+  });
+}
+
+export async function markChefApplicationInterviewConducted(
+  applicationId: string,
+  options: PlatformRequestOptions = {},
+): Promise<ChefApplication> {
+  return updateChefApplication(applicationId, { interviewConducted: true }, options);
+}
+
+export async function inviteChefApplication(
+  applicationId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{ application: ChefApplication; magicLinkUrl: string }> {
+  return requestData({
+    path: `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/invite`,
+    method: "POST",
+    schema: envelope(
+      z.object({ application: chefApplicationSchema, magicLinkUrl: z.string().url() }),
+    ),
+    options,
+  });
+}
+
+export async function fetchCustomers(
+  options: PlatformRequestOptions = {},
+): Promise<PlatformUser[]> {
+  return requestData({
+    path: "/api/v1/operations/customers",
+    method: "GET",
+    schema: itemsEnvelope(platformUserSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function fetchChefs(options: PlatformRequestOptions = {}): Promise<ChefSummary[]> {
+  return requestData({
+    path: "/api/v1/operations/chefs",
+    method: "GET",
+    schema: itemsEnvelope(chefSummarySchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function fetchCommunicationLogs(
+  options: PlatformRequestOptions = {},
+): Promise<CommunicationLog[]> {
+  return requestData({
+    path: "/api/v1/operations/communications?limit=50",
+    method: "GET",
+    schema: envelope(
+      z.object({ items: z.array(communicationLogSchema), nextCursor: z.string().nullable() }),
+    ),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function fetchPopularMeals(
+  options: PlatformRequestOptions = {},
+): Promise<PopularMeal[]> {
+  return requestData({
+    path: "/api/v1/operations/analytics/popular-meals?limit=10",
+    method: "GET",
+    schema: itemsEnvelope(popularMealSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function logWhatsAppPreview(
+  input: WhatsAppPreviewInput,
+  options: PlatformRequestOptions = {},
+): Promise<CommunicationLog> {
+  return requestData({
+    path: "/api/v1/operations/communications/whatsapp-preview",
+    method: "POST",
+    body: input,
+    schema: envelope(communicationLogSchema),
+    options,
+  });
+}
+
+type RequestMethod = "GET" | "POST" | "PUT" | "PATCH";
+
+interface RequestDataArgs<Schema extends z.ZodTypeAny, Result> {
+  readonly path: string;
+  readonly method: RequestMethod;
+  readonly body?: unknown;
+  readonly schema: Schema;
+  readonly options: PlatformRequestOptions;
+  readonly select?: (data: z.infer<Schema>["data"]) => Result;
+}
+
+async function requestData<Schema extends z.ZodTypeAny, Result = z.infer<Schema>["data"]>({
+  path,
+  method,
+  body,
+  schema,
+  options,
+  select,
+}: RequestDataArgs<Schema, Result>): Promise<Result> {
+  const response = await send(path, method, body, options);
+
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate request failed (" + response.status + ")"),
+    );
+  }
+
+  const parsed = schema.parse(await response.json());
+  return select ? select(parsed.data) : (parsed.data as Result);
+}
+
+async function requestNoContent({
+  path,
+  method,
+  options,
+}: Pick<RequestDataArgs<z.ZodTypeAny, unknown>, "path" | "method" | "options">): Promise<void> {
+  const response = await send(path, method, undefined, options);
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate request failed (" + response.status + ")"),
+    );
+  }
+}
+
+async function send(
+  path: string,
+  method: RequestMethod,
+  body: unknown,
+  options: PlatformRequestOptions,
+): Promise<Response> {
+  const init: RequestInit = {
+    method,
+    credentials: "include",
+    ...(body === undefined
+      ? {}
+      : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  };
+
+  return (options.fetchImpl ?? fetch)(apiUrl(options.baseUrl ?? getChefmateApiUrl(), path), init);
+}
+
+function apiUrl(baseUrl: string, path: string): string {
+  const trimmed = baseUrl.trim().replace(/\/$/, "");
+  if (!trimmed) throw new Error("Chefmate API URL is not configured.");
+  return trimmed + path;
+}
