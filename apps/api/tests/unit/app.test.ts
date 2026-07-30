@@ -136,15 +136,16 @@ describe("problem responses", () => {
   });
 });
 
-describe("scaffold boundaries", () => {
-  it("registers only the two health routes", async () => {
+describe("business route surface", () => {
+  it("registers health plus the browser-consumed purchase-flow routes", async () => {
     app = await buildApp({ logger, pool: healthyPool() });
     await app.ready();
 
-    const routes = app
-      .printRoutes({ commonPrefix: false })
-      .split("\n")
-      .filter((line) => line.includes("(GET"));
-    expect(routes).toHaveLength(2);
+    const routes = app.printRoutes({ commonPrefix: false });
+    expect(routes).toContain("/health/live");
+    expect(routes).toContain("/health/ready");
+    expect(routes).toContain("/api/v1/catalog/categories");
+    expect(routes).toContain("/api/v1/availability/slots");
+    expect(routes).toContain("/api/v1/booking-requests");
   });
 });

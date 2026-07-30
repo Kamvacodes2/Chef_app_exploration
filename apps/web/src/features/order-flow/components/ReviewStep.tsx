@@ -24,16 +24,20 @@ export function formatZarCents(amountCents: number): string {
   }).format(amountCents / 100);
 }
 
+export function pricingLineLabel(priceCents: number | undefined): string {
+  if (priceCents === undefined) return "Pending";
+  if (priceCents === 0) return "Included";
+  return formatZarCents(priceCents);
+}
+
 function SelectionRow({
   item,
   kind,
   priceCents,
-  includedInPlan = false,
 }: {
   readonly item: OrderMenuItem;
   readonly kind: "main" | "side" | "dessert";
   readonly priceCents: number | undefined;
-  readonly includedInPlan?: boolean;
 }): ReactElement {
   const imageSize = kind === "main" ? "h-16 w-16 rounded-2xl" : "h-12 w-12 rounded-xl";
 
@@ -55,11 +59,7 @@ function SelectionRow({
         {kind !== "main" ? <p className="text-xs text-[var(--color-bone)]/50">({kind})</p> : null}
       </div>
       <p className="shrink-0 text-sm font-semibold text-[var(--color-bone)]">
-        {includedInPlan
-          ? "Included"
-          : priceCents === undefined
-            ? "Pending"
-            : formatZarCents(priceCents)}
+        {pricingLineLabel(priceCents)}
       </p>
     </div>
   );
@@ -113,28 +113,16 @@ export function ReviewStep(): ReactElement {
       <div className="grid w-full gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           {state.main ? (
-            <SelectionRow
-              item={state.main}
-              kind="main"
-              priceCents={priceFor(state.main)}
-              includedInPlan={Boolean(pricingQuote?.plan)}
-            />
+            <SelectionRow item={state.main} kind="main" priceCents={priceFor(state.main)} />
           ) : null}
           {state.sides.map((side) => (
-            <SelectionRow
-              key={side.id}
-              item={side}
-              kind="side"
-              priceCents={priceFor(side)}
-              includedInPlan={Boolean(pricingQuote?.plan)}
-            />
+            <SelectionRow key={side.id} item={side} kind="side" priceCents={priceFor(side)} />
           ))}
           {state.dessert ? (
             <SelectionRow
               item={state.dessert}
               kind="dessert"
               priceCents={priceFor(state.dessert)}
-              includedInPlan={Boolean(pricingQuote?.plan)}
             />
           ) : null}
 

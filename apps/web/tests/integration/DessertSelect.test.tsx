@@ -58,4 +58,16 @@ describe("DessertSelect", () => {
     fireEvent.click(screen.getByRole("button", { name: /Malva Pudding/ }));
     expect(controller.selectDessert).toHaveBeenCalledWith(DESSERTS[0]);
   });
+  it("shows the fixed dessert price and supports skipping dessert", () => {
+    const controller = createController();
+    render(
+      <OrderContext.Provider value={controller}>
+        <DessertSelect />
+      </OrderContext.Provider>,
+    );
+
+    expect(screen.getByText(/adds R90/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /No dessert/i }));
+    expect(controller.skipDessert).toHaveBeenCalledTimes(1);
+  });
 });

@@ -37,7 +37,7 @@ export interface OrderMenuItem {
   readonly name: string;
   readonly description: string;
   readonly priceDisplay: string;
-  /** Numeric price in ZAR for running-total math. */
+  /** Fallback pricing hint in ZAR; server quotes remain authoritative for checkout. */
   readonly price: number;
   readonly course: CourseKind;
   readonly imageSrc: string;

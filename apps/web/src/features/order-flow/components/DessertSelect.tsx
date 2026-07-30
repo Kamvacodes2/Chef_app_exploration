@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { DESSERTS } from "../constants/menu";
+import { DESSERT_PRICE_ZAR, DESSERTS } from "../constants/menu";
 import { useOrder } from "../state/OrderContext";
 import { DishCard } from "./DishCard";
 
@@ -19,7 +19,7 @@ export function DessertSelect(): ReactElement {
           Something sweet?
         </h2>
         <p className="text-sm text-[var(--color-bone)]/70">
-          Optional. Go on - malva counts as a food group.
+          Dessert is optional and adds R{DESSERT_PRICE_ZAR}. Go on - malva counts as a food group.
         </p>
       </div>
 

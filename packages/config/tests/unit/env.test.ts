@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   apiEnvSchema,
@@ -5,6 +8,8 @@ import {
   EnvValidationError,
   LOG_LEVELS,
   loadApiEnv,
+  loadDotEnvFile,
+  loadLocalDotEnv,
   loadDatabaseEnv,
   loadWorkerEnv,
   parseEnv,
@@ -94,6 +99,42 @@ describe("parseEnv", () => {
   });
 });
 
+describe("local dotenv loading", () => {
+  it("loads simple .env.local values without overriding exported values", () => {
+    const directory = mkdtempSync(path.join(os.tmpdir(), "chefmate-env-"));
+    try {
+      writeFileSync(
+        path.join(directory, ".env.local"),
+        [
+          "# comments are ignored",
+          "DATABASE_URL=postgresql://chefmate:CHANGE_ME_LOCAL_ONLY@127.0.0.1:5432/chefmate",
+          "API_PORT=4100",
+          "QUOTED_VALUE='kept simple'",
+          "EMPTY_LINE_FOLLOWS=ok",
+          "",
+        ].join("\n"),
+      );
+
+      const env: NodeJS.ProcessEnv = { API_PORT: "4200" };
+      loadLocalDotEnv({ cwd: directory, env });
+
+      expect(env.DATABASE_URL).toBe(
+        "postgresql://chefmate:CHANGE_ME_LOCAL_ONLY@127.0.0.1:5432/chefmate",
+      );
+      expect(env.API_PORT).toBe("4200");
+      expect(env.QUOTED_VALUE).toBe("kept simple");
+      expect(env.EMPTY_LINE_FOLLOWS).toBe("ok");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores a missing file", () => {
+    const env: NodeJS.ProcessEnv = {};
+    loadDotEnvFile(path.join(os.tmpdir(), "chefmate-missing-env-file"), env);
+    expect(env).toEqual({});
+  });
+});
 describe("schemas per process", () => {
   it("validates the worker environment", () => {
     const env = parseEnv(workerEnvSchema, {

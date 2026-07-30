@@ -49,7 +49,7 @@
       "categoryId": "healthy",
       "name": "Chicken Gyro Bowl",
       "description": "Grilled chicken, fresh greens and a light tzatziki drizzle.",
-      "priceDisplay": "R89",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/healthy/chicken-gyro-bowl.webp",
         "width": 736,
@@ -71,7 +71,7 @@
       "categoryId": "healthy",
       "name": "Burger Bowl",
       "description": "Deconstructed burger flavours over crisp greens.",
-      "priceDisplay": "R85",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/healthy/burger-bowl.webp",
         "width": 736,
@@ -93,7 +93,7 @@
       "categoryId": "healthy",
       "name": "Chicken Salad Bowl",
       "description": "Lean chicken breast with a colourful vegetable medley.",
-      "priceDisplay": "R79",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/healthy/chicken-salad-bowl.webp",
         "width": 736,
@@ -115,7 +115,7 @@
       "categoryId": "chicken",
       "name": "Peri-Peri Chicken",
       "description": "Flame-grilled chicken basted in fiery peri-peri sauce.",
-      "priceDisplay": "R95",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/chicken/peri-peri-chicken.webp",
         "width": 736,
@@ -137,7 +137,7 @@
       "categoryId": "chicken",
       "name": "BBQ Chicken",
       "description": "Smoky BBQ glazed chicken, grilled to perfection.",
-      "priceDisplay": "R92",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/chicken/bbq-chicken.webp",
         "width": 736,
@@ -159,7 +159,7 @@
       "categoryId": "chicken",
       "name": "Roasted Chicken",
       "description": "Slow-roasted chicken with golden crispy skin.",
-      "priceDisplay": "R99",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/chicken/roasted-chicken.webp",
         "width": 736,
@@ -181,7 +181,7 @@
       "categoryId": "beef-premium",
       "name": "Steak & Chips",
       "description": "Tender grilled steak served with crispy golden chips.",
-      "priceDisplay": "R149",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/beef-premium/steak-and-chips.webp",
         "width": 564,
@@ -203,7 +203,7 @@
       "categoryId": "beef-premium",
       "name": "Oxtail Stew",
       "description": "Slow-braised oxtail in a rich, hearty gravy.",
-      "priceDisplay": "R159",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/beef-premium/oxtail-stew.webp",
         "width": 675,
@@ -225,7 +225,7 @@
       "categoryId": "beef-premium",
       "name": "Lamb Chops",
       "description": "Char-grilled lamb chops with herb seasoning.",
-      "priceDisplay": "R169",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/beef-premium/lamb-chops.webp",
         "width": 736,
@@ -247,7 +247,7 @@
       "categoryId": "breakfast",
       "name": "Overnight Oats",
       "description": "Creamy oats soaked overnight with fruit and honey.",
-      "priceDisplay": "R55",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/breakfast/overnight-oats.webp",
         "width": 684,
@@ -269,7 +269,7 @@
       "categoryId": "pasta-bakes",
       "name": "Beef Lasagne",
       "description": "Layers of pasta, beef ragu and melted cheese.",
-      "priceDisplay": "R89",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/pasta-bakes/beef-lasagne.webp",
         "width": 736,
@@ -291,7 +291,7 @@
       "categoryId": "pasta-bakes",
       "name": "Meatball Pasta",
       "description": "Juicy meatballs tossed in rich tomato pasta.",
-      "priceDisplay": "R85",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/pasta-bakes/meatball-pasta.webp",
         "width": 736,
@@ -313,7 +313,7 @@
       "categoryId": "pasta-bakes",
       "name": "Cheesy Mince Pasta",
       "description": "Kid-friendly cheesy mince pasta bake.",
-      "priceDisplay": "R79",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/pasta-bakes/cheesy-mince-pasta.webp",
         "width": 720,
@@ -335,7 +335,7 @@
       "categoryId": "sunday-lunch",
       "name": "Roast Chicken Seven Colours",
       "description": "Traditional roast chicken with seven vibrant sides.",
-      "priceDisplay": "R129",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/sunday-lunch/roast-chicken-seven-colours.webp",
         "width": 736,
@@ -357,7 +357,7 @@
       "categoryId": "sunday-lunch",
       "name": "Oxtail Seven Colours",
       "description": "Rich oxtail served the traditional Sunday way.",
-      "priceDisplay": "R159",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/sunday-lunch/oxtail-seven-colours.webp",
         "width": 736,
@@ -379,7 +379,7 @@
       "categoryId": "sunday-lunch",
       "name": "Chicken Seven Colours",
       "description": "Classic chicken Sunday lunch with seven colourful sides.",
-      "priceDisplay": "R119",
+      "priceDisplay": "Included in package",
       "image": {
         "src": "/images/meals/sunday-lunch/chicken-seven-colours.webp",
         "width": 736,

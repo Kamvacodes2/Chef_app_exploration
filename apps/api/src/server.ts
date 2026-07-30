@@ -1,4 +1,4 @@
-import { loadApiEnv } from "@chefmate/config";
+import { loadApiEnv, loadLocalDotEnv } from "@chefmate/config";
 import { createPoolFromEnv } from "@chefmate/database";
 import { createLogger, installGracefulShutdown } from "@chefmate/observability";
 import { buildApp, SERVICE_NAME } from "./app.js";
@@ -11,6 +11,7 @@ import { buildApp, SERVICE_NAME } from "./app.js";
  * instead of accepting traffic it cannot serve.
  */
 async function main(): Promise<void> {
+  loadLocalDotEnv();
   const env = loadApiEnv();
   const logger = createLogger({ name: SERVICE_NAME, level: env.LOG_LEVEL });
 

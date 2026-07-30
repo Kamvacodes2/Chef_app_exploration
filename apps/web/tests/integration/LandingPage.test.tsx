@@ -59,7 +59,7 @@ describe("LandingPage", () => {
       "#order-flow?plan=tonight",
       "#order-flow?plan=rhythm",
       "#order-flow?plan=family",
-      "#order-flow?plan=full-house",
+      "#order-flow?plan=premium",
     ]);
     expect(
       screen.getByAltText("Two people enjoying a freshly cooked meal together at home"),
@@ -98,6 +98,20 @@ describe("LandingPage", () => {
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "sides");
   });
 
+  it("keeps legacy full-house package links working as premium", async () => {
+    render(<LandingPage />);
+
+    const legacyLink = document.createElement("a");
+    legacyLink.href = "#order-flow?plan=full-house";
+    document.body.appendChild(legacyLink);
+    fireEvent.click(legacyLink);
+    document.body.removeChild(legacyLink);
+
+    expect(
+      await screen.findByRole("heading", { name: "Which days suit your household?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-days");
+  });
   it("takes the once-off package straight to a favourite meal", async () => {
     render(<LandingPage />);
 

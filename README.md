@@ -11,7 +11,7 @@ See `plans/chefmate-platform-execution-blueprint.md` for the full plan and
 ```text
 apps/
   web/          Next.js 15 App Router application (the existing product)
-  api/          Fastify HTTP API — health, correlation, graceful shutdown
+  api/          Fastify HTTP API — health, catalog, availability, quote and booking routes
   worker/       Outbox drain loop and scheduler
 packages/
   contracts/    Zod request/response contracts shared by every consumer
@@ -34,13 +34,22 @@ integrations} → apps` — and that direction is enforced by
 
 ```bash
 pnpm install
-cp .env.example .env.local        # then fill in local values
+cp .env.example .env.local        # placeholders only; change values locally if needed
 pnpm db:up                        # pinned postgis/postgis:16-3.4 container
 pnpm db:migrate
+```
+
+For the functional local purchase flow, run these in separate terminals:
+
+```bash
+pnpm dev:api                      # API on http://127.0.0.1:4000
 pnpm dev                          # web on http://localhost:3000
 ```
 
-`pnpm dev:api` and `pnpm dev:worker` start the other two processes.
+`pnpm dev:worker` starts the outbox worker. It is useful once notification and
+payment-provider handlers are enabled; the customer checkout confirmation works
+without it in the current local slice because booking creation persists the
+request, payment instructions and outbox event transactionally.
 
 If no container runtime is available, the test tooling falls back to a throwaway
 cluster built from a local PostgreSQL installation — see `infra/README.md`.
@@ -99,13 +108,19 @@ no route, UX or contract change.
 
 ### Backend API configuration
 
-Local development defaults Chefmate booking API calls to `http://localhost:3001`
-when `NEXT_PUBLIC_CHEFMATE_API_URL` is unset. Booking submission uses
-`NEXT_PUBLIC_CHEFMATE_API_URL` only; it never reuses `NEXT_PUBLIC_MEALS_API_URL`.
-HTTP catalog mode may set `NEXT_PUBLIC_MEALS_API_URL` to either a backend base
-URL or a catalog URL ending in `/api/v1/catalog`. Production builds that use HTTP
-catalog or booking submission must configure the relevant API URL; there is no
-hard-coded production host and no silent same-origin fallback.
+For the integrated local purchase flow, `.env.local` should contain
+`NEXT_PUBLIC_CHEFMATE_API_URL=http://127.0.0.1:4000` and
+`NEXT_PUBLIC_MEALS_DATA_SOURCE=http`. With that setup the web app reads catalog,
+availability, quote and booking data from `apps/api`.
+
+When `NEXT_PUBLIC_CHEFMATE_API_URL` is unset in development, the browser contract
+still defaults booking calls to the legacy-safe `http://localhost:3001` fallback
+characterized in S01. Booking submission uses `NEXT_PUBLIC_CHEFMATE_API_URL`
+only; it never reuses `NEXT_PUBLIC_MEALS_API_URL`. HTTP catalog mode may set
+`NEXT_PUBLIC_MEALS_API_URL` to either a backend base URL or a catalog URL ending
+in `/api/v1/catalog`. Production builds that use HTTP catalog or booking
+submission must configure the relevant API URL; there is no hard-coded
+production host and no silent same-origin fallback.
 
 ### Content notes
 

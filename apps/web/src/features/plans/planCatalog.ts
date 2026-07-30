@@ -45,8 +45,8 @@ export const CHEFMATE_PLANS = [
     recurring: true,
   },
   {
-    id: "full-house",
-    name: "chefmate full house",
+    id: "premium",
+    name: "chefmate premium",
     sessions: "12 sessions",
     tier: "Platinum",
     savings: "Save R1,279/month",
@@ -63,6 +63,11 @@ export const CHEFMATE_PLANS = [
 
 export type ChefmatePlan = (typeof CHEFMATE_PLANS)[number];
 export type ChefmatePlanId = ChefmatePlan["id"];
+export type ChefmatePlanAliasId = "full-house";
+
+const CHEFMATE_PLAN_ALIASES: Readonly<Record<ChefmatePlanAliasId, ChefmatePlanId>> = {
+  "full-house": "premium",
+};
 
 export const PREFERRED_DAYS = [
   { id: "monday", label: "Monday", shortLabel: "Mon" },
@@ -91,6 +96,12 @@ export interface ChefmatePlanSelection {
 
 export function isChefmatePlanId(value: string): value is ChefmatePlanId {
   return CHEFMATE_PLANS.some((plan) => plan.id === value);
+}
+
+export function normalizeChefmatePlanId(value: string | null | undefined): ChefmatePlanId | null {
+  if (!value) return null;
+  if (isChefmatePlanId(value)) return value;
+  return CHEFMATE_PLAN_ALIASES[value as ChefmatePlanAliasId] ?? null;
 }
 
 export function findChefmatePlan(planId: ChefmatePlanId | null | undefined): ChefmatePlan | null {

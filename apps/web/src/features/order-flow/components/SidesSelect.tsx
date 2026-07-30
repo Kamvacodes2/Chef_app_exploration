@@ -1,13 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { SIDES } from "../constants/menu";
+import { EXTRA_SIDE_PRICE_ZAR, INCLUDED_SIDE_COUNT, SIDES } from "../constants/menu";
 import { useOrder } from "../state/OrderContext";
 import { DishCard } from "./DishCard";
 
 /**
- * Optional add-on sides. Multi-select: tap to add, tap again to remove.
- * Continuing works with zero or more selected.
+ * Side add-ons. The first two are included; every additional side uses the shared extra-side price.
  */
 export function SidesSelect(): ReactElement {
   const { state, toggleSide } = useOrder();
@@ -20,8 +19,8 @@ export function SidesSelect(): ReactElement {
           Add some sides?
         </h2>
         <p className="text-sm text-[var(--color-bone)]/70">
-          Optional — but the seven colours aren&apos;t going to eat themselves. Tap to add, tap
-          again to remove.
+          Choose up to two included sides. Any extra side adds R{EXTRA_SIDE_PRICE_ZAR}. Tap to add,
+          tap again to remove.
         </p>
       </div>
 
@@ -39,7 +38,9 @@ export function SidesSelect(): ReactElement {
 
       {state.sides.length > 0 && (
         <p className="text-sm text-[var(--color-bone)]/80" aria-live="polite">
-          {state.sides.length} side{state.sides.length === 1 ? "" : "s"} added
+          {state.sides.length <= INCLUDED_SIDE_COUNT
+            ? `${state.sides.length} side${state.sides.length === 1 ? "" : "s"} included`
+            : `${INCLUDED_SIDE_COUNT} included, ${state.sides.length - INCLUDED_SIDE_COUNT} extra at R${EXTRA_SIDE_PRICE_ZAR} each`}
         </p>
       )}
     </div>

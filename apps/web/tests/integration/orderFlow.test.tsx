@@ -79,19 +79,19 @@ describe("order flow end-to-end", () => {
     expect(s.step).toBe("confirmed");
   });
 
-  it("computes totals with a gift-code discount", () => {
+  it("computes fallback totals from the package model with a gift-code discount", () => {
     let s: OrderState = INITIAL_ORDER_STATE;
-    s = orderReducer(s, { type: "SELECT_MAIN", item: main }); // R95
-    s = orderReducer(s, { type: "TOGGLE_SIDE", item: side }); // R30
-    s = orderReducer(s, { type: "SELECT_DESSERT", item: dessert }); // R55
-    expect(selectSubtotal(s)).toBe(95 + 30 + 55);
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "TOGGLE_SIDE", item: side });
+    s = orderReducer(s, { type: "SELECT_DESSERT", item: dessert });
+    expect(selectSubtotal(s)).toBeCloseTo(527.85 + 90);
 
     s = orderReducer(s, { type: "SET_GIFT_INPUT", value: "chill10" });
     s = orderReducer(s, { type: "APPLY_GIFT" });
     expect(s.appliedGift?.code).toBe("CHILL10");
     expect(s.appliedGift?.discountFraction).toBeCloseTo(0.1);
-    expect(selectDiscount(s)).toBe(Math.round(180 * 0.1));
-    expect(selectTotal(s)).toBe(180 - 18);
+    expect(selectDiscount(s)).toBe(Math.round(617.85 * 0.1));
+    expect(selectTotal(s)).toBeCloseTo(617.85 - 62);
   });
 
   it("rejects an unknown gift code", () => {
