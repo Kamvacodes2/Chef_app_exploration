@@ -1,10 +1,16 @@
 import {
+  findChefmatePlan,
   isRecurringChefmatePlan,
   type ChefmatePlanId,
   type PreferredDayId,
 } from "@/features/plans/planCatalog";
 import type { Address, ContactDetails, GoalId, OrderMenuItem } from "../types";
-import { ALL_MENU_ITEMS } from "../constants/menu";
+import {
+  ALL_MENU_ITEMS,
+  DESSERT_PRICE_ZAR,
+  EXTRA_SIDE_PRICE_ZAR,
+  INCLUDED_SIDE_COUNT,
+} from "../constants/menu";
 import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
 
 export type OrderStep =
@@ -256,10 +262,12 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
 }
 
 export function selectSubtotal(state: OrderState): number {
-  const mains = state.main ? state.main.price : 0;
-  const sides = state.sides.reduce((sum, side) => sum + side.price, 0);
-  const dessert = state.dessert ? state.dessert.price : 0;
-  return mains + sides + dessert;
+  if (!state.main) return 0;
+
+  const packageBase = findChefmatePlan(state.planId ?? "tonight")?.priceCents ?? 0;
+  const extraSides = Math.max(0, state.sides.length - INCLUDED_SIDE_COUNT) * EXTRA_SIDE_PRICE_ZAR;
+  const dessert = state.dessert ? DESSERT_PRICE_ZAR : 0;
+  return packageBase / 100 + extraSides + dessert;
 }
 
 export function selectDiscount(state: OrderState): number {

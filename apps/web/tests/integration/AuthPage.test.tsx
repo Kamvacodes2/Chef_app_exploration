@@ -1,8 +1,29 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthPage } from "@/features/auth/AuthPage";
 
+const authApi = vi.hoisted(() => ({
+  createCustomerAccount: vi.fn(),
+  signIn: vi.fn(),
+}));
+
+vi.mock("@/features/auth/api/authClient", () => authApi);
+
+const customer = {
+  id: "customer-1",
+  email: "customer@example.test",
+  displayName: "Test Customer",
+  roles: ["CUSTOMER"],
+  status: "ACTIVE",
+  emailVerifiedAt: null,
+  createdAt: "2026-07-30T10:00:00.000Z",
+};
+
 describe("AuthPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("switches between sign-in and customer-account creation", () => {
     render(<AuthPage />);
 
@@ -17,5 +38,74 @@ describe("AuthPage", () => {
     );
     expect(screen.getByLabelText("Your name")).toBeRequired();
     expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "new-password");
+  });
+
+  it("signs in returning customers and offers a booking deep link", async () => {
+    authApi.signIn.mockResolvedValue(customer);
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: customer.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "A-strong-password-2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent(
+      "Signed in as Test Customer.",
+    );
+    expect(screen.getByRole("link", { name: "Book a chef" })).toHaveAttribute(
+      "href",
+      "/#order-flow",
+    );
+    expect(authApi.signIn).toHaveBeenCalledWith({
+      email: customer.email,
+      password: "A-strong-password-2026",
+    });
+    expect(authApi.createCustomerAccount).not.toHaveBeenCalled();
+  });
+
+  it("creates customer accounts through the backend auth client", async () => {
+    authApi.createCustomerAccount.mockResolvedValue(customer);
+    render(<AuthPage />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Create account" }));
+    fireEvent.change(screen.getByLabelText("Your name"), {
+      target: { value: customer.displayName },
+    });
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: customer.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "A-strong-password-2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+    await waitFor(() =>
+      expect(authApi.createCustomerAccount).toHaveBeenCalledWith({
+        displayName: customer.displayName,
+        email: customer.email,
+        password: "A-strong-password-2026",
+      }),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Signed in as Test Customer.");
+  });
+
+  it("shows useful backend auth errors", async () => {
+    authApi.signIn.mockRejectedValue(new Error("Invalid email or password."));
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: customer.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "wrong-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await expect(screen.findByRole("alert")).resolves.toHaveTextContent(
+      "Invalid email or password.",
+    );
   });
 });

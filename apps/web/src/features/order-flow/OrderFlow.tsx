@@ -18,7 +18,7 @@ import { ReviewStep } from "./components/ReviewStep";
 import { Confirmation } from "./components/Confirmation";
 import { PlanDaysSelect } from "./components/PlanDaysSelect";
 import { PlanFavoriteSelect } from "./components/PlanFavoriteSelect";
-import { isChefmatePlanId, isRecurringChefmatePlan } from "@/features/plans/planCatalog";
+import { isRecurringChefmatePlan, normalizeChefmatePlanId } from "@/features/plans/planCatalog";
 
 const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
   goal: GoalSelect,
@@ -56,8 +56,8 @@ function parseOrderFlowHash(hash: string): OrderFlowLinkTarget | null {
   if (fragment !== "order-flow") return null;
 
   const params = new URLSearchParams(query);
-  const planId = params.get("plan");
-  if (planId && isChefmatePlanId(planId)) return { planId };
+  const planId = normalizeChefmatePlanId(params.get("plan"));
+  if (planId) return { planId };
 
   const mealId = params.get("meal");
   return mealId ? { mealId } : {};
@@ -154,12 +154,13 @@ export function OrderFlow(): ReactElement {
     };
 
     const openPlanSetup = (planId: string): void => {
-      if (!isChefmatePlanId(planId)) {
+      const normalizedPlanId = normalizeChefmatePlanId(planId);
+      if (!normalizedPlanId) {
         openBooking();
         return;
       }
 
-      startPlanSetup(planId);
+      startPlanSetup(normalizedPlanId);
       scrollToOrderFlow();
     };
 
