@@ -1,86 +1,83 @@
-# Dependency maintenance: vitest 2.x / vite 5.x → vitest ≥3.2.6 / vite ≥6.4.3
+# Dependency maintenance: Vitest 4 / Vite 6 migration
 
-| Field         | Value                                                                      |
-| ------------- | -------------------------------------------------------------------------- |
-| Status        | Open — not started                                                         |
-| Created       | 2026-07-29                                                                 |
-| Owner         | Kamva (kamva@speccon.co.za)                                                |
-| Due           | **Before S03 begins** (hard gate on S03 kickoff)                           |
-| Raised by     | S02 dependency-security remediation                                        |
-| Related       | `tests/security/dev-dependency-exceptions.json`, `pnpm-workspace.yaml`      |
-| Review window | Exception entries expire 2026-08-26; this work must land or be re-dated by then |
+| Field | Value |
+| --- | --- |
+| Status | **Closed** — implemented on `chore/vitest-vite-migration` |
+| Created | 2026-07-29 |
+| Closed | 2026-07-30 |
+| Owner | Kamva (kamva@speccon.co.za) |
+| Original due | Before S03 begins |
+| Raised by | S02 dependency-security remediation |
+| Related | `tests/security/dev-dependency-exceptions.json`, `pnpm-workspace.yaml`, root/workspace `package.json` files |
 
-## Why
+## What changed
 
-Six advisories currently reported by unscoped `pnpm audit` are all rooted in the
-test toolchain. None of them affect any production dependency tree —
-`pnpm audit --prod` is clean of high and critical findings, and that gate
-(`tests/security/dependencies.test.ts`) stays unchanged. They cannot be closed
-by a patch bump because `vitest` 2.x pins `vite` `^5`, so `vite` cannot move
-alone and `vitest` cannot move without a major migration.
+The original maintenance target was `vitest >=3.2.6` and `vite >=6.4.3`. During implementation,
+`vitest 3.x` cleared the critical Vitest advisory but still left the coverage-tooling
+`test-exclude -> glob -> minimatch -> brace-expansion` path in the lockfile. The migration therefore
+moved to Vitest 4 instead, which removes that coverage-chain dependency entirely while keeping Vite on
+6.4.x.
 
-| Advisory                | Severity | Module           | Needs      |
-| ----------------------- | -------- | ---------------- | ---------- |
-| `GHSA-5xrq-8626-4rwp`   | critical | `vitest`         | ≥ 3.2.6    |
-| `GHSA-fx2h-pf6j-xcff`   | high     | `vite`           | ≥ 6.4.3    |
-| `GHSA-v6wh-96g9-6wx3`   | moderate | `vite`           | ≥ 6.4.3    |
-| `GHSA-4w7w-66w2-5vf9`   | moderate | `vite`           | ≥ 6.4.2    |
-| `GHSA-67mh-4wv8-2f99`   | moderate | `esbuild`        | ≥ 0.24.3 (moves with vite) |
-| `GHSA-mh99-v99m-4gvg`   | high     | `brace-expansion` | ≥ 5.0.8 — *partially* fixed; the `glob@10 → minimatch@9` chain under `@vitest/coverage-v8` is cleared by this migration, the `eslint → minimatch@3` chain is not (see below) |
+Updated direct dev dependencies across the workspaces that declare them:
 
-Until this lands, each advisory is covered by a named, dated, owned entry in
-`tests/security/dev-dependency-exceptions.json`, enforced by
-`tests/security/devDependencyExceptions.test.ts` (unnamed dev advisories fail
-the suite) and justified by
-`tests/security/devServerExposure.test.ts` (no Vitest UI server, no Vite dev
-server, loopback-only Playwright web server).
+- `vitest` -> `^4.1.10`
+- `@vitest/coverage-v8` -> `^4.1.10`
+- `vite` -> `^6.4.3`
+- `@vitejs/plugin-react` -> `^4.7.0`
 
-## What needs to happen
+The migration also updated Vitest 4 pool configuration in root DB/integration/coverage configs:
+`poolOptions: { forks: { singleFork: true } }` became the Vitest 4 top-level
+`forks: { singleFork: true }` form.
 
-Upgrade as one atomic change — these four move together or not at all:
+## Closed advisories
 
-- `vitest` `^2.1.8` → `^3.2.6` or later
-- `@vitest/coverage-v8` → matching 3.x line
-- `vite` → `^6.4.3` or later
-- `@vitejs/plugin-react` → the release compatible with vite 6
+Unscoped `pnpm audit` no longer reports the original Vitest/Vite/esbuild advisories:
 
-Across all workspace packages that declare them:
+| Advisory | Prior severity | Module | Closure |
+| --- | --- | --- | --- |
+| `GHSA-5xrq-8626-4rwp` | critical | `vitest` | Cleared by Vitest 4 |
+| `GHSA-fx2h-pf6j-xcff` | high | `vite` | Cleared by Vite `^6.4.3` |
+| `GHSA-v6wh-96g9-6wx3` | moderate | `vite` | Cleared by Vite `^6.4.3` |
+| `GHSA-4w7w-66w2-5vf9` | moderate | `vite` | Cleared by Vite `^6.4.3` |
+| `GHSA-67mh-4wv8-2f99` | moderate | `esbuild` | Cleared by the Vite/Vitest dependency graph |
 
-- `package.json` (root: `vitest`, `@vitest/coverage-v8`, `@vitejs/plugin-react`)
-- `apps/web/package.json` (`vitest`, `@vitest/coverage-v8`, `@vitejs/plugin-react`)
-- `apps/api/package.json` (`vitest`)
-- `apps/worker/package.json` (`vitest`)
-- `packages/database/package.json` (`vitest`)
-- plus any remaining `packages/*` manifest that gains `vitest` before the work starts
+Their corresponding entries were deleted from `tests/security/dev-dependency-exceptions.json`, and
+the security suite now enforces that they stay deleted.
 
-Config surfaces to review for vitest 3 breaking changes:
+## Remaining advisory deliberately left open
 
-- `vitest.shared.mjs` and the six root configs (`vitest.unit`, `vitest.contract`,
-  `vitest.db`, `vitest.integration`, `vitest.security`, `vitest.coverage`)
-- `apps/web/vitest.config.ts`
-- coverage thresholds and reporter wiring (v8 provider options moved in 3.x)
-- `workspace`/`projects` configuration semantics, `environmentMatchGlobs`
-  deprecations, and default pool changes
+`GHSA-mh99-v99m-4gvg` (`brace-expansion`) remains in the development-only exception register, but its
+scope is now narrower:
 
-## Acceptance criteria
+- `pnpm why brace-expansion` shows vulnerable `brace-expansion@1.1.16` only through the ESLint /
+  `minimatch@3` development-tooling chain.
+- The former `@vitest/coverage-v8 -> test-exclude -> glob -> minimatch` chain is gone.
+- `brace-expansion@5.0.8` is present for the modern `minimatch@10` chain.
+- `pnpm audit --prod` remains clean.
 
-1. `pnpm audit` (unscoped) reports zero critical and zero high findings for
-   `vitest`, `vite` and `esbuild`.
-2. `pnpm audit --prod` still reports zero critical and zero high (unchanged
-   production gate).
-3. `pnpm why brace-expansion` shows the `minimatch@9` chain gone; only the
-   eslint `minimatch@3` chain may remain.
-4. The corresponding entries are **deleted** from
-   `tests/security/dev-dependency-exceptions.json` (the register's stale-entry
-   assertion will fail until they are).
-5. Full gate green with no regression from the S02 baseline: platform unit 170,
-   web unit 245, contract 59, db 19, integration 20, e2e 14/14, a11y 9/9,
-   coverage ≥ 85% functions in both packages.
+This residual ESLint-chain exception remains owned and dated in
+`tests/security/dev-dependency-exceptions.json`. It should be removed only when ESLint's remaining
+`minimatch@3` chain resolves to `brace-expansion >=5.0.8` (expected to require an ESLint major-line
+upgrade). Verify with `pnpm why brace-expansion` before deleting the exception and reassessing the
+`brace-expansion@5` override in `pnpm-workspace.yaml`.
+
+## Acceptance evidence
+
+Recorded during implementation on 2026-07-30:
+
+1. `pnpm audit` reports zero `vitest`, `vite`, or `esbuild` advisories; the only high finding is the
+   known dev-only ESLint `brace-expansion` chain.
+2. `pnpm audit --prod --json` reports zero advisories.
+3. `pnpm why brace-expansion` shows the coverage-tooling `minimatch@9` chain gone; only the ESLint
+   `minimatch@3` chain remains vulnerable.
+4. `pnpm test:security` passes (126/126).
+5. `pnpm test:coverage` passes with Vitest 4 after adding real coverage for the newly counted branch
+   surfaces: platform 93.53% statements / 80.63% branches / 95.16% functions / 95.66% lines; web
+   89.44% statements / 80.25% branches / 87.39% functions / 91.04% lines.
 
 ## Follow-on, separately scoped
 
-The residual `brace-expansion` chain under eslint is **not** part of this item.
-`eslint@9` pins `minimatch@^3.1.5` itself, and `@eslint/eslintrc` still does
-too, so clearing it needs an eslint 10 major upgrade
-(`@eslint/config-array` ≥ 0.23.x moved to `minimatch@^10`). Raise that as its
-own maintenance item; do not fold it into this migration.
+The residual `brace-expansion` path under ESLint is not part of this Vitest/Vite migration. It is a
+separate toolchain-maintenance item because `eslint@9` still depends on `minimatch@^3.1.5` through
+its own packages. Track it as an ESLint major-line upgrade / exception-removal task before the
+2026-08-26 review date in `tests/security/dev-dependency-exceptions.json`.

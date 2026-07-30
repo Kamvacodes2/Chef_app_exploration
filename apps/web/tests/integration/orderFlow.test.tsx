@@ -273,6 +273,95 @@ describe("order flow end-to-end", () => {
     expect(buildBookingRequestPayload(s)).toMatchObject({ planSelection: expectedPlanSelection });
   });
 
+  it("rejects incomplete booking payloads before sending a request", () => {
+    const validState: OrderState = {
+      ...INITIAL_ORDER_STATE,
+      main,
+      date: "2026-08-15",
+      time: "18:30",
+      address: { estate: "", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+    };
+
+    expect(() => buildBookingRequestPayload({ ...validState, main: null })).toThrow(
+      "Choose a main meal",
+    );
+    expect(() => buildBookingRequestPayload({ ...validState, date: "" })).toThrow("Choose a date");
+    expect(() => buildBookingRequestPayload({ ...validState, time: null })).toThrow(
+      "Choose a time",
+    );
+    expect(() =>
+      buildBookingRequestPayload({
+        ...validState,
+        address: { ...validState.address, street: "  " },
+      }),
+    ).toThrow("Street address is required");
+    expect(() =>
+      buildBookingRequestPayload({
+        ...validState,
+        address: { ...validState.address, area: " " },
+      }),
+    ).toThrow("Area or suburb is required");
+    expect(() =>
+      buildBookingRequestPayload({
+        ...validState,
+        contact: { ...validState.contact, name: " " },
+      }),
+    ).toThrow("Contact name is required");
+    expect(() =>
+      buildBookingRequestPayload({
+        ...validState,
+        contact: { ...validState.contact, email: "not-an-email" },
+      }),
+    ).toThrow("A valid contact email is required");
+    expect(() =>
+      buildBookingRequestPayload({
+        ...validState,
+        contact: { ...validState.contact, phone: "12" },
+      }),
+    ).toThrow("A valid contact phone number is required");
+  });
+
+  it("normalizes guest phone formats and omits duplicate contact for account checkout", () => {
+    const validState: OrderState = {
+      ...INITIAL_ORDER_STATE,
+      main,
+      date: "2026-08-15",
+      time: "18:30",
+      address: {
+        estate: " Dainfern ",
+        unit: " 42 ",
+        street: " 12 Jacaranda Ave ",
+        area: " Fourways ",
+      },
+      contact: {
+        name: " Test Customer ",
+        email: " CUSTOMER@EXAMPLE.TEST ",
+        phone: "0027821234567",
+      },
+    };
+
+    expect(buildBookingRequestPayload(validState).contact).toEqual({
+      name: "Test Customer",
+      email: "customer@example.test",
+      phone: "+27821234567",
+    });
+    expect(
+      buildBookingRequestPayload({
+        ...validState,
+        contact: { ...validState.contact, phone: "+27821234567" },
+      }).contact?.phone,
+    ).toBe("+27821234567");
+    expect(buildBookingRequestPayload(validState, { useAccountContact: true })).not.toHaveProperty(
+      "contact",
+    );
+    expect(buildBookingRequestPayload(validState).address).toMatchObject({
+      estate: "Dainfern",
+      unit: "42",
+      street: "12 Jacaranda Ave",
+      area: "Fourways",
+    });
+  });
   it("sends the backend booking request with an idempotency key before confirming", async () => {
     const fetchImpl = vi.fn(
       async () =>

@@ -29,7 +29,7 @@ export default defineConfig({
     testTimeout: 180_000,
     hookTimeout: 240_000,
     pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    forks: { singleFork: true },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
