@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { getChefmateApiUrl } from "@/lib/env";
 import { readApiErrorMessage } from "@/lib/apiError";
+import { platformRoleSchema } from "@/features/platform/api/platformClient";
 
 const authUserSchema = z.object({
   id: z.string().min(1),
   email: z.string().email(),
   displayName: z.string().min(1),
-  roles: z.array(z.enum(["CUSTOMER", "COOK", "ADMIN", "SUPPORT"])),
+  roles: z.array(platformRoleSchema),
   status: z.enum(["ACTIVE", "SUSPENDED"]),
   emailVerifiedAt: z.string().nullable(),
   createdAt: z.string(),

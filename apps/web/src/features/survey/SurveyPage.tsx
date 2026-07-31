@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { getChefmateApiUrl } from "@/lib/env";
 
-type SurveyRole = "CUSTOMER" | "COOK";
+// This survey payload is fetched directly (no zod schema, no `platformRoleSchema`
+// normalization) from a separate, unauthenticated tokenized survey endpoint, so
+// it is not guaranteed to have passed through the platformClient compatibility
+// layer. "COOK" is kept here defensively as a legacy fallback value the backend
+// may still literally send on this independent path.
+type SurveyRole = "CUSTOMER" | "CHEF" | "COOK";
 
 interface SurveyDetails {
   readonly bookingReference: string;
@@ -141,8 +146,9 @@ export function SurveyPage({
       ),
     [details, ratingQuestions, ratings],
   );
-  const heading =
-    details?.recipientRole === "COOK" ? "How did the session go?" : "How was your food?";
+  const heading = ["CHEF", "COOK"].includes(details?.recipientRole ?? "CUSTOMER")
+    ? "How did the session go?"
+    : "How was your food?";
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
