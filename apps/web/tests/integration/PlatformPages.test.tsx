@@ -24,6 +24,7 @@ const api = vi.hoisted(() => ({
   markChefApplicationInterviewConducted: vi.fn(),
   markChefEnRoute: vi.fn(),
   submitChefApplication: vi.fn(),
+  updateChefApplication: vi.fn(),
   updateChefBankDetails: vi.fn(),
   updateChefProfile: vi.fn(),
 }));
@@ -69,7 +70,7 @@ const chefProfile = {
 const offer = {
   id: "offer-1",
   bookingRequestId: "booking-1",
-  cookUserId: "chef-1",
+  chefUserId: "chef-1",
   status: "PENDING",
   rank: 1,
   distanceKm: 4,
@@ -83,7 +84,6 @@ const offer = {
     scheduledDate: "2026-08-15",
     timeSlot: "18:30",
     serviceArea: "Fourways",
-    totalCents: 99500,
   },
 };
 
@@ -112,20 +112,14 @@ const booking = {
   contactPhone: "+27821234567",
   goalId: null,
   promotionCodeHash: null,
-  pricing: { subtotalCents: 99500, discountCents: 0, totalCents: 99500, items: [] },
   createdAt: "2026-07-30T09:00:00.000Z",
-  cook: {
-    id: "chef-1",
-    email: "nomsa@example.test",
-    displayName: "Nomsa Dlamini",
-    roles: ["COOK"],
-  },
   transitions: [],
 };
 
 describe("platform pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState(null, "", "/");
   });
 
   it("submits chef applications into the backend pipeline", async () => {
@@ -155,7 +149,7 @@ describe("platform pages", () => {
       id: "chef-1",
       email: "nomsa@example.test",
       displayName: "Nomsa Dlamini",
-      roles: ["COOK"],
+      roles: ["CHEF"],
       status: "ACTIVE",
       createdAt: "2026-07-30T08:00:00.000Z",
     });
@@ -167,6 +161,25 @@ describe("platform pages", () => {
       "/chef/portal",
     );
     expect(api.consumeChefMagicLink).toHaveBeenCalledWith("valid-magic-token");
+  });
+
+  it("consumes fragment chef magic links and clears the browser hash", async () => {
+    api.consumeChefMagicLink.mockResolvedValue({
+      id: "chef-1",
+      email: "nomsa@example.test",
+      displayName: "Nomsa Dlamini",
+      roles: ["CHEF"],
+      status: "ACTIVE",
+      createdAt: "2026-07-30T08:00:00.000Z",
+    });
+    window.history.replaceState(null, "", "/chef/magic-login#token=fragment-magic-token");
+
+    render(<ChefMagicLoginPage token={null} />);
+
+    await waitFor(() =>
+      expect(api.consumeChefMagicLink).toHaveBeenCalledWith("fragment-magic-token"),
+    );
+    expect(window.location.hash).toBe("");
   });
 
   it("connects chef portal offers, bank details, and session actions", async () => {
@@ -220,7 +233,7 @@ describe("platform pages", () => {
       customersCount: 3,
       chefsCount: 1,
       chefApplicationsCount: 1,
-      chefApplicationStatusCounts: { APPLIED: 1 },
+      chefApplicationStatusCounts: { APPROVED: 1 },
       bookingsThisMonthCount: 2,
       collectedThisMonthCents: 199000,
       chefPayableCents: 64675,
@@ -229,7 +242,8 @@ describe("platform pages", () => {
       communicationsSentCount: 1,
       whatsAppReady: false,
     });
-    api.fetchChefApplications.mockResolvedValue([application]);
+    const approvedApplication = { ...application, status: "APPROVED" as const };
+    api.fetchChefApplications.mockResolvedValue([approvedApplication]);
     api.fetchCustomers.mockResolvedValue([
       {
         id: "customer-1",
@@ -245,7 +259,7 @@ describe("platform pages", () => {
         id: "chef-1",
         email: "nomsa@example.test",
         displayName: "Nomsa Dlamini",
-        roles: ["COOK"],
+        roles: ["CHEF"],
         status: "ACTIVE",
         createdAt: "2026-07-30T08:00:00.000Z",
         profile: null,
@@ -263,8 +277,8 @@ describe("platform pages", () => {
       },
     ]);
     api.inviteChefApplication.mockResolvedValue({
-      application: { ...application, status: "INVITED" },
-      magicLinkUrl: "https://app.test/chef/magic-login?token=abc",
+      application: { ...approvedApplication, status: "INVITED" },
+      deliveryStatus: "QUEUED",
     });
     api.logWhatsAppPreview.mockResolvedValue({
       id: "log-1",
@@ -289,9 +303,52 @@ describe("platform pages", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Send portal access" }));
     await waitFor(() => expect(api.inviteChefApplication).toHaveBeenCalledWith("application-1"));
-    expect(await screen.findByRole("status")).toHaveTextContent("magic link created");
+    expect(await screen.findByRole("status")).toHaveTextContent("invite queued");
 
     fireEvent.click(screen.getByRole("button", { name: "Log WhatsApp preview" }));
     await waitFor(() => expect(api.logWhatsAppPreview).toHaveBeenCalled());
+  });
+
+  it("approves an interview-conducted chef application from the admin dashboard", async () => {
+    api.fetchAdminDashboard.mockResolvedValue({
+      customersCount: 0,
+      chefsCount: 0,
+      chefApplicationsCount: 1,
+      chefApplicationStatusCounts: { INTERVIEW_CONDUCTED: 1 },
+      bookingsThisMonthCount: 0,
+      collectedThisMonthCents: 0,
+      chefPayableCents: 0,
+      platformRevenueCents: 0,
+      communicationsQueuedCount: 0,
+      communicationsSentCount: 0,
+      whatsAppReady: false,
+    });
+    const interviewedApplication = {
+      ...application,
+      status: "INTERVIEW_CONDUCTED" as const,
+      interviewConductedAt: "2026-07-30T09:00:00.000Z",
+    };
+    api.fetchChefApplications.mockResolvedValue([interviewedApplication]);
+    api.fetchCustomers.mockResolvedValue([]);
+    api.fetchChefs.mockResolvedValue([]);
+    api.fetchCommunicationLogs.mockResolvedValue([]);
+    api.fetchPopularMeals.mockResolvedValue([]);
+    api.updateChefApplication.mockResolvedValue({
+      ...interviewedApplication,
+      status: "APPROVED",
+    });
+
+    render(<AdminDashboardPage />);
+
+    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await waitFor(() =>
+      expect(api.updateChefApplication).toHaveBeenCalledWith("application-1", {
+        status: "APPROVED",
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("has been approved");
+    expect(await screen.findByText(/Status: APPROVED/)).toBeInTheDocument();
   });
 });

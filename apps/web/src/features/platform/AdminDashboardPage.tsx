@@ -11,6 +11,7 @@ import {
   inviteChefApplication,
   logWhatsAppPreview,
   markChefApplicationInterviewConducted,
+  updateChefApplication,
   type AdminDashboard,
   type ChefApplication,
   type ChefSummary,
@@ -81,13 +82,20 @@ export function AdminDashboardPage() {
     });
   };
 
+  const approve = (application: ChefApplication): void => {
+    void run("approve-" + application.id, async () => {
+      const updated = await updateChefApplication(application.id, { status: "APPROVED" });
+      setApplications((current) => replaceApplication(current, updated));
+      setNotice(`${application.fullName}'s application has been approved.`);
+    });
+  };
+
   const invite = (application: ChefApplication): void => {
+    if (application.status !== "APPROVED") return;
     void run("invite-" + application.id, async () => {
       const result = await inviteChefApplication(application.id);
       setApplications((current) => replaceApplication(current, result.application));
-      setNotice(
-        `Chef portal magic link created for ${application.fullName}: ${result.magicLinkUrl}`,
-      );
+      setNotice(`Chef portal invite queued for ${application.fullName}.`);
       await load();
     });
   };
@@ -174,7 +182,19 @@ export function AdminDashboardPage() {
                       Mark interviewed
                     </Button>
                     <Button
-                      disabled={busy === "invite-" + application.id}
+                      disabled={
+                        application.status !== "INTERVIEW_CONDUCTED" ||
+                        busy === "approve-" + application.id
+                      }
+                      kind="secondary"
+                      onClick={() => approve(application)}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      disabled={
+                        application.status !== "APPROVED" || busy === "invite-" + application.id
+                      }
                       onClick={() => invite(application)}
                     >
                       Send portal access
