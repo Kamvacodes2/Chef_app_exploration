@@ -86,6 +86,7 @@ describe("MealSelect", () => {
 
     fireEvent.change(search, { target: { value: "tzatziki" } });
     expect(screen.getByRole("button", { name: /Chicken Gyro Bowl/ })).toBeInTheDocument();
+    expect(screen.queryByText("Ingredients:")).not.toBeInTheDocument();
 
     fireEvent.change(search, { target: { value: "not-on-the-menu-yet" } });
     expect(screen.getByText("No exact match yet.")).toBeInTheDocument();

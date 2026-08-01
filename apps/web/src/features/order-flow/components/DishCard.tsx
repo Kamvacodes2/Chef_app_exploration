@@ -94,49 +94,43 @@ export function DishCard({
           </p>
         </div>
         {detail ? (
-          <>
-            <p className="line-clamp-2 text-[11px] leading-relaxed text-[var(--color-charcoal)]/70">
-              <span className="font-bold text-[var(--color-oxblood)]">Ingredients: </span>
-              {detail.ingredients.join(", ")}
-            </p>
-            <dl
-              className="grid grid-cols-4 gap-1.5 border-t border-[var(--color-oxblood)]/10 pt-2.5 text-center"
-              aria-label={`Nutrition for ${item.name}`}
-            >
-              <div>
-                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
-                  Cal
-                </dt>
-                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
-                  {detail.nutrition.calories}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
-                  Protein
-                </dt>
-                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
-                  {detail.nutrition.protein}g
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
-                  Carbs
-                </dt>
-                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
-                  {detail.nutrition.carbs}g
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
-                  Fat
-                </dt>
-                <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
-                  {detail.nutrition.fat}g
-                </dd>
-              </div>
-            </dl>
-          </>
+          <dl
+            className="grid grid-cols-4 gap-1.5 border-t border-[var(--color-oxblood)]/10 pt-2.5 text-center"
+            aria-label={`Nutrition for ${item.name}`}
+          >
+            <div>
+              <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
+                Cal
+              </dt>
+              <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
+                {detail.nutrition.calories}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
+                Protein
+              </dt>
+              <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
+                {detail.nutrition.protein}g
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
+                Carbs
+              </dt>
+              <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
+                {detail.nutrition.carbs}g
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]/55">
+                Fat
+              </dt>
+              <dd className="text-[11px] font-bold text-[var(--color-oxblood)]">
+                {detail.nutrition.fat}g
+              </dd>
+            </div>
+          </dl>
         ) : null}
       </div>
     </motion.button>
