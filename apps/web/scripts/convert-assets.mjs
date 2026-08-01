@@ -191,6 +191,17 @@ const SHOWCASE_SOURCES = [
   },
 ];
 
+// Landing-page hero carousel "story" images (LANDING_ASSETS in
+// src/features/landing/content.ts) are full-bleed photographic PNGs with no
+// alpha channel, all matching the same 1448x1086 (4:3) frame so the carousel
+// can swap between them under object-fit: cover without per-slide cropping.
+const HERO_STORY_SOURCES = [
+  {
+    src: "Assets/Tiniefied New Landing Page/come_home_switchoff.jpg",
+    out: "public/images/chefmate/story-after-work.png",
+  },
+];
+
 const LOOP_SOURCES = [
   { src: "Assets/Design/1.png", out: "public/images/loop/meal-1.webp" },
   { src: "Assets/Design/2.png", out: "public/images/loop/meal-2.webp" },
@@ -252,6 +263,23 @@ async function convertShowcaseHands({ src, out }) {
     withoutEnlargement: true,
   });
   await image.webp({ quality: 82, alphaQuality: 100 }).toFile(outPath);
+  const meta = await sharp(outPath).metadata();
+  console.log(`[ok] ${out} (${meta.width}x${meta.height}, alpha=${meta.hasAlpha})`);
+}
+
+async function convertHeroStory({ src, out }) {
+  const srcPath = join(ROOT, src);
+  const outPath = join(ROOT, out);
+  if (!existsSync(srcPath)) {
+    console.warn(`[skip] missing source: ${src}`);
+    return;
+  }
+  await ensureDir(outPath);
+  await sharp(srcPath)
+    .resize({ width: 1448, withoutEnlargement: true })
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .png({ compressionLevel: 9, quality: 80, palette: true })
+    .toFile(outPath);
   const meta = await sharp(outPath).metadata();
   console.log(`[ok] ${out} (${meta.width}x${meta.height}, alpha=${meta.hasAlpha})`);
 }
@@ -458,6 +486,10 @@ async function main() {
   console.log("Converting intro banner images...");
   for (const intro of INTRO_SOURCES) {
     await convertIntro(intro);
+  }
+  console.log("Converting landing hero story images...");
+  for (const heroStory of HERO_STORY_SOURCES) {
+    await convertHeroStory(heroStory);
   }
   console.log("Converting hero loop meals...");
   for (const loop of LOOP_SOURCES) {

@@ -11,7 +11,7 @@ export const LANDING_ASSETS = {
   },
   afterWork: {
     src: "/images/chefmate/story-after-work.png",
-    alt: "A customer relaxing on the sofa after work while a chef cooks dinner in the kitchen",
+    alt: "A customer smiling at her phone on the sofa, feet up, while a Chefmate chef preps dinner in the kitchen behind her",
   },
   couple: {
     src: "/images/chefmate/story-couple-time.png",
