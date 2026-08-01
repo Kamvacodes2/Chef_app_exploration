@@ -31,6 +31,16 @@ const api = vi.hoisted(() => ({
 
 vi.mock("@/features/platform/api/platformClient", () => api);
 
+const featuredMealsApi = vi.hoisted(() => ({
+  FEATURED_MEAL_COUNT: 6,
+  fetchCatalogMeals: vi.fn().mockResolvedValue([]),
+  fetchFeaturedMeals: vi.fn(),
+  updateFeaturedMeals: vi.fn(),
+  FeaturedMealsError: class extends Error {},
+}));
+
+vi.mock("@/features/featured-meals/api/featuredMealsClient", () => featuredMealsApi);
+
 const application = {
   id: "application-1",
   fullName: "Nomsa Dlamini",
@@ -119,6 +129,7 @@ const booking = {
 describe("platform pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    featuredMealsApi.fetchCatalogMeals.mockResolvedValue([]);
     window.history.replaceState(null, "", "/");
   });
 

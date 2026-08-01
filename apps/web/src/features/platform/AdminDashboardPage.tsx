@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
+import { FeaturedMealsPanel } from "./FeaturedMealsPanel";
 import {
   fetchAdminDashboard,
   fetchChefApplications,
@@ -232,6 +233,10 @@ export function AdminDashboardPage() {
               ))}
             </div>
           </Panel>
+        </div>
+
+        <div className="mt-6">
+          <FeaturedMealsPanel />
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
