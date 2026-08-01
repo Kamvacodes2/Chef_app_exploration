@@ -108,10 +108,6 @@ const INTRO_SOURCES = [
 
 const GOAL_TILE_SOURCES = [
   {
-    src: "Assets/Tiles/chefmate-lose-weight-transparent-1024.png",
-    out: "public/images/goals/lose-weight.webp",
-  },
-  {
     src: "Assets/Tiles/chefmate-build-muscle-transparent.png",
     out: "public/images/goals/build-muscle.webp",
   },
@@ -339,6 +335,41 @@ async function convertIntro({ src, out }) {
   console.log(`[ok] ${out} (${meta.width}x${meta.height})`);
 }
 
+/**
+ * The lose-weight goal tile source (Assets/goal-icons/png/new_lose_weight.jpg)
+ * is a flattened JPG with a solid black background rather than a true
+ * transparent PNG like the other goal tile sources, so it needs a manual
+ * chroma-key pass (near-black -> transparent) before trim/resize/encode.
+ */
+async function convertGoalTileChromaKey({ src, out }) {
+  const srcPath = join(ROOT, src);
+  const outPath = join(ROOT, out);
+  if (!existsSync(srcPath)) {
+    console.warn(`[skip] missing source: ${src}`);
+    return;
+  }
+  await ensureDir(outPath);
+  const { data, info } = await sharp(srcPath).raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const rgba = Buffer.alloc(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const r = data[i * channels];
+    const g = data[i * channels + 1];
+    const b = data[i * channels + 2];
+    rgba[i * 4] = r;
+    rgba[i * 4 + 1] = g;
+    rgba[i * 4 + 2] = b;
+    rgba[i * 4 + 3] = Math.max(r, g, b) < 25 ? 0 : 255;
+  }
+  await sharp(rgba, { raw: { width, height, channels: 4 } })
+    .trim({ threshold: 10 })
+    .resize({ width: 900, withoutEnlargement: true })
+    .webp({ quality: 85, alphaQuality: 100 })
+    .toFile(outPath);
+  const meta = await sharp(outPath).metadata();
+  console.log(`[ok] ${out} (${meta.width}x${meta.height}, alpha=${meta.hasAlpha})`);
+}
+
 async function convertBrandLogo() {
   const srcPath = join(ROOT, "Assets/Logo/chef_logo_1.png");
   if (!existsSync(srcPath)) {
@@ -419,6 +450,11 @@ async function main() {
   for (const tile of GOAL_TILE_SOURCES) {
     await convertIllustration(tile);
   }
+  console.log("Converting lose-weight goal tile (chroma-key)...");
+  await convertGoalTileChromaKey({
+    src: "Assets/goal-icons/png/new_lose_weight.jpg",
+    out: "public/images/goals/lose-weight.webp",
+  });
   console.log("Converting intro banner images...");
   for (const intro of INTRO_SOURCES) {
     await convertIntro(intro);
