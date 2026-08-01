@@ -172,7 +172,7 @@ describe("LandingPage", () => {
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     expect(
-      await screen.findByRole("heading", { name: "What are you feeding?" }),
+      await screen.findByRole("heading", { name: "How can chefmate help?" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "goal");
   });
@@ -208,7 +208,7 @@ describe("LandingPage", () => {
     fireEvent.click(screen.getByRole("link", { name: "Explore meals" }));
 
     expect(
-      await screen.findByRole("heading", { name: "What are you feeding?" }),
+      await screen.findByRole("heading", { name: "How can chefmate help?" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Find what you want to eat." }),
