@@ -43,9 +43,7 @@ describe("PopularMealsGrid", () => {
     render(<PopularMealsGrid />);
 
     await waitFor(() => expect(screen.getAllByTestId("popular-meal-card")).toHaveLength(6));
-    expect(api.fetchCatalogMeals).toHaveBeenCalledWith(
-      expect.objectContaining({ featured: true }),
-    );
+    expect(api.fetchCatalogMeals).toHaveBeenCalledWith(expect.objectContaining({ featured: true }));
     expect(screen.getAllByTestId("popular-meal-card")[0]).toHaveAttribute(
       "data-order-meal-id",
       "a",

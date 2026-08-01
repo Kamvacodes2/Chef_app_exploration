@@ -454,7 +454,11 @@ async function convertGoalTileChromaKey({ src, out }) {
 
 async function convertBrandLogo() {
   const src = "Assets/Logo/chef_logo_1.png";
-  const outs = ["public/images/brand/logo.webp", "public/images/brand/logo-icon.webp", "src/app/icon.png"];
+  const outs = [
+    "public/images/brand/logo.webp",
+    "public/images/brand/logo-icon.webp",
+    "src/app/icon.png",
+  ];
 
   await convertIfChanged(src, outs, async () => {
     const srcPath = join(ROOT, src);

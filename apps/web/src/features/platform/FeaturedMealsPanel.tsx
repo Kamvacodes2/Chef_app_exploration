@@ -81,7 +81,10 @@ export function FeaturedMealsPanel(): ReactElement {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Featured meals</h2>
-        <p className="text-sm font-bold text-[var(--color-charcoal)]/70" data-testid="featured-count">
+        <p
+          className="text-sm font-bold text-[var(--color-charcoal)]/70"
+          data-testid="featured-count"
+        >
           {selected.length} / {FEATURED_MEAL_COUNT} selected
         </p>
       </div>
@@ -96,12 +99,18 @@ export function FeaturedMealsPanel(): ReactElement {
         </p>
       ) : null}
       {notice ? (
-        <p className="mt-4 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-900" role="status">
+        <p
+          className="mt-4 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-900"
+          role="status"
+        >
           {notice}
         </p>
       ) : null}
       {error ? (
-        <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900" role="alert">
+        <p
+          className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
