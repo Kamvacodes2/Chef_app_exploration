@@ -19,6 +19,22 @@ const customer = {
   createdAt: "2026-07-30T10:00:00.000Z",
 };
 
+const admin = {
+  ...customer,
+  id: "admin-1",
+  email: "admin@example.test",
+  displayName: "Test Admin",
+  roles: ["ADMIN"],
+};
+
+const chef = {
+  ...customer,
+  id: "chef-1",
+  email: "chef@example.test",
+  displayName: "Test Chef",
+  roles: ["CHEF"],
+};
+
 describe("AuthPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -64,6 +80,50 @@ describe("AuthPage", () => {
       password: "A-strong-password-2026",
     });
     expect(authApi.createCustomerAccount).not.toHaveBeenCalled();
+  });
+
+  it("signs in admins and offers a link to the admin dashboard", async () => {
+    authApi.signIn.mockResolvedValue(admin);
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: admin.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "A-strong-password-2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent(
+      "Signed in as Test Admin.",
+    );
+    expect(screen.getByRole("link", { name: "Go to admin dashboard" })).toHaveAttribute(
+      "href",
+      "/admin",
+    );
+    expect(screen.queryByRole("link", { name: "Book a chef" })).not.toBeInTheDocument();
+  });
+
+  it("signs in chefs and offers a link to the chef portal", async () => {
+    authApi.signIn.mockResolvedValue(chef);
+    render(<AuthPage />);
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: chef.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "A-strong-password-2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent(
+      "Signed in as Test Chef.",
+    );
+    expect(screen.getByRole("link", { name: "Go to chef portal" })).toHaveAttribute(
+      "href",
+      "/chef/portal",
+    );
+    expect(screen.queryByRole("link", { name: "Book a chef" })).not.toBeInTheDocument();
   });
 
   it("creates customer accounts through the backend auth client", async () => {

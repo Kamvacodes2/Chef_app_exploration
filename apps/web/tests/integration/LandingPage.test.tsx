@@ -2,6 +2,16 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LandingPage } from "@/features/landing/LandingPage";
 
+// The marquee live-fetches featured meals; an empty response keeps the static
+// in-demand fallback these assertions are written against.
+vi.mock("@/features/featured-meals/api/featuredMealsClient", () => ({
+  FEATURED_MEAL_COUNT: 6,
+  fetchCatalogMeals: vi.fn().mockResolvedValue([]),
+  fetchFeaturedMeals: vi.fn(),
+  updateFeaturedMeals: vi.fn(),
+  FeaturedMealsError: class extends Error {},
+}));
+
 describe("LandingPage", () => {
   beforeEach(() => {
     Object.defineProperty(Element.prototype, "scrollIntoView", {

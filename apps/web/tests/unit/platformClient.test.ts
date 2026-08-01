@@ -17,11 +17,22 @@ import {
   logWhatsAppPreview,
   markChefApplicationInterviewConducted,
   markChefEnRoute,
+  platformRoleSchema,
   submitChefApplication,
   updateChefApplication,
   updateChefBankDetails,
   updateChefProfile,
 } from "@/features/platform/api/platformClient";
+import type { z } from "zod";
+
+// Compile-time proof that the normalized output type excludes the legacy "COOK"
+// literal even though the schema still parses it on input. If "COOK" were still
+// part of PlatformRole, `_cookExcludedCheck`'s type would be
+// "FAIL_COOK_STILL_IN_TYPE" and this assignment would fail to typecheck.
+type PlatformRole = z.infer<typeof platformRoleSchema>;
+type _CookExcludedCheck = "COOK" extends PlatformRole ? "FAIL_COOK_STILL_IN_TYPE" : "OK";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _cookExcludedCheck: _CookExcludedCheck = "OK";
 
 const application = {
   id: "application-1",
@@ -46,7 +57,7 @@ const user = {
   id: "chef-1",
   email: "nomsa@example.test",
   displayName: "Nomsa Dlamini",
-  roles: ["COOK"],
+  roles: ["CHEF"],
   status: "ACTIVE",
   emailVerifiedAt: null,
   createdAt: "2026-07-30T08:00:00.000Z",
@@ -103,34 +114,14 @@ const booking = {
   contactPhone: "+27821234567",
   goalId: null,
   promotionCodeHash: null,
-  pricing: {
-    subtotalCents: 99500,
-    discountCents: 0,
-    totalCents: 99500,
-    items: [
-      {
-        kind: "main",
-        slug: "chicken-peri-peri",
-        name: "Chicken peri-peri",
-        priceCents: 0,
-        sortOrder: 1,
-      },
-    ],
-  },
   createdAt: "2026-07-30T09:00:00.000Z",
-  cook: {
-    id: "chef-1",
-    email: "nomsa@example.test",
-    displayName: "Nomsa Dlamini",
-    roles: ["COOK"],
-  },
   transitions: [],
 };
 
 const offer = {
   id: "offer-1",
   bookingRequestId: "booking-1",
-  cookUserId: "chef-1",
+  chefUserId: "chef-1",
   status: "PENDING",
   rank: 1,
   distanceKm: 4.3,
@@ -144,7 +135,6 @@ const offer = {
     scheduledDate: "2026-08-15",
     timeSlot: "18:30",
     serviceArea: "Fourways",
-    totalCents: 99500,
   },
 };
 
@@ -152,12 +142,9 @@ const earning = {
   id: "earning-1",
   bookingRequestId: "booking-1",
   bookingReference: "CM-0001",
-  cookUserId: "chef-1",
-  cookDisplayName: "Nomsa Dlamini",
-  grossCents: 99500,
+  chefUserId: "chef-1",
+  chefDisplayName: "Nomsa Dlamini",
   chefPayoutCents: 64675,
-  platformRevenueCents: 34825,
-  chefPayoutShareBasisPoints: 6500,
   status: "PENDING",
   payoutReference: null,
   createdAt: "2026-08-15T20:00:00.000Z",
@@ -199,12 +186,25 @@ describe("platformClient", () => {
         baseUrl: "http://api.test",
         fetchImpl,
       }),
-    ).resolves.toMatchObject({ email: user.email, roles: ["COOK"] });
+    ).resolves.toMatchObject({ email: user.email, roles: ["CHEF"] });
 
     expect(fetchImpl).toHaveBeenCalledWith(
       "http://api.test/api/v1/chef/magic-login",
       expect.objectContaining({ method: "POST", credentials: "include" }),
     );
+  });
+
+  it("normalizes a legacy COOK role from the real backend into CHEF", async () => {
+    const fetchImpl = mockFetch({
+      data: { user: { ...user, roles: ["COOK"] } },
+    });
+
+    await expect(
+      consumeChefMagicLink("signed-token-for-chef-portal", {
+        baseUrl: "http://api.test",
+        fetchImpl,
+      }),
+    ).resolves.toMatchObject({ email: user.email, roles: ["CHEF"] });
   });
 
   it("saves chef profile and bank details against the chef portal endpoints", async () => {
@@ -319,7 +319,7 @@ describe("platformClient", () => {
         jsonResponse({
           data: {
             application: { ...application, status: "INVITED" },
-            magicLinkUrl: "https://app.test/chef/magic-login?token=abc",
+            deliveryStatus: "QUEUED",
           },
         }),
       )
@@ -333,7 +333,7 @@ describe("platformClient", () => {
     await expect(
       inviteChefApplication("application-1", { baseUrl: "http://api.test", fetchImpl }),
     ).resolves.toMatchObject({
-      magicLinkUrl: "https://app.test/chef/magic-login?token=abc",
+      deliveryStatus: "QUEUED",
     });
     await expect(
       logWhatsAppPreview(

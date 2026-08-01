@@ -80,7 +80,7 @@ describe("LandingHeroCarousel", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByAltText(
-        "A customer relaxing on the sofa after work while a chef cooks dinner in the kitchen",
+        "A customer smiling at her phone on the sofa, feet up, while a Chefmate chef preps dinner in the kitchen behind her",
       ),
     ).toBeInTheDocument();
   });

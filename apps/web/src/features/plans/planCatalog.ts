@@ -26,7 +26,7 @@ export const CHEFMATE_PLANS = [
     image: "/images/pricing-plans/chefmate_rhythm.jpg",
     alt: "A customer enjoying a quiet meal at home",
     overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(125, 44, 39, 0.22) 34%, rgba(111, 39, 33, 0.8) 58%, rgba(86, 27, 24, 0.98) 100%)",
-    featured: false,
+    featured: true,
     recurring: true,
   },
   {
@@ -41,7 +41,7 @@ export const CHEFMATE_PLANS = [
     image: "/images/pricing-plans/chefmate_family.jpg",
     alt: "A family sharing a relaxed dinner together at home",
     overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(122, 82, 39, 0.22) 34%, rgba(121, 75, 35, 0.76) 58%, rgba(86, 27, 24, 0.98) 100%)",
-    featured: true,
+    featured: false,
     recurring: true,
   },
   {

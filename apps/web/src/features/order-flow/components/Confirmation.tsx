@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import type { ReactElement, ReactNode } from "react";
 import { findChefmatePlan } from "@/features/plans/planCatalog";
 import { useOrder } from "../state/OrderContext";
@@ -50,10 +51,16 @@ export function Confirmation(): ReactElement {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 14 }}
-        className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-bone)] text-4xl text-[var(--color-oxblood)]"
+        className="flex items-center justify-center rounded-3xl bg-[var(--color-bone)] px-6 py-4"
         aria-hidden="true"
       >
-        &check;
+        <Image
+          src="/images/brand/logo.webp"
+          alt=""
+          width={965}
+          height={393}
+          className="h-10 w-auto"
+        />
       </motion.div>
 
       <div className="flex flex-col gap-2">

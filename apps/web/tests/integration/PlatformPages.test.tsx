@@ -24,11 +24,22 @@ const api = vi.hoisted(() => ({
   markChefApplicationInterviewConducted: vi.fn(),
   markChefEnRoute: vi.fn(),
   submitChefApplication: vi.fn(),
+  updateChefApplication: vi.fn(),
   updateChefBankDetails: vi.fn(),
   updateChefProfile: vi.fn(),
 }));
 
 vi.mock("@/features/platform/api/platformClient", () => api);
+
+const featuredMealsApi = vi.hoisted(() => ({
+  FEATURED_MEAL_COUNT: 6,
+  fetchCatalogMeals: vi.fn().mockResolvedValue([]),
+  fetchFeaturedMeals: vi.fn(),
+  updateFeaturedMeals: vi.fn(),
+  FeaturedMealsError: class extends Error {},
+}));
+
+vi.mock("@/features/featured-meals/api/featuredMealsClient", () => featuredMealsApi);
 
 const application = {
   id: "application-1",
@@ -69,7 +80,7 @@ const chefProfile = {
 const offer = {
   id: "offer-1",
   bookingRequestId: "booking-1",
-  cookUserId: "chef-1",
+  chefUserId: "chef-1",
   status: "PENDING",
   rank: 1,
   distanceKm: 4,
@@ -83,7 +94,6 @@ const offer = {
     scheduledDate: "2026-08-15",
     timeSlot: "18:30",
     serviceArea: "Fourways",
-    totalCents: 99500,
   },
 };
 
@@ -112,20 +122,15 @@ const booking = {
   contactPhone: "+27821234567",
   goalId: null,
   promotionCodeHash: null,
-  pricing: { subtotalCents: 99500, discountCents: 0, totalCents: 99500, items: [] },
   createdAt: "2026-07-30T09:00:00.000Z",
-  cook: {
-    id: "chef-1",
-    email: "nomsa@example.test",
-    displayName: "Nomsa Dlamini",
-    roles: ["COOK"],
-  },
   transitions: [],
 };
 
 describe("platform pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    featuredMealsApi.fetchCatalogMeals.mockResolvedValue([]);
+    window.history.replaceState(null, "", "/");
   });
 
   it("submits chef applications into the backend pipeline", async () => {
@@ -155,7 +160,7 @@ describe("platform pages", () => {
       id: "chef-1",
       email: "nomsa@example.test",
       displayName: "Nomsa Dlamini",
-      roles: ["COOK"],
+      roles: ["CHEF"],
       status: "ACTIVE",
       createdAt: "2026-07-30T08:00:00.000Z",
     });
@@ -167,6 +172,25 @@ describe("platform pages", () => {
       "/chef/portal",
     );
     expect(api.consumeChefMagicLink).toHaveBeenCalledWith("valid-magic-token");
+  });
+
+  it("consumes fragment chef magic links and clears the browser hash", async () => {
+    api.consumeChefMagicLink.mockResolvedValue({
+      id: "chef-1",
+      email: "nomsa@example.test",
+      displayName: "Nomsa Dlamini",
+      roles: ["CHEF"],
+      status: "ACTIVE",
+      createdAt: "2026-07-30T08:00:00.000Z",
+    });
+    window.history.replaceState(null, "", "/chef/magic-login#token=fragment-magic-token");
+
+    render(<ChefMagicLoginPage token={null} />);
+
+    await waitFor(() =>
+      expect(api.consumeChefMagicLink).toHaveBeenCalledWith("fragment-magic-token"),
+    );
+    expect(window.location.hash).toBe("");
   });
 
   it("connects chef portal offers, bank details, and session actions", async () => {
@@ -220,7 +244,7 @@ describe("platform pages", () => {
       customersCount: 3,
       chefsCount: 1,
       chefApplicationsCount: 1,
-      chefApplicationStatusCounts: { APPLIED: 1 },
+      chefApplicationStatusCounts: { APPROVED: 1 },
       bookingsThisMonthCount: 2,
       collectedThisMonthCents: 199000,
       chefPayableCents: 64675,
@@ -229,7 +253,8 @@ describe("platform pages", () => {
       communicationsSentCount: 1,
       whatsAppReady: false,
     });
-    api.fetchChefApplications.mockResolvedValue([application]);
+    const approvedApplication = { ...application, status: "APPROVED" as const };
+    api.fetchChefApplications.mockResolvedValue([approvedApplication]);
     api.fetchCustomers.mockResolvedValue([
       {
         id: "customer-1",
@@ -245,7 +270,7 @@ describe("platform pages", () => {
         id: "chef-1",
         email: "nomsa@example.test",
         displayName: "Nomsa Dlamini",
-        roles: ["COOK"],
+        roles: ["CHEF"],
         status: "ACTIVE",
         createdAt: "2026-07-30T08:00:00.000Z",
         profile: null,
@@ -263,8 +288,8 @@ describe("platform pages", () => {
       },
     ]);
     api.inviteChefApplication.mockResolvedValue({
-      application: { ...application, status: "INVITED" },
-      magicLinkUrl: "https://app.test/chef/magic-login?token=abc",
+      application: { ...approvedApplication, status: "INVITED" },
+      deliveryStatus: "QUEUED",
     });
     api.logWhatsAppPreview.mockResolvedValue({
       id: "log-1",
@@ -289,9 +314,162 @@ describe("platform pages", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Send portal access" }));
     await waitFor(() => expect(api.inviteChefApplication).toHaveBeenCalledWith("application-1"));
-    expect(await screen.findByRole("status")).toHaveTextContent("magic link created");
+    expect(await screen.findByRole("status")).toHaveTextContent("invite queued");
 
+    fireEvent.click(screen.getByRole("tab", { name: "Communication controls" }));
     fireEvent.click(screen.getByRole("button", { name: "Log WhatsApp preview" }));
     await waitFor(() => expect(api.logWhatsAppPreview).toHaveBeenCalled());
+  });
+
+  it("approves an interview-conducted chef application from the admin dashboard", async () => {
+    api.fetchAdminDashboard.mockResolvedValue({
+      customersCount: 0,
+      chefsCount: 0,
+      chefApplicationsCount: 1,
+      chefApplicationStatusCounts: { INTERVIEW_CONDUCTED: 1 },
+      bookingsThisMonthCount: 0,
+      collectedThisMonthCents: 0,
+      chefPayableCents: 0,
+      platformRevenueCents: 0,
+      communicationsQueuedCount: 0,
+      communicationsSentCount: 0,
+      whatsAppReady: false,
+    });
+    const interviewedApplication = {
+      ...application,
+      status: "INTERVIEW_CONDUCTED" as const,
+      interviewConductedAt: "2026-07-30T09:00:00.000Z",
+    };
+    api.fetchChefApplications.mockResolvedValue([interviewedApplication]);
+    api.fetchCustomers.mockResolvedValue([]);
+    api.fetchChefs.mockResolvedValue([]);
+    api.fetchCommunicationLogs.mockResolvedValue([]);
+    api.fetchPopularMeals.mockResolvedValue([]);
+    api.updateChefApplication.mockResolvedValue({
+      ...interviewedApplication,
+      status: "APPROVED",
+    });
+
+    render(<AdminDashboardPage />);
+
+    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await waitFor(() =>
+      expect(api.updateChefApplication).toHaveBeenCalledWith("application-1", {
+        status: "APPROVED",
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("has been approved");
+    expect(await screen.findByText(/Status: APPROVED/)).toBeInTheDocument();
+  });
+
+  it("shows one admin section at a time and keeps the metrics strip visible while switching", async () => {
+    api.fetchAdminDashboard.mockResolvedValue({
+      customersCount: 3,
+      chefsCount: 1,
+      chefApplicationsCount: 1,
+      chefApplicationStatusCounts: { APPLIED: 1 },
+      bookingsThisMonthCount: 2,
+      collectedThisMonthCents: 199000,
+      chefPayableCents: 64675,
+      platformRevenueCents: 34825,
+      communicationsQueuedCount: 4,
+      communicationsSentCount: 1,
+      whatsAppReady: false,
+    });
+    api.fetchChefApplications.mockResolvedValue([application]);
+    api.fetchCustomers.mockResolvedValue([
+      {
+        id: "customer-1",
+        email: "customer@example.test",
+        displayName: "Test Customer",
+        roles: ["CUSTOMER"],
+        status: "ACTIVE",
+        createdAt: "2026-07-30T08:00:00.000Z",
+      },
+    ]);
+    api.fetchChefs.mockResolvedValue([]);
+    api.fetchCommunicationLogs.mockResolvedValue([]);
+    api.fetchPopularMeals.mockResolvedValue([
+      {
+        slug: "chicken-peri-peri",
+        name: "Chicken peri-peri",
+        kind: "main",
+        orderCount: 4,
+        grossCents: 398000,
+      },
+    ]);
+
+    render(<AdminDashboardPage />);
+
+    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+
+    // Default section is the chef applications pipeline; nothing else is rendered.
+    expect(screen.getByRole("heading", { name: "Chef applications pipeline" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Chef applications pipeline" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.queryByRole("heading", { name: "Customers" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Popular meals" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("featured-meals-panel")).not.toBeInTheDocument();
+
+    // Switching sections swaps the visible panel.
+    fireEvent.click(screen.getByRole("tab", { name: "Customers" }));
+    expect(screen.getByRole("heading", { name: "Customers" })).toBeInTheDocument();
+    expect(screen.getByText("Test Customer")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Chef applications pipeline" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Featured meals" }));
+    expect(await screen.findByTestId("featured-meals-panel")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Customers" })).not.toBeInTheDocument();
+
+    // The metrics strip stays mounted no matter which section is active.
+    expect(screen.getByText("Platform revenue")).toBeInTheDocument();
+    expect(screen.getByText("Comms queued/sent")).toBeInTheDocument();
+
+    // The single upfront fetch is not repeated when switching sections.
+    expect(api.fetchAdminDashboard).toHaveBeenCalledTimes(1);
+    expect(api.fetchCustomers).toHaveBeenCalledTimes(1);
+  });
+
+  it("moves between admin sections with arrow keys from the tablist", async () => {
+    api.fetchAdminDashboard.mockResolvedValue({
+      customersCount: 0,
+      chefsCount: 0,
+      chefApplicationsCount: 0,
+      chefApplicationStatusCounts: {},
+      bookingsThisMonthCount: 0,
+      collectedThisMonthCents: 0,
+      chefPayableCents: 0,
+      platformRevenueCents: 0,
+      communicationsQueuedCount: 0,
+      communicationsSentCount: 0,
+      whatsAppReady: false,
+    });
+    api.fetchChefApplications.mockResolvedValue([]);
+    api.fetchCustomers.mockResolvedValue([]);
+    api.fetchChefs.mockResolvedValue([]);
+    api.fetchCommunicationLogs.mockResolvedValue([]);
+    api.fetchPopularMeals.mockResolvedValue([]);
+
+    render(<AdminDashboardPage />);
+    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+
+    const tablist = screen.getByRole("tablist", { name: "Admin dashboard sections" });
+    fireEvent.keyDown(tablist, { key: "ArrowRight" });
+    expect(screen.getByRole("heading", { name: "Communication controls" })).toBeInTheDocument();
+
+    fireEvent.keyDown(tablist, { key: "ArrowLeft" });
+    expect(screen.getByRole("heading", { name: "Chef applications pipeline" })).toBeInTheDocument();
+
+    fireEvent.keyDown(tablist, { key: "End" });
+    expect(screen.getByRole("heading", { name: "Popular meals" })).toBeInTheDocument();
+
+    fireEvent.keyDown(tablist, { key: "Home" });
+    expect(screen.getByRole("heading", { name: "Chef applications pipeline" })).toBeInTheDocument();
   });
 });

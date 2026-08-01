@@ -2,12 +2,13 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ChefMagicLoginPage } from "@/features/platform/ChefMagicLoginPage";
 
 interface PageProps {
-  readonly searchParams: Promise<{ readonly token?: string | string[] }>;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
-  const token = Array.isArray(params.token) ? (params.token[0] ?? null) : (params.token ?? null);
+  const rawToken = params.token;
+  const token = typeof rawToken === "string" ? rawToken : null;
 
   return (
     <>

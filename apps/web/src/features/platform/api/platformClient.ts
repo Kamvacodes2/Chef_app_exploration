@@ -128,30 +128,6 @@ const bookingStatusSchema = z.enum([
   "COMPLETED",
 ]);
 
-const bookingPricingSchema = z.object({
-  subtotalCents: z.number().int().nonnegative(),
-  discountCents: z.number().int().nonnegative(),
-  totalCents: z.number().int().nonnegative(),
-  items: z.array(
-    z.object({
-      kind: z.enum(["main", "side", "dessert"]),
-      slug: z.string().min(1),
-      name: z.string().min(1),
-      priceCents: z.number().int(),
-      sortOrder: z.number().int(),
-    }),
-  ),
-  plan: z
-    .object({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      sessions: z.string().min(1),
-      recurring: z.boolean(),
-      priceCents: z.number().int().nonnegative(),
-    })
-    .optional(),
-});
-
 const chefBookingSchema = z.object({
   id: z.string().min(1),
   reference: z.string().min(1),
@@ -177,17 +153,13 @@ const chefBookingSchema = z.object({
   contactPhone: z.string().nullable(),
   goalId: z.string().nullable(),
   promotionCodeHash: z.string().nullable(),
-  pricing: bookingPricingSchema,
   createdAt: z.string(),
-  cook: platformUserSchema
-    .pick({ id: true, email: true, displayName: true, roles: true })
-    .nullable(),
   transitions: z.array(
     z.object({
       id: z.string().min(1),
       fromStatus: bookingStatusSchema.nullable(),
       toStatus: bookingStatusSchema,
-      actor: z.enum(["SYSTEM", "CUSTOMER", "ADMIN", "COOK"]),
+      actor: z.enum(["SYSTEM", "CUSTOMER", "ADMIN", "CHEF"]),
       actorUserId: z.string().nullable(),
       note: z.string().nullable(),
       metadata: z.record(z.unknown()).nullable(),
@@ -199,7 +171,7 @@ const chefBookingSchema = z.object({
 const chefOfferSchema = z.object({
   id: z.string().min(1),
   bookingRequestId: z.string().min(1),
-  cookUserId: z.string().min(1),
+  chefUserId: z.string().min(1),
   status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "WITHDRAWN"]),
   rank: z.number().int(),
   distanceKm: z.number().nullable(),
@@ -213,7 +185,6 @@ const chefOfferSchema = z.object({
     scheduledDate: z.string().min(1),
     timeSlot: z.string().min(1),
     serviceArea: z.string().nullable(),
-    totalCents: z.number().int().nonnegative(),
   }),
 });
 
@@ -221,13 +192,10 @@ const chefEarningSchema = z.object({
   id: z.string().min(1),
   bookingRequestId: z.string().min(1),
   bookingReference: z.string().min(1),
-  cookUserId: z.string().min(1),
-  cookDisplayName: z.string().min(1),
-  grossCents: z.number().int().nonnegative(),
+  chefUserId: z.string().min(1),
+  chefDisplayName: z.string().min(1),
   chefPayoutCents: z.number().int().nonnegative(),
-  platformRevenueCents: z.number().int().nonnegative(),
-  chefPayoutShareBasisPoints: z.number().int().nonnegative(),
-  status: z.enum(["PENDING", "PAID"]),
+  status: z.enum(["PENDING", "PAYABLE", "PAID", "CANCELLED"]),
   payoutReference: z.string().nullable(),
   createdAt: z.string(),
 });
@@ -275,9 +243,19 @@ const popularMealSchema = z.object({
   grossCents: z.number().int().nonnegative(),
 });
 
+// The backend's Prisma role enum still literally uses "COOK" on the wire (not yet
+// renamed). This schema accepts that legacy value but normalizes it to "CHEF" so
+// no other frontend code ever has to check for "COOK". The renamed backend enum
+// + a data migration for persisted legacy roles is a separate, deferred follow-up.
+const rawPlatformRoleSchema = z.enum(["CUSTOMER", "COOK", "CHEF", "ADMIN", "SUPPORT"]);
+export const platformRoleSchema = z.preprocess(
+  (value) => (value === "COOK" ? "CHEF" : value),
+  rawPlatformRoleSchema.exclude(["COOK"]),
+);
+
 const authUserSchema = platformUserSchema.extend({
   status: z.enum(["ACTIVE", "SUSPENDED"]),
-  roles: z.array(z.enum(["CUSTOMER", "COOK", "ADMIN", "SUPPORT"])),
+  roles: z.array(platformRoleSchema),
   emailVerifiedAt: z.string().nullable(),
 });
 
@@ -491,12 +469,12 @@ export async function markChefApplicationInterviewConducted(
 export async function inviteChefApplication(
   applicationId: string,
   options: PlatformRequestOptions = {},
-): Promise<{ application: ChefApplication; magicLinkUrl: string }> {
+): Promise<{ application: ChefApplication; deliveryStatus: "QUEUED" }> {
   return requestData({
     path: `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/invite`,
     method: "POST",
     schema: envelope(
-      z.object({ application: chefApplicationSchema, magicLinkUrl: z.string().url() }),
+      z.object({ application: chefApplicationSchema, deliveryStatus: z.literal("QUEUED") }),
     ),
     options,
   });
