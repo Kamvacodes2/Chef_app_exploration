@@ -62,7 +62,13 @@ describe("LandingPage", () => {
       throw new Error("Expected final callout section");
     }
 
-    expect(screen.getByRole("heading", { name: "Choose your Chefmate" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Choose your chefmate" })).toBeInTheDocument();
+    const pricingHeadingWordmark = screen.getByTestId("pricing-heading-wordmark");
+    expect(pricingHeadingWordmark).toHaveAttribute(
+      "src",
+      expect.stringContaining("logo-wordmark.webp"),
+    );
+    expect(pricingHeadingWordmark).toHaveAttribute("aria-hidden", "true");
     const cards = screen.getAllByTestId("pricing-plan-card");
     expect(cards).toHaveLength(4);
     expect(cards.map((card) => card.getAttribute("href"))).toEqual([

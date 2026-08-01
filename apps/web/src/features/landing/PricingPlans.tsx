@@ -49,9 +49,19 @@ export function PricingPlans(): ReactElement {
         <div className="mx-auto mb-8 max-w-2xl text-center">
           <h2
             id="plans-heading"
-            className="font-display text-4xl leading-tight text-[var(--color-oxblood)] sm:text-5xl"
+            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-display text-4xl leading-none text-[var(--color-oxblood)] sm:text-5xl"
           >
-            Choose your Chefmate
+            <span>Choose your</span>
+            <span className="sr-only"> chefmate</span>
+            <Image
+              src="/images/brand/logo-wordmark.webp"
+              alt=""
+              width={589}
+              height={393}
+              aria-hidden="true"
+              data-testid="pricing-heading-wordmark"
+              className="h-[3.25rem] w-auto object-contain sm:h-[4.25rem]"
+            />
           </h2>
           <p className="mt-3 text-base leading-7 text-[var(--color-charcoal)]/72">
             Flexible ways to get dinner handled.

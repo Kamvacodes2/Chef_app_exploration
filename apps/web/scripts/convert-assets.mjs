@@ -457,6 +457,7 @@ async function convertBrandLogo() {
   const outs = [
     "public/images/brand/logo.webp",
     "public/images/brand/logo-icon.webp",
+    "public/images/brand/logo-wordmark.webp",
     "src/app/icon.png",
   ];
 
@@ -502,6 +503,25 @@ async function convertBrandLogo() {
       .webp({ quality: 90 })
       .toFile(iconOut);
     console.log("[ok] public/images/brand/logo-icon.webp");
+
+    // Wordmark-only crop, preserving the exact baked-in "chef" / "mate"
+    // letterforms without carrying the pot + spoon icon into inline text.
+    const wordmarkExtracted = await sharp(trimmed)
+      .extract({
+        left: iconWidth,
+        top: 0,
+        width: trimmedInfo.width - iconWidth,
+        height: trimmedInfo.height,
+      })
+      .toBuffer();
+    const wordmarkTrimmed = await sharp(wordmarkExtracted).trim({ threshold: 10 }).toBuffer();
+
+    const wordmarkOut = join(ROOT, "public/images/brand/logo-wordmark.webp");
+    await sharp(wordmarkTrimmed)
+      .resize({ width: 720, withoutEnlargement: true })
+      .webp({ quality: 90 })
+      .toFile(wordmarkOut);
+    console.log("[ok] public/images/brand/logo-wordmark.webp");
 
     // App Router favicon/tab icon (src/app/icon.png is auto-served by Next.js).
     // Composited onto a white square canvas since the icon crop has no alpha.
