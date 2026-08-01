@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { FeaturedMealsPanel } from "./FeaturedMealsPanel";
 import {
   fetchAdminDashboard,
@@ -21,7 +21,21 @@ import {
   type PopularMeal,
 } from "./api/platformClient";
 
+const SECTIONS = [
+  { id: "applications", label: "Chef applications pipeline" },
+  { id: "communications", label: "Communication controls" },
+  { id: "featured-meals", label: "Featured meals" },
+  { id: "customers", label: "Customers" },
+  { id: "chefs", label: "Chefs" },
+  { id: "popular-meals", label: "Popular meals" },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]["id"];
+
+const DEFAULT_SECTION: SectionId = "applications";
+
 export function AdminDashboardPage() {
+  const [activeSection, setActiveSection] = useState<SectionId>(DEFAULT_SECTION);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [applications, setApplications] = useState<ChefApplication[]>([]);
   const [customers, setCustomers] = useState<PlatformUser[]>([]);
@@ -151,130 +165,236 @@ export function AdminDashboardPage() {
           />
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Panel title="Chef applications pipeline">
-            {applications.map((application) => (
-              <article
-                className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
-                key={application.id}
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <h3 className="text-xl font-black">{application.fullName}</h3>
-                    <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-                      {application.email} · applied {formatDateTime(application.appliedAt)}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-                      Status: {application.status.replaceAll("_", " ")}
-                      {application.interviewScheduledAt
-                        ? ` · interview set ${formatDateTime(application.interviewScheduledAt)}`
-                        : ""}
-                      {application.interviewConductedAt
-                        ? ` · conducted ${formatDateTime(application.interviewConductedAt)}`
-                        : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      kind="secondary"
-                      disabled={busy === "interview-" + application.id}
-                      onClick={() => markInterview(application)}
-                    >
-                      Mark interviewed
-                    </Button>
-                    <Button
-                      disabled={
-                        application.status !== "INTERVIEW_CONDUCTED" ||
-                        busy === "approve-" + application.id
-                      }
-                      kind="secondary"
-                      onClick={() => approve(application)}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      disabled={
-                        application.status !== "APPROVED" || busy === "invite-" + application.id
-                      }
-                      onClick={() => invite(application)}
-                    >
-                      Send portal access
-                    </Button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </Panel>
+        <SectionTabs active={activeSection} onSelect={setActiveSection} />
 
-          <Panel title="Communication controls">
-            <p className="mt-3 text-sm text-[var(--color-charcoal)]/70">
-              Email sends are logged through Resend-backed outbox events. WhatsApp is scaffolded now
-              and records SKIPPED until the business number/provider credentials are configured.
-            </p>
-            <Button disabled={busy === "whatsapp"} onClick={previewWhatsApp}>
-              Log WhatsApp preview
-            </Button>
-            <div className="mt-5 grid gap-3">
-              {communications.map((log) => (
+        <div
+          aria-labelledby={tabDomId(activeSection)}
+          className="mt-6"
+          id={panelDomId(activeSection)}
+          role="tabpanel"
+          tabIndex={-1}
+        >
+          {activeSection === "applications" ? (
+            <Panel title="Chef applications pipeline">
+              {applications.map((application) => (
                 <article
-                  className="rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm"
-                  key={log.id}
+                  className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
+                  key={application.id}
                 >
-                  <p className="font-black">
-                    {log.channel} · {log.status}
-                  </p>
-                  <p className="text-[var(--color-charcoal)]/70">
-                    {log.templateKey} → {log.recipient}
-                  </p>
-                  {log.bodyPreview ? (
-                    <p className="mt-1 text-[var(--color-charcoal)]/70">{log.bodyPreview}</p>
-                  ) : null}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-xl font-black">{application.fullName}</h3>
+                      <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
+                        {application.email} · applied {formatDateTime(application.appliedAt)}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
+                        Status: {application.status.replaceAll("_", " ")}
+                        {application.interviewScheduledAt
+                          ? ` · interview set ${formatDateTime(application.interviewScheduledAt)}`
+                          : ""}
+                        {application.interviewConductedAt
+                          ? ` · conducted ${formatDateTime(application.interviewConductedAt)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        kind="secondary"
+                        disabled={busy === "interview-" + application.id}
+                        onClick={() => markInterview(application)}
+                      >
+                        Mark interviewed
+                      </Button>
+                      <Button
+                        disabled={
+                          application.status !== "INTERVIEW_CONDUCTED" ||
+                          busy === "approve-" + application.id
+                        }
+                        kind="secondary"
+                        onClick={() => approve(application)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        disabled={
+                          application.status !== "APPROVED" || busy === "invite-" + application.id
+                        }
+                        onClick={() => invite(application)}
+                      >
+                        Send portal access
+                      </Button>
+                    </div>
+                  </div>
                 </article>
               ))}
-            </div>
-          </Panel>
-        </div>
+            </Panel>
+          ) : null}
 
-        <div className="mt-6">
-          <FeaturedMealsPanel />
-        </div>
+          {activeSection === "communications" ? (
+            <Panel title="Communication controls">
+              <p className="mt-3 text-sm text-[var(--color-charcoal)]/70">
+                Email sends are logged through Resend-backed outbox events. WhatsApp is scaffolded
+                now and records SKIPPED until the business number/provider credentials are
+                configured.
+              </p>
+              <Button disabled={busy === "whatsapp"} onClick={previewWhatsApp}>
+                Log WhatsApp preview
+              </Button>
+              <div className="mt-5 grid gap-3">
+                {communications.map((log) => (
+                  <article
+                    className="rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm"
+                    key={log.id}
+                  >
+                    <p className="font-black">
+                      {log.channel} · {log.status}
+                    </p>
+                    <p className="text-[var(--color-charcoal)]/70">
+                      {log.templateKey} → {log.recipient}
+                    </p>
+                    {log.bodyPreview ? (
+                      <p className="mt-1 text-[var(--color-charcoal)]/70">{log.bodyPreview}</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </Panel>
+          ) : null}
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Panel title="Customers">
-            {customers.map((customer) => (
-              <Person key={customer.id} person={customer} />
-            ))}
-          </Panel>
-          <Panel title="Chefs">
-            {chefs.map((chef) => (
-              <Person
-                detail={
-                  chef.bankAccount
-                    ? `Bank account ending ${chef.bankAccount.accountNumberLast4}`
-                    : "Bank details pending"
-                }
-                key={chef.id}
-                person={chef}
-              />
-            ))}
-          </Panel>
-          <Panel title="Popular meals">
-            {popularMeals.map((meal) => (
-              <article
-                className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm"
-                key={meal.slug}
-              >
-                <p className="font-black">{meal.name}</p>
-                <p className="text-[var(--color-charcoal)]/70">
-                  {meal.orderCount} orders · {formatZar(meal.grossCents)} collected
-                </p>
-              </article>
-            ))}
-          </Panel>
+          {activeSection === "featured-meals" ? <FeaturedMealsPanel /> : null}
+
+          {activeSection === "customers" ? (
+            <Panel title="Customers">
+              {customers.map((customer) => (
+                <Person key={customer.id} person={customer} />
+              ))}
+            </Panel>
+          ) : null}
+
+          {activeSection === "chefs" ? (
+            <Panel title="Chefs">
+              {chefs.map((chef) => (
+                <Person
+                  detail={
+                    chef.bankAccount
+                      ? `Bank account ending ${chef.bankAccount.accountNumberLast4}`
+                      : "Bank details pending"
+                  }
+                  key={chef.id}
+                  person={chef}
+                />
+              ))}
+            </Panel>
+          ) : null}
+
+          {activeSection === "popular-meals" ? (
+            <Panel title="Popular meals">
+              {popularMeals.map((meal) => (
+                <article
+                  className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm"
+                  key={meal.slug}
+                >
+                  <p className="font-black">{meal.name}</p>
+                  <p className="text-[var(--color-charcoal)]/70">
+                    {meal.orderCount} orders · {formatZar(meal.grossCents)} collected
+                  </p>
+                </article>
+              ))}
+            </Panel>
+          ) : null}
         </div>
       </section>
     </main>
   );
+}
+
+function tabDomId(section: SectionId): string {
+  return `admin-tab-${section}`;
+}
+
+function panelDomId(section: SectionId): string {
+  return `admin-panel-${section}`;
+}
+
+function SectionTabs({
+  active,
+  onSelect,
+}: {
+  readonly active: SectionId;
+  readonly onSelect: (section: SectionId) => void;
+}) {
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const focusSection = (section: SectionId): void => {
+    onSelect(section);
+    tabRefs.current[section]?.focus();
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const index = SECTIONS.findIndex((section) => section.id === active);
+    if (index < 0) return;
+    const target = sectionIndexForKey(event.key, index);
+    if (target === null) return;
+    event.preventDefault();
+    const next = SECTIONS[target];
+    if (next) focusSection(next.id);
+  };
+
+  return (
+    <div
+      aria-label="Admin dashboard sections"
+      className="mt-8 flex flex-wrap gap-2 rounded-3xl bg-white p-2 shadow-[0_20px_60px_rgba(70,33,24,0.08)]"
+      onKeyDown={onKeyDown}
+      role="tablist"
+    >
+      {SECTIONS.map((section) => {
+        const isActive = section.id === active;
+        return (
+          <button
+            aria-controls={panelDomId(section.id)}
+            aria-selected={isActive}
+            className={sectionTabClassName(isActive)}
+            id={tabDomId(section.id)}
+            key={section.id}
+            onClick={() => onSelect(section.id)}
+            ref={(node) => {
+              tabRefs.current[section.id] = node;
+            }}
+            role="tab"
+            tabIndex={isActive ? 0 : -1}
+            type="button"
+          >
+            {section.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function sectionIndexForKey(key: string, index: number): number | null {
+  const last = SECTIONS.length - 1;
+  switch (key) {
+    case "ArrowRight":
+      return (index + 1) % SECTIONS.length;
+    case "ArrowLeft":
+      return (index - 1 + SECTIONS.length) % SECTIONS.length;
+    case "Home":
+      return 0;
+    case "End":
+      return last;
+    default:
+      return null;
+  }
+}
+
+function sectionTabClassName(isActive: boolean): string {
+  return [
+    "min-h-10 rounded-xl px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]",
+    isActive
+      ? "bg-[var(--color-oxblood)] text-white"
+      : "text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)]",
+  ].join(" ");
 }
 
 function Metric({ label, value }: { readonly label: string; readonly value: number | string }) {
