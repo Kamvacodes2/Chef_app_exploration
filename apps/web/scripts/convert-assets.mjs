@@ -281,8 +281,9 @@ async function ensureDir(filePath) {
  * source (most converters produce exactly one; convertBrandLogo produces
  * several from a single source). The source is skipped only if its hash
  * matches the cached hash AND every one of `outs` still exists on disk.
+ * `cacheVersion` invalidates outputs when converter logic changes.
  */
-async function convertIfChanged(src, outs, run) {
+async function convertIfChanged(src, outs, run, cacheVersion = "") {
   const srcPath = join(ROOT, src);
   if (!existsSync(srcPath)) {
     console.warn(`[skip] missing source: ${src}`);
@@ -290,7 +291,8 @@ async function convertIfChanged(src, outs, run) {
   }
 
   const outList = Array.isArray(outs) ? outs : [outs];
-  const hash = hashFile(srcPath);
+  const sourceHash = hashFile(srcPath);
+  const hash = cacheVersion ? `${sourceHash}:${cacheVersion}` : sourceHash;
   const allOutputsExist = outList.every((out) => existsSync(join(ROOT, out)));
 
   if (!FORCE && cache[src] === hash && allOutputsExist) {
@@ -454,6 +456,7 @@ async function convertGoalTileChromaKey({ src, out }) {
 
 async function convertBrandLogo() {
   const src = "Assets/Logo/chef_logo_1.png";
+  const cacheVersion = "brand-logo-horizontal-wordmark-v2";
   const outs = [
     "public/images/brand/logo.webp",
     "public/images/brand/logo-icon.webp",
@@ -461,82 +464,158 @@ async function convertBrandLogo() {
     "src/app/icon.png",
   ];
 
-  await convertIfChanged(src, outs, async () => {
-    const srcPath = join(ROOT, src);
+  await convertIfChanged(
+    src,
+    outs,
+    async () => {
+      const srcPath = join(ROOT, src);
 
-    // Source is a true transparent PNG on an oversized square canvas, so trim
-    // just tightens the bounding box to the actual lockup content (no
-    // white-background removal needed, unlike earlier logo sources). Doing
-    // this once into a buffer (rather than re-reading the file per output)
-    // means the icon crop below can be computed proportionally from the
-    // trimmed lockup's own dimensions instead of hardcoded pixel coordinates.
-    const { data: trimmed, info: trimmedInfo } = await sharp(srcPath)
-      .trim({ threshold: 10 })
-      .toBuffer({ resolveWithObject: true });
+      // Source is a true transparent PNG on an oversized square canvas, so trim
+      // just tightens the bounding box to the actual lockup content (no
+      // white-background removal needed, unlike earlier logo sources). Doing
+      // this once into a buffer (rather than re-reading the file per output)
+      // means the icon crop below can be computed proportionally from the
+      // trimmed lockup's own dimensions instead of hardcoded pixel coordinates.
+      const { data: trimmed, info: trimmedInfo } = await sharp(srcPath)
+        .trim({ threshold: 10 })
+        .toBuffer({ resolveWithObject: true });
 
-    // Full lockup (icon + baked-in "chef" / "mate" stacked wordmark) — this is
-    // what actually renders in the header now, since the wordmark's baked-in
-    // typography doesn't match rendering it as separate live text.
-    const fullOut = join(ROOT, "public/images/brand/logo.webp");
-    await ensureDir(fullOut);
-    await sharp(trimmed)
-      .resize({ width: 1200, withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toFile(fullOut);
-    console.log("[ok] public/images/brand/logo.webp");
+      // Full lockup (icon + baked-in "chef" / "mate" stacked wordmark) — this is
+      // what actually renders in the header now, since the wordmark's baked-in
+      // typography doesn't match rendering it as separate live text.
+      const fullOut = join(ROOT, "public/images/brand/logo.webp");
+      await ensureDir(fullOut);
+      await sharp(trimmed)
+        .resize({ width: 1200, withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toFile(fullOut);
+      console.log("[ok] public/images/brand/logo.webp");
 
-    // Icon-only crop (the pot + spoon mark), for contexts needing just the
-    // icon. Occupies the left ~36.8% of the trimmed lockup's width, full
-    // height. sharp's extract() can't be chained directly into trim() in the
-    // same pipeline (throws "bad extract area"), so the extracted region is
-    // materialized to its own buffer first, then re-trimmed from a fresh
-    // sharp() call to drop any residual margin next to the wordmark.
-    const iconWidth = Math.round(trimmedInfo.width * 0.368);
-    const iconExtracted = await sharp(trimmed)
-      .extract({ left: 0, top: 0, width: iconWidth, height: trimmedInfo.height })
-      .toBuffer();
-    const iconTrimmed = await sharp(iconExtracted).trim({ threshold: 10 }).toBuffer();
+      // Icon-only crop (the pot + spoon mark), for contexts needing just the
+      // icon. Occupies the left ~36.8% of the trimmed lockup's width, full
+      // height. sharp's extract() can't be chained directly into trim() in the
+      // same pipeline (throws "bad extract area"), so the extracted region is
+      // materialized to its own buffer first, then re-trimmed from a fresh
+      // sharp() call to drop any residual margin next to the wordmark.
+      const iconWidth = Math.round(trimmedInfo.width * 0.368);
+      const iconExtracted = await sharp(trimmed)
+        .extract({ left: 0, top: 0, width: iconWidth, height: trimmedInfo.height })
+        .toBuffer();
+      const iconTrimmed = await sharp(iconExtracted).trim({ threshold: 10 }).toBuffer();
 
-    const iconOut = join(ROOT, "public/images/brand/logo-icon.webp");
-    await sharp(iconTrimmed)
-      .resize({ width: 240, withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toFile(iconOut);
-    console.log("[ok] public/images/brand/logo-icon.webp");
+      const iconOut = join(ROOT, "public/images/brand/logo-icon.webp");
+      await sharp(iconTrimmed)
+        .resize({ width: 240, withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toFile(iconOut);
+      console.log("[ok] public/images/brand/logo-icon.webp");
 
-    // Wordmark-only crop, preserving the exact baked-in "chef" / "mate"
-    // letterforms without carrying the pot + spoon icon into inline text.
-    const wordmarkExtracted = await sharp(trimmed)
-      .extract({
-        left: iconWidth,
-        top: 0,
-        width: trimmedInfo.width - iconWidth,
-        height: trimmedInfo.height,
+      // Horizontal wordmark crop, preserving the exact baked-in "chef" and
+      // "mate" letterforms while placing them on one baseline for inline text.
+      const wordmarkExtracted = await sharp(trimmed)
+        .extract({
+          left: iconWidth,
+          top: 0,
+          width: trimmedInfo.width - iconWidth,
+          height: trimmedInfo.height,
+        })
+        .toBuffer();
+      const wordmarkTrimmed = await sharp(wordmarkExtracted)
+        .trim({ threshold: 10 })
+        .png()
+        .toBuffer();
+      const { data: wordmarkRaw, info: wordmarkInfo } = await sharp(wordmarkTrimmed)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const rowClusters = [];
+      let clusterStart = null;
+      let previousInkRow = null;
+      for (let y = 0; y < wordmarkInfo.height; y += 1) {
+        let rowHasInk = false;
+        for (let x = 0; x < wordmarkInfo.width; x += 1) {
+          if (wordmarkRaw[(y * wordmarkInfo.width + x) * 4 + 3] > 10) {
+            rowHasInk = true;
+            break;
+          }
+        }
+
+        if (!rowHasInk) continue;
+        if (clusterStart === null) {
+          clusterStart = y;
+        } else if (previousInkRow !== null && y > previousInkRow + 1) {
+          rowClusters.push([clusterStart, previousInkRow]);
+          clusterStart = y;
+        }
+        previousInkRow = y;
+      }
+      if (clusterStart !== null && previousInkRow !== null) {
+        rowClusters.push([clusterStart, previousInkRow]);
+      }
+      if (rowClusters.length < 2) {
+        throw new Error("Expected the Chefmate wordmark to contain stacked chef and mate rows");
+      }
+
+      const wordPieces = [];
+      for (const [top, bottom] of rowClusters.slice(0, 2)) {
+        const extractedPiece = await sharp(wordmarkTrimmed)
+          .extract({ left: 0, top, width: wordmarkInfo.width, height: bottom - top + 1 })
+          .png()
+          .toBuffer();
+        const { data: pieceData, info: pieceInfo } = await sharp(extractedPiece)
+          .trim({ threshold: 10 })
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        wordPieces.push({ data: pieceData, width: pieceInfo.width, height: pieceInfo.height });
+      }
+
+      const [chefWord, mateWord] = wordPieces;
+      const wordGap = Math.round(Math.max(chefWord.height, mateWord.height) * 0.04);
+      const inlineWordmarkWidth = chefWord.width + wordGap + mateWord.width;
+      const inlineWordmarkHeight = Math.max(chefWord.height, mateWord.height);
+      const inlineWordmark = Buffer.alloc(inlineWordmarkWidth * inlineWordmarkHeight * 4);
+      const copyWord = (word, left, top) => {
+        for (let y = 0; y < word.height; y += 1) {
+          word.data.copy(
+            inlineWordmark,
+            ((top + y) * inlineWordmarkWidth + left) * 4,
+            y * word.width * 4,
+            (y + 1) * word.width * 4,
+          );
+        }
+      };
+
+      copyWord(chefWord, 0, inlineWordmarkHeight - chefWord.height);
+      copyWord(mateWord, chefWord.width + wordGap, inlineWordmarkHeight - mateWord.height);
+
+      const wordmarkOut = join(ROOT, "public/images/brand/logo-wordmark.webp");
+      await sharp(inlineWordmark, {
+        raw: { width: inlineWordmarkWidth, height: inlineWordmarkHeight, channels: 4 },
       })
-      .toBuffer();
-    const wordmarkTrimmed = await sharp(wordmarkExtracted).trim({ threshold: 10 }).toBuffer();
+        .trim({ threshold: 10 })
+        .resize({ width: 720, withoutEnlargement: true })
+        .webp({ quality: 90, alphaQuality: 100 })
+        .toFile(wordmarkOut);
+      console.log("[ok] public/images/brand/logo-wordmark.webp");
 
-    const wordmarkOut = join(ROOT, "public/images/brand/logo-wordmark.webp");
-    await sharp(wordmarkTrimmed)
-      .resize({ width: 720, withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toFile(wordmarkOut);
-    console.log("[ok] public/images/brand/logo-wordmark.webp");
-
-    // App Router favicon/tab icon (src/app/icon.png is auto-served by Next.js).
-    // Composited onto a white square canvas since the icon crop has no alpha.
-    const faviconOut = join(ROOT, "src/app/icon.png");
-    await sharp(iconTrimmed)
-      .resize({
-        width: 512,
-        height: 512,
-        fit: "contain",
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
-      })
-      .png()
-      .toFile(faviconOut);
-    console.log("[ok] src/app/icon.png");
-  });
+      // App Router favicon/tab icon (src/app/icon.png is auto-served by Next.js).
+      // Composited onto a white square canvas since the icon crop has no alpha.
+      const faviconOut = join(ROOT, "src/app/icon.png");
+      await sharp(iconTrimmed)
+        .resize({
+          width: 512,
+          height: 512,
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 1 },
+        })
+        .png()
+        .toFile(faviconOut);
+      console.log("[ok] src/app/icon.png");
+    },
+    cacheVersion,
+  );
 }
 
 async function main() {
