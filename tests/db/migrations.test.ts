@@ -280,6 +280,48 @@ describe("section 8.1 runtime roles", () => {
     expect(bySchema.get("private")).not.toContain("chefmate_api");
     expect(bySchema.get("analytics")).toContain("chefmate_analytics");
   });
+
+  it("forces RLS on protected app tables introduced by the operations migration", async () => {
+    const protectedTables = [
+      "audit_log",
+      "booking_assignments",
+      "booking_transitions",
+      "chef_applications",
+      "chef_documents",
+      "chef_earnings",
+      "chef_offers",
+      "chef_profiles",
+      "communication_consents",
+      "communication_logs",
+      "communication_suppressions",
+      "magic_tokens",
+      "notifications",
+      "payouts",
+      "rate_limit_buckets",
+      "sessions",
+      "survey_tokens",
+      "user_roles",
+      "users",
+    ] as const;
+    const rows = await query<{
+      relname: string;
+      relrowsecurity: boolean;
+      relforcerowsecurity: boolean;
+    }>(
+      `SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity
+         FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'app' AND c.relname = ANY($1)
+        ORDER BY c.relname`,
+      [[...protectedTables]],
+    );
+
+    expect(rows.map((row) => row.relname)).toEqual([...protectedTables].sort());
+    for (const row of rows) {
+      expect(row.relrowsecurity).toBe(true);
+      expect(row.relforcerowsecurity).toBe(true);
+    }
+  });
 });
 
 describe("forward-only enforcement (ADR-0010)", () => {

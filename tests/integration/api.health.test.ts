@@ -187,10 +187,10 @@ describe("error surface", () => {
     expect(body.meta.correlationId).toBeTruthy();
   });
 
-  it("exposes no business routes yet — S02 is infrastructure only", async () => {
-    for (const route of ["/api/v1/auth/me", "/api/v1/catalog", "/api/v1/quotes"]) {
-      const response = await fetch(`${baseUrl}${route}`);
-      expect(response.status).toBe(404);
-    }
+  it("exposes public and protected business routes with the expected status codes", async () => {
+    expect((await fetch(`${baseUrl}/api/v1/catalog/categories`)).status).toBe(200);
+    expect((await fetch(`${baseUrl}/api/v1/auth/me`)).status).toBe(401);
+    expect((await fetch(`${baseUrl}/api/v1/operations/dashboard`)).status).toBe(401);
+    expect((await fetch(`${baseUrl}/api/v1/quotes`)).status).toBe(404);
   });
 });

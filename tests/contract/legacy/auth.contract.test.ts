@@ -55,7 +55,9 @@ describe("legacy contract: authentication", () => {
     expect(request.body).toEqual({ ...credentials, displayName: legacyAuthUser.displayName });
   });
 
-  it("pins the parsed authenticated-user projection, retaining the legacy COOK role value", async () => {
+  it("pins the parsed authenticated-user projection, normalizing legacy COOK to CHEF", async () => {
+    expect(legacyAuthUser.roles).toContain("COOK");
+
     const fetchImpl = fakeFetch({ body: legacyAuthResponse });
 
     const user = await getCurrentUser({
@@ -72,13 +74,13 @@ describe("legacy contract: authentication", () => {
         "id": "usr_0000000000000001",
         "roles": [
           "CUSTOMER",
-          "COOK",
+          "CHEF",
         ],
         "status": "ACTIVE",
       }
     `);
-    expect(user?.roles).toContain("COOK");
-    expect(user?.roles).not.toContain("CHEF");
+    expect(user?.roles).toContain("CHEF");
+    expect(user?.roles).not.toContain("COOK");
   });
 
   it("treats 401 on the session probe as a guest rather than an error", async () => {

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createCustomerAccount, getCurrentUser, signIn } from "@/features/auth/api/authClient";
+import {
+  createCustomerAccount,
+  getCurrentUser,
+  logout,
+  signIn,
+} from "@/features/auth/api/authClient";
 
 const authenticatedUser = {
   id: "user-1",
@@ -83,5 +88,22 @@ describe("authClient", () => {
         { baseUrl: "http://api.test", fetchImpl },
       ),
     ).rejects.toThrow("An account with this email already exists");
+  });
+
+  it("logs out the current session with a non-throwing browser request", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 204 }) as unknown as typeof fetch;
+
+    await expect(logout({ baseUrl: "http://api.test", fetchImpl })).resolves.toBeUndefined();
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/auth/logout",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 });

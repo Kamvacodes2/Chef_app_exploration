@@ -19,6 +19,7 @@ export default tseslint.config(
       ".agents/**",
       ".claude/**",
       ".codex/**",
+      ".local-dev/**",
       "playwright-report/**",
       "test-results/**",
     ],

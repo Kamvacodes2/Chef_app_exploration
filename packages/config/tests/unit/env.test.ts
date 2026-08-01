@@ -28,6 +28,7 @@ describe("parseEnv", () => {
     expect(env.API_HOST).toBe("127.0.0.1");
     expect(env.API_PORT).toBe(4000);
     expect(env.API_SHUTDOWN_GRACE_MS).toBe(10_000);
+    expect(env.API_TRUST_PROXY).toBe(false);
     expect(env.DATABASE_POOL_MAX).toBe(10);
   });
 
@@ -41,6 +42,14 @@ describe("parseEnv", () => {
     expect(env.DATABASE_POOL_MAX).toBe(25);
   });
 
+  it("transforms API_TRUST_PROXY into a boolean", () => {
+    expect(
+      parseEnv(apiEnvSchema, { DATABASE_URL: DB, API_TRUST_PROXY: "true" }).API_TRUST_PROXY,
+    ).toBe(true);
+    expect(
+      parseEnv(apiEnvSchema, { DATABASE_URL: DB, API_TRUST_PROXY: "false" }).API_TRUST_PROXY,
+    ).toBe(false);
+  });
   it("transforms LOG_PRETTY into a boolean", () => {
     expect(parseEnv(apiEnvSchema, { DATABASE_URL: DB, LOG_PRETTY: "true" }).LOG_PRETTY).toBe(true);
     expect(parseEnv(apiEnvSchema, { DATABASE_URL: DB, LOG_PRETTY: "false" }).LOG_PRETTY).toBe(
@@ -152,6 +161,29 @@ describe("schemas per process", () => {
       EnvValidationError,
     );
   });
+  it("rejects Resend worker delivery without a link-token secret", () => {
+    expect(() =>
+      parseEnv(workerEnvSchema, {
+        DATABASE_URL: DB,
+        RESEND_API_KEY: "CHANGE_ME_RESEND_TEST_ONLY",
+        RESEND_FROM_EMAIL: "ChefMate <noreply@example.test>",
+      }),
+    ).toThrow(/LINK_TOKEN_SECRET/);
+  });
+
+  it("requires a long link-token secret when configured", () => {
+    expect(() =>
+      parseEnv(workerEnvSchema, { DATABASE_URL: DB, LINK_TOKEN_SECRET: "short" }),
+    ).toThrow(/at least 32/);
+    expect(
+      parseEnv(workerEnvSchema, {
+        DATABASE_URL: DB,
+        RESEND_API_KEY: "CHANGE_ME_RESEND_TEST_ONLY",
+        RESEND_FROM_EMAIL: "ChefMate <noreply@example.test>",
+        LINK_TOKEN_SECRET: "a".repeat(32),
+      }).LINK_TOKEN_SECRET,
+    ).toBe("a".repeat(32));
+  });
 
   it("exposes loaders bound to each schema", () => {
     expect(loadApiEnv({ DATABASE_URL: DB }).API_PORT).toBe(4000);
@@ -175,8 +207,9 @@ describe("declared constants", () => {
     expect(LOG_LEVELS).toContain("error");
   });
 
-  it("marks the database and KMS variables as secret", () => {
+  it("marks database, KMS, and token-derivation variables as secret", () => {
     expect(SECRET_ENV_KEYS).toContain("DATABASE_URL");
     expect(SECRET_ENV_KEYS).toContain("KMS_LOCAL_DEV_KEY");
+    expect(SECRET_ENV_KEYS).toContain("LINK_TOKEN_SECRET");
   });
 });

@@ -2,16 +2,16 @@ import type { Logger } from "@chefmate/observability";
 import type { OutboxEvent, OutboxSource } from "./types.js";
 
 /**
- * The S02 outbox source.
+ * Legacy inert outbox source retained for unit tests and rollback drills.
  *
- * `app.outbox_events` does not exist yet — it is introduced in S05 together
- * with durable jobs and provider ports. Until then the worker runs its real
- * loop against a source that claims nothing and says so once, rather than
- * against SQL that would fail on every tick.
+ * Production now uses SqlOutboxSource. This source intentionally claims
+ * nothing and says so once; markProcessed/markFailed throw because it
+ * cannot legitimately produce an event.
  *
- * `markProcessed` / `markFailed` throw: reaching them would mean the loop
- * claimed an event from a source that cannot have produced one, which is a bug
- * worth surfacing loudly rather than swallowing.
+ *
+ * Reaching an acknowledgement method would mean a loop claimed an event
+ * from this inert source, which is a bug worth surfacing loudly.
+ *
  */
 export class PendingSchemaOutboxSource implements OutboxSource {
   readonly #logger: Logger;
@@ -24,22 +24,20 @@ export class PendingSchemaOutboxSource implements OutboxSource {
   claim(_batchSize: number): Promise<readonly OutboxEvent[]> {
     if (!this.#warned) {
       this.#warned = true;
-      this.#logger.info(
-        "outbox schema is not installed yet (S05); the drain loop is idle by design",
-      );
+      this.#logger.info("legacy inert outbox source is idle by design");
     }
     return Promise.resolve([]);
   }
 
-  markProcessed(eventId: string): Promise<never> {
+  markProcessed(event: OutboxEvent): Promise<never> {
     return Promise.reject(
-      new Error(`PendingSchemaOutboxSource cannot mark ${eventId} processed: no outbox exists`),
+      new Error(`PendingSchemaOutboxSource cannot mark ${event.id} processed: no outbox exists`),
     );
   }
 
-  markFailed(eventId: string): Promise<never> {
+  markFailed(event: OutboxEvent): Promise<never> {
     return Promise.reject(
-      new Error(`PendingSchemaOutboxSource cannot mark ${eventId} failed: no outbox exists`),
+      new Error(`PendingSchemaOutboxSource cannot mark ${event.id} failed: no outbox exists`),
     );
   }
 }

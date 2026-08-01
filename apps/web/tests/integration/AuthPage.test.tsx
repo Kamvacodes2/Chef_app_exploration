@@ -116,9 +116,7 @@ describe("AuthPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    await expect(screen.findByRole("status")).resolves.toHaveTextContent(
-      "Signed in as Test Chef.",
-    );
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent("Signed in as Test Chef.");
     expect(screen.getByRole("link", { name: "Go to chef portal" })).toHaveAttribute(
       "href",
       "/chef/portal",

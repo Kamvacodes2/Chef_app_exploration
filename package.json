@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @chefmate/web dev",
+    "dev:local": "tsx scripts/local-dev.ts",
     "dev:api": "pnpm --filter @chefmate/api dev",
     "dev:worker": "pnpm --filter @chefmate/worker dev",
     "start": "pnpm --filter @chefmate/web start",
