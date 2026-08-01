@@ -26,15 +26,6 @@ export const GOALS: readonly Goal[] = Object.freeze([
     paletteId: "espresso",
   }),
   Object.freeze({
-    id: "anti-inflammatory",
-    title: "Anti-Inflammatory",
-    tagline: "Gentle, colourful, easy on the body.",
-    image: "/images/goal-icons/anti-inflammatory-sprout.svg",
-    imageAlt: "Sprout icon for the anti-inflammatory goal",
-    matchTags: Object.freeze(["light", "plant-forward", "omega"]),
-    paletteId: "lemon-cream",
-  }),
-  Object.freeze({
     id: "post-partum",
     title: "Post-Partum",
     tagline: "Nourishing, comforting, one-hand-friendly.",
@@ -42,6 +33,15 @@ export const GOALS: readonly Goal[] = Object.freeze([
     imageAlt: "Illustration of a parent nourishing themselves while holding a baby",
     matchTags: Object.freeze(["nourishing", "iron-rich", "comfort"]),
     paletteId: "strawberry",
+  }),
+  Object.freeze({
+    id: "anti-inflammatory",
+    title: "Anti-Inflammatory",
+    tagline: "Gentle, colourful, easy on the body.",
+    image: "/images/goal-icons/anti-inflammatory-sprout.svg",
+    imageAlt: "Sprout icon for the anti-inflammatory goal",
+    matchTags: Object.freeze(["light", "plant-forward", "omega"]),
+    paletteId: "lemon-cream",
   }),
   Object.freeze({
     id: "mediterranean",
