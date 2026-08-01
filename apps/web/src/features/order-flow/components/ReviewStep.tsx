@@ -60,7 +60,7 @@ function SelectionRow({
         {kind !== "main" ? <p className="text-xs text-[var(--color-bone)]/50">({kind})</p> : null}
       </div>
       <p className="shrink-0 text-sm font-semibold text-[var(--color-bone)]">
-        {pricingLineLabel(priceCents)}
+        {kind === "main" ? "Included in your session" : pricingLineLabel(priceCents)}
       </p>
     </div>
   );
