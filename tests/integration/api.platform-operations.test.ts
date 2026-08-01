@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import { buildApp } from "../../apps/api/src/app.js";
-import { SESSION_COOKIE_NAME } from "../../apps/api/src/auth/session.js";
+import { SESSION_COOKIE_NAME, hashToken } from "../../apps/api/src/auth/session.js";
 import { emailHandler } from "../../apps/worker/src/outbox/handlers.js";
 import type { OutboxEvent } from "../../apps/worker/src/outbox/types.js";
 import { createPool, migrate } from "../../packages/database/src/index.js";
@@ -795,5 +795,113 @@ describe("platform operations backend", () => {
       },
     );
     expect(supportInvite.status).toBe(403);
+
+    const shortMagicLink = await fetch(`${baseUrl}/api/v1/chef/magic-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "too-short" }),
+    });
+    expect(shortMagicLink.status).toBe(400);
+
+    const missingMagicLink = await fetch(`${baseUrl}/api/v1/chef/magic-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "missing-magic-link-token-with-safe-length" }),
+    });
+    expect(missingMagicLink.status).toBe(401);
+    expect(await json(missingMagicLink)).toMatchObject({ code: "INVALID_MAGIC_LINK" });
+
+    const invalidDateDashboard = await fetch(
+      `${baseUrl}/api/v1/operations/dashboard?from=not-a-date`,
+      {
+        credentials: "include",
+        headers: { Cookie: admin.cookie },
+      },
+    );
+    expect(invalidDateDashboard.status).toBe(400);
+
+    const repeatedDateDashboard = await fetch(
+      `${baseUrl}/api/v1/operations/dashboard?from=2026-01-01&from=2026-01-02`,
+      {
+        credentials: "include",
+        headers: { Cookie: admin.cookie },
+      },
+    );
+    expect(repeatedDateDashboard.status).toBe(400);
+
+    const reversedRangeDashboard = await fetch(
+      `${baseUrl}/api/v1/operations/dashboard?from=2026-08-02&to=2026-08-01`,
+      {
+        credentials: "include",
+        headers: { Cookie: admin.cookie },
+      },
+    );
+    expect(reversedRangeDashboard.status).toBe(400);
+
+    const invalidLimitDashboard = await fetch(
+      `${baseUrl}/api/v1/operations/dashboard?topChefsLimit=0`,
+      {
+        credentials: "include",
+        headers: { Cookie: admin.cookie },
+      },
+    );
+    expect(invalidLimitDashboard.status).toBe(400);
+
+    const datedDashboard = await fetch(
+      `${baseUrl}/api/v1/operations/dashboard?from=2026-01-01&to=2026-12-31&topChefsLimit=2`,
+      {
+        credentials: "include",
+        headers: { Cookie: admin.cookie },
+      },
+    );
+    expect(datedDashboard.status).toBe(200);
+    expect(await json(datedDashboard)).toMatchObject({
+      data: {
+        dateRange: {
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2027-01-01T00:00:00.000Z",
+        },
+      },
+    });
+
+    const missingSurvey = await fetch(`${baseUrl}/api/v1/surveys/missing-survey-token`);
+    expect(missingSurvey.status).toBe(404);
+
+    const booking = await pool.query<{ id: string }>(
+      `INSERT INTO app.bookings
+         (reference, status, source, main_slug, address, subtotal_cents, discount_cents,
+          total_cents, chef_payable_cents, platform_revenue_cents, idempotency_key, request_fingerprint)
+       VALUES
+         ('CM-EDGE-SURVEY-001', 'COMPLETED', 'coverage-edge', 'chicken-peri-peri',
+          '{"area":"Fourways","street":"1 Edge Road"}'::jsonb, 1000, 0, 1000, 650, 350,
+          'edge-survey-booking-001', 'edge-survey-fingerprint-001')
+       RETURNING id::text`,
+    );
+    const expiredSurveyToken = "expired-survey-token-with-safe-length";
+    await pool.query(
+      `INSERT INTO app.survey_tokens (booking_id, token_hash, customer_email, status, expires_at)
+       VALUES ($1, $2, 'expired.customer@example.test', 'PENDING', now() - interval '1 minute')`,
+      [booking.rows[0]?.id, hashToken(expiredSurveyToken)],
+    );
+    const expiredSurvey = await fetch(`${baseUrl}/api/v1/surveys/${expiredSurveyToken}`);
+    expect(expiredSurvey.status).toBe(404);
+
+    const invalidSurveyRatings = [{ mealRating: 0 }, { mealRating: 6 }] as const;
+    for (const payload of invalidSurveyRatings) {
+      const response = await fetch(`${baseUrl}/api/v1/surveys/missing-survey-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      expect(response.status).toBe(400);
+      expect(await json(response)).toMatchObject({ code: "VALIDATION_FAILED" });
+    }
+
+    const missingSurveySubmit = await fetch(`${baseUrl}/api/v1/surveys/missing-survey-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: { ignored: true }, mealRating: 5 }),
+    });
+    expect(missingSurveySubmit.status).toBe(404);
   });
 });
