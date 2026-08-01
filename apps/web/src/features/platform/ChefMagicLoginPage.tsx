@@ -15,18 +15,38 @@ type MagicLoginState =
 
 export function ChefMagicLoginPage({ token }: ChefMagicLoginPageProps) {
   const [state, setState] = useState<MagicLoginState>({ status: "loading" });
+  const [fragmentToken, setFragmentToken] = useState<string | null>(null);
+  const [hashChecked, setHashChecked] = useState(Boolean(token));
+  const effectiveToken = token ?? fragmentToken;
 
   useEffect(() => {
+    if (token) {
+      setHashChecked(true);
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const nextToken = params.get("token");
+    if (nextToken) {
+      setFragmentToken(nextToken);
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    }
+    setHashChecked(true);
+  }, [token]);
+
+  useEffect(() => {
+    if (!hashChecked) return;
+
     let active = true;
 
     const consume = async (): Promise<void> => {
-      if (!token) {
+      if (!effectiveToken) {
         setState({ status: "error", message: "This chef portal link is missing its token." });
         return;
       }
 
       try {
-        const user = await consumeChefMagicLink(token);
+        const user = await consumeChefMagicLink(effectiveToken);
         if (active) setState({ status: "success", user });
       } catch (caught) {
         if (!active) return;
@@ -42,7 +62,7 @@ export function ChefMagicLoginPage({ token }: ChefMagicLoginPageProps) {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [effectiveToken, hashChecked]);
 
   return (
     <main className="bg-[var(--color-warm-cream)] px-4 py-16 text-[var(--color-charcoal)] sm:px-6">

@@ -22,11 +22,17 @@ export const SECRET_ENV_KEYS = [
   "DATABASE_URL",
   "DATABASE_MIGRATION_URL",
   "KMS_LOCAL_DEV_KEY",
+  "RESEND_API_KEY",
+  "META_WHATSAPP_ACCESS_TOKEN",
+  "LINK_TOKEN_SECRET",
 ] as const;
 
 const port = z.coerce.number().int().min(1).max(65_535);
 
 const nonEmpty = (label: string) => z.string().trim().min(1, `${label} must not be empty`);
+const optionalNonEmpty = (label: string) =>
+  z.preprocess((value) => (value === "" ? undefined : value), nonEmpty(label).optional());
+const httpUrl = (label: string) => nonEmpty(label).url(`${label} must be a valid URL`);
 
 /**
  * `postgres://` / `postgresql://` only. Rejecting anything else keeps a
@@ -62,13 +68,38 @@ export const apiEnvSchema = baseEnvSchema.merge(databaseEnvSchema).extend({
   API_HOST: nonEmpty("API_HOST").default("127.0.0.1"),
   API_PORT: port.default(4000),
   API_SHUTDOWN_GRACE_MS: z.coerce.number().int().min(0).max(120_000).default(10_000),
+  API_TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  CHEFMATE_WEB_APP_URL: httpUrl("CHEFMATE_WEB_APP_URL").default("http://localhost:3000"),
+  KMS_LOCAL_DEV_KEY: optionalNonEmpty("KMS_LOCAL_DEV_KEY"),
 });
 
-export const workerEnvSchema = baseEnvSchema.merge(databaseEnvSchema).extend({
-  WORKER_POLL_INTERVAL_MS: z.coerce.number().int().min(10).max(60_000).default(1_000),
-  WORKER_BATCH_SIZE: z.coerce.number().int().min(1).max(500).default(25),
-  WORKER_SHUTDOWN_GRACE_MS: z.coerce.number().int().min(0).max(120_000).default(10_000),
-});
+export const workerEnvSchema = baseEnvSchema
+  .merge(databaseEnvSchema)
+  .extend({
+    WORKER_POLL_INTERVAL_MS: z.coerce.number().int().min(10).max(60_000).default(1_000),
+    WORKER_BATCH_SIZE: z.coerce.number().int().min(1).max(500).default(25),
+    WORKER_SHUTDOWN_GRACE_MS: z.coerce.number().int().min(0).max(120_000).default(10_000),
+    RESEND_API_KEY: optionalNonEmpty("RESEND_API_KEY"),
+    RESEND_FROM_EMAIL: optionalNonEmpty("RESEND_FROM_EMAIL"),
+    META_WHATSAPP_ACCESS_TOKEN: optionalNonEmpty("META_WHATSAPP_ACCESS_TOKEN"),
+    META_WHATSAPP_PHONE_NUMBER_ID: optionalNonEmpty("META_WHATSAPP_PHONE_NUMBER_ID"),
+    LINK_TOKEN_SECRET: optionalNonEmpty("LINK_TOKEN_SECRET").refine(
+      (value) => value === undefined || value.length >= 32,
+      "LINK_TOKEN_SECRET must be at least 32 characters",
+    ),
+  })
+  .superRefine((env, context) => {
+    if (env.RESEND_API_KEY && env.RESEND_FROM_EMAIL && !env.LINK_TOKEN_SECRET) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["LINK_TOKEN_SECRET"],
+        message: "LINK_TOKEN_SECRET is required when Resend email delivery is enabled",
+      });
+    }
+  });
 
 export type BaseEnv = z.infer<typeof baseEnvSchema>;
 export type DatabaseEnv = z.infer<typeof databaseEnvSchema>;

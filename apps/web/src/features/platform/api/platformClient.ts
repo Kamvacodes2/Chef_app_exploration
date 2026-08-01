@@ -243,10 +243,8 @@ const popularMealSchema = z.object({
   grossCents: z.number().int().nonnegative(),
 });
 
-// The backend's Prisma role enum still literally uses "COOK" on the wire (not yet
-// renamed). This schema accepts that legacy value but normalizes it to "CHEF" so
-// no other frontend code ever has to check for "COOK". The renamed backend enum
-// + a data migration for persisted legacy roles is a separate, deferred follow-up.
+// Legacy providers may still send "COOK" on the wire. Normalize that compatibility
+// value to the canonical "CHEF" role so the rest of the frontend has one role name.
 const rawPlatformRoleSchema = z.enum(["CUSTOMER", "COOK", "CHEF", "ADMIN", "SUPPORT"]);
 export const platformRoleSchema = z.preprocess(
   (value) => (value === "COOK" ? "CHEF" : value),

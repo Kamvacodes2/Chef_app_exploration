@@ -1,8 +1,25 @@
-﻿import { createHash } from "node:crypto";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import { createHash } from "node:crypto";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "@chefmate/database";
 import { calculatePricingQuote, type PricingItem, type PricingPayload } from "@chefmate/domain";
+import {
+  checkRateLimit,
+  currentUser,
+  hashToken,
+  HttpRouteError,
+  randomToken,
+  readCookie,
+  requestRateLimitKey,
+  type SessionCookieOptions,
+} from "../auth/session.js";
+import { createChefOffersForBooking } from "./platform.js";
+
+export const ANONYMOUS_BOOKING_COOKIE_NAME = "chefmate_booking_client";
+const ANONYMOUS_BOOKING_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 30;
+const ANONYMOUS_BOOKING_TOKEN_PATTERN = /^[A-Za-z0-9_-]{20,200}$/;
+const QUOTE_RATE_LIMIT = { maxAttempts: 60, windowMs: 15 * 60 * 1_000 } as const;
+const BOOKING_REQUEST_RATE_LIMIT = { maxAttempts: 12, windowMs: 15 * 60 * 1_000 } as const;
 
 const BANK_TRANSFER_INSTRUCTIONS = {
   bankName: "Chefmate Test Bank",
@@ -29,23 +46,44 @@ interface BookingRow {
   readonly subtotal_cents: number;
   readonly discount_cents: number;
   readonly total_cents: number;
+  readonly request_fingerprint: string;
+  readonly customer_id: string | null;
+  readonly anonymous_caller_hash: string | null;
   readonly payment_method: string | null;
   readonly payment_status: string | null;
   readonly bank_transfer: Record<string, unknown> | null;
+}
+
+interface RegisterBookingRequestRoutesOptions {
+  readonly pool: Pool;
+  readonly cookies?: SessionCookieOptions;
 }
 
 function meta(request: FastifyRequest) {
   return { requestId: request.id, correlationId: request.id };
 }
 
-function problem(request: FastifyRequest, status: number, message: string) {
+function problem(
+  request: FastifyRequest,
+  status: number,
+  message: string,
+  code = status === 400 ? "VALIDATION_FAILED" : "REQUEST_FAILED",
+  retryable = false,
+) {
   return {
-    code: status === 400 ? "VALIDATION_FAILED" : "REQUEST_FAILED",
+    code,
     message,
     status,
-    retryable: false,
+    retryable,
     meta: meta(request),
   };
+}
+
+function problemFromCaught(request: FastifyRequest, error: unknown, fallbackStatus = 400) {
+  if (error instanceof HttpRouteError) {
+    return problem(request, error.status, error.message, error.code, error.retryable);
+  }
+  return problem(request, fallbackStatus, (error as Error).message);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -127,6 +165,37 @@ function fingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
 }
 
+function anonymousBookingCookieHeader(token: string, options: SessionCookieOptions): string {
+  return [
+    `${ANONYMOUS_BOOKING_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${ANONYMOUS_BOOKING_COOKIE_TTL_SECONDS}`,
+    ...(options.secure ? ["Secure"] : []),
+  ].join("; ");
+}
+
+function setAnonymousBookingCookie(
+  reply: FastifyReply,
+  token: string,
+  options: SessionCookieOptions,
+): void {
+  void reply.header("Set-Cookie", anonymousBookingCookieHeader(token, options));
+}
+
+function anonymousCallerHash(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  options: SessionCookieOptions,
+): string {
+  const existing = readCookie(request, ANONYMOUS_BOOKING_COOKIE_NAME);
+  const token =
+    existing && ANONYMOUS_BOOKING_TOKEN_PATTERN.test(existing) ? existing : randomToken();
+  if (token !== existing) setAnonymousBookingCookie(reply, token, options);
+  return hashToken(token);
+}
+
 function splitChefShare(amountCents: number): number {
   return Math.round((amountCents * 6_500) / 10_000);
 }
@@ -137,6 +206,7 @@ async function findBookingByIdempotencyKey(
 ): Promise<BookingRow | null> {
   const result = await client.query<BookingRow>(
     `SELECT b.id::text, b.reference, b.status, b.subtotal_cents, b.discount_cents, b.total_cents,
+            b.request_fingerprint, b.customer_id::text, b.anonymous_caller_hash,
             p.method AS payment_method, p.status AS payment_status, p.bank_transfer
        FROM app.bookings b
        LEFT JOIN app.booking_payments p ON p.booking_id = b.id
@@ -144,6 +214,25 @@ async function findBookingByIdempotencyKey(
     [idempotencyKey],
   );
   return result.rows[0] ?? null;
+}
+
+function assertIdempotencyReplay(
+  row: BookingRow,
+  payloadFingerprint: string,
+  customerId: string | null,
+  anonymousHash: string | null,
+): void {
+  if (
+    row.request_fingerprint !== payloadFingerprint ||
+    row.customer_id !== customerId ||
+    row.anonymous_caller_hash !== anonymousHash
+  ) {
+    throw new HttpRouteError(
+      409,
+      "IDEMPOTENCY_KEY_CONFLICT",
+      "Idempotency-Key has already been used for a different booking request.",
+    );
+  }
 }
 
 function toBookingResponse(row: BookingRow) {
@@ -200,10 +289,16 @@ async function insertItems(
 
 export async function registerBookingRequestRoutes(
   app: FastifyInstance,
-  pool: Pool,
+  options: RegisterBookingRequestRoutesOptions,
 ): Promise<void> {
+  const { pool, cookies = {} } = options;
   app.post("/api/v1/booking-requests/quote", async (request, reply) => {
     try {
+      await checkRateLimit(
+        pool,
+        requestRateLimitKey(request, "booking-request:quote:ip"),
+        QUOTE_RATE_LIMIT,
+      );
       const payload = parsePricingPayload(request.body);
       const quote = calculatePricingQuote(payload);
       const {
@@ -214,31 +309,70 @@ export async function registerBookingRequestRoutes(
       } = quote;
       return reply.status(200).send({ data, meta: meta(request) });
     } catch (error) {
-      return reply.status(400).send(problem(request, 400, (error as Error).message));
+      const body = problemFromCaught(request, error);
+      return reply.status(body.status).send(body);
     }
   });
 
   app.post("/api/v1/booking-requests", async (request, reply) => {
+    try {
+      await checkRateLimit(
+        pool,
+        requestRateLimitKey(request, "booking-request:create:ip"),
+        BOOKING_REQUEST_RATE_LIMIT,
+      );
+    } catch (error) {
+      const body = problemFromCaught(request, error);
+      return reply.status(body.status).send(body);
+    }
+
     const idempotencyHeader = request.headers["idempotency-key"];
-    const idempotencyKey = Array.isArray(idempotencyHeader)
+    const rawIdempotencyKey = Array.isArray(idempotencyHeader)
       ? idempotencyHeader[0]
       : idempotencyHeader;
-    if (!idempotencyKey || idempotencyKey.trim() === "") {
+    const idempotencyKey = rawIdempotencyKey?.trim();
+    if (!idempotencyKey) {
       return reply.status(400).send(problem(request, 400, "Idempotency-Key header is required."));
     }
 
     let payload: BookingPayload;
     try {
+      await checkRateLimit(
+        pool,
+        requestRateLimitKey(request, "booking-request:create:key", idempotencyKey),
+        BOOKING_REQUEST_RATE_LIMIT,
+      );
       payload = parseBookingPayload(request.body);
     } catch (error) {
-      return reply.status(400).send(problem(request, 400, (error as Error).message));
+      const body = problemFromCaught(request, error);
+      return reply.status(body.status).send(body);
     }
 
-    const existing = await findBookingByIdempotencyKey(pool, idempotencyKey);
-    if (existing)
-      return reply.status(200).send({ data: toBookingResponse(existing), meta: meta(request) });
+    const payloadFingerprint = fingerprint(payload);
+    let customerId: string | null;
+    try {
+      const customer = await currentUser(request, pool);
+      customerId = customer?.id ?? null;
+    } catch (error) {
+      request.log.error({ err: error }, "booking session lookup failed");
+      const body = problem(
+        request,
+        503,
+        "Session could not be verified. Please try again.",
+        "SESSION_LOOKUP_FAILED",
+        true,
+      );
+      return reply.status(body.status).send(body);
+    }
+    const anonymousHash = customerId ? null : anonymousCallerHash(request, reply, cookies);
 
     try {
+      const existing = await findBookingByIdempotencyKey(pool, idempotencyKey);
+      if (existing) {
+        assertIdempotencyReplay(existing, payloadFingerprint, customerId, anonymousHash);
+        return reply.status(200).send({ data: toBookingResponse(existing), meta: meta(request) });
+      }
+
       const row = await withTransaction(pool, async (client) => {
         const quote = calculatePricingQuote(payload);
         const reference = await nextReference(client, payload.scheduledDate);
@@ -247,10 +381,12 @@ export async function registerBookingRequestRoutes(
              (reference, status, source, goal_id, main_slug, side_slugs, dessert_slug,
               custom_request, scheduled_date, time_slot, address, contact, gift_code,
               plan_id, plan_selection, subtotal_cents, discount_cents, total_cents,
-              chef_payable_cents, platform_revenue_cents, idempotency_key, request_fingerprint)
+              chef_payable_cents, platform_revenue_cents, idempotency_key, request_fingerprint,
+              customer_id, anonymous_caller_hash)
            VALUES
              ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13,
-              $14, $15::jsonb, $16, $17, $18, $19, $20, $21, $22)
+              $14, $15::jsonb, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+           ON CONFLICT (idempotency_key) DO NOTHING
            RETURNING id::text`,
           [
             reference,
@@ -274,11 +410,18 @@ export async function registerBookingRequestRoutes(
             quote.chefPayableCents,
             quote.platformRevenueCents,
             idempotencyKey,
-            fingerprint(payload),
+            payloadFingerprint,
+            customerId,
+            anonymousHash,
           ],
         );
         const bookingId = insert.rows[0]?.id;
-        if (!bookingId) throw new Error("Booking insert failed.");
+        if (!bookingId) {
+          const replay = await findBookingByIdempotencyKey(client, idempotencyKey);
+          if (!replay) throw new Error("Booking insert failed.");
+          assertIdempotencyReplay(replay, payloadFingerprint, customerId, anonymousHash);
+          return { row: replay, created: false };
+        }
 
         await insertItems(client, bookingId, quote.items);
 
@@ -292,22 +435,34 @@ export async function registerBookingRequestRoutes(
         }
 
         await client.query(
-          `INSERT INTO app.outbox_events (topic, aggregate_type, aggregate_id, payload)
-           VALUES ($1, 'booking', $2, $3::jsonb)`,
+          `INSERT INTO app.outbox_events
+             (topic, event_type, aggregate_type, aggregate_id, correlation_id, payload)
+           VALUES ($1, $1, 'booking', $2, $3, $4::jsonb)`,
           [
             quote.status === "NEEDS_REVIEW" ? "booking.review_requested" : "booking.requested",
             bookingId,
+            request.id,
             JSON.stringify({ reference, status: quote.status }),
           ],
         );
 
+        if (quote.status === "REQUESTED") {
+          await createChefOffersForBooking(client, bookingId, request.id);
+        }
+
         const created = await findBookingByIdempotencyKey(client, idempotencyKey);
         if (!created) throw new Error("Booking lookup failed.");
-        return created;
+        return { row: created, created: true };
       });
 
-      return reply.status(201).send({ data: toBookingResponse(row), meta: meta(request) });
+      return reply
+        .status(row.created ? 201 : 200)
+        .send({ data: toBookingResponse(row.row), meta: meta(request) });
     } catch (error) {
+      if (error instanceof HttpRouteError) {
+        const body = problemFromCaught(request, error);
+        return reply.status(body.status).send(body);
+      }
       request.log.error({ err: error }, "booking request failed");
       return reply.status(500).send({
         code: "INTERNAL_ERROR",

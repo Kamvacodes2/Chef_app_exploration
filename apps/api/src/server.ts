@@ -1,5 +1,6 @@
 import { loadApiEnv, loadLocalDotEnv } from "@chefmate/config";
 import { createPoolFromEnv } from "@chefmate/database";
+import { createKmsProvider } from "@chefmate/integrations";
 import { createLogger, installGracefulShutdown } from "@chefmate/observability";
 import { buildApp, SERVICE_NAME } from "./app.js";
 
@@ -16,7 +17,21 @@ async function main(): Promise<void> {
   const logger = createLogger({ name: SERVICE_NAME, level: env.LOG_LEVEL });
 
   const pool = createPoolFromEnv(env, SERVICE_NAME);
-  const app = await buildApp({ logger, pool });
+  const kms =
+    env.KMS_LOCAL_DEV_KEY === undefined
+      ? undefined
+      : createKmsProvider({
+          deployEnv: env.DEPLOY_ENV,
+          localKeyMaterial: env.KMS_LOCAL_DEV_KEY,
+        });
+  const app = await buildApp({
+    logger,
+    pool,
+    kms,
+    webAppBaseUrl: env.CHEFMATE_WEB_APP_URL,
+    secureCookies: env.DEPLOY_ENV === "staging" || env.DEPLOY_ENV === "production",
+    trustProxy: env.API_TRUST_PROXY,
+  });
 
   installGracefulShutdown(
     [

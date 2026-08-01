@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import { buildApp } from "../../apps/api/src/app.js";
+import { ANONYMOUS_BOOKING_COOKIE_NAME } from "../../apps/api/src/routes/bookingRequests.js";
 import { createPool, migrate } from "../../packages/database/src/index.js";
 import { createLogger } from "../../packages/observability/src/index.js";
 import {
@@ -24,6 +25,12 @@ function silentLogger() {
 
 async function json(response: Response): Promise<unknown> {
   return response.json() as Promise<unknown>;
+}
+
+function responseCookie(response: Response): string {
+  const value = response.headers.get("set-cookie");
+  if (!value) throw new Error("expected Set-Cookie header");
+  return value.split(";")[0] ?? value;
 }
 
 beforeAll(async () => {
@@ -154,19 +161,194 @@ describe("frontend purchase-flow API", () => {
       },
     });
 
+    const anonymousCookie = responseCookie(first);
+    expect(anonymousCookie).toContain(`${ANONYMOUS_BOOKING_COOKIE_NAME}=`);
+
     const stored = await pool.query<{ total_cents: number; chef_payable_cents: number }>(
       "SELECT total_cents, chef_payable_cents FROM app.bookings WHERE id = $1",
       [firstBody.data.id],
     );
     expect(stored.rows[0]).toEqual({ total_cents: 67_285, chef_payable_cents: 43_735 });
 
-    const second = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+    const foreignAnonymousReplay = await fetch(`${baseUrl}/api/v1/booking-requests`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", "Idempotency-Key": "purchase-flow-001" },
       body: JSON.stringify(payload),
     });
+    expect(foreignAnonymousReplay.status).toBe(409);
+    expect(await json(foreignAnonymousReplay)).toMatchObject({ code: "IDEMPOTENCY_KEY_CONFLICT" });
+
+    const second = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "purchase-flow-001",
+        Cookie: anonymousCookie,
+      },
+      body: JSON.stringify(payload),
+    });
     expect(second.status).toBe(200);
     expect((await json(second)) as unknown).toMatchObject({ data: { id: firstBody.data.id } });
+
+    const conflictingReplay = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "purchase-flow-001",
+        Cookie: anonymousCookie,
+      },
+      body: JSON.stringify({ ...payload, timeSlot: "19:00" }),
+    });
+    expect(conflictingReplay.status).toBe(409);
+    expect(await json(conflictingReplay)).toMatchObject({ code: "IDEMPOTENCY_KEY_CONFLICT" });
+  });
+
+  it("handles concurrent same-key booking submissions as replay instead of errors", async () => {
+    const payload = {
+      source: "landing-order-flow",
+      goalId: "just-good-food",
+      mainSlug: "chicken-peri-peri",
+      sideSlugs: ["side-coleslaw"],
+      dessertSlug: null,
+      customRequest: null,
+      scheduledDate: "2026-08-17",
+      timeSlot: "18:30",
+      address: { estate: "Dainfern", unit: "", street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Parallel Customer", email: "parallel@example.test", phone: "+27821234567" },
+      giftCode: null,
+    };
+    const anonymousCookie = `${ANONYMOUS_BOOKING_COOKIE_NAME}=parallel-client-token-0001`;
+    const [first, second] = await Promise.all([
+      fetch(`${baseUrl}/api/v1/booking-requests`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "purchase-flow-concurrent-001",
+          Cookie: anonymousCookie,
+        },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`${baseUrl}/api/v1/booking-requests`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "purchase-flow-concurrent-001",
+          Cookie: anonymousCookie,
+        },
+        body: JSON.stringify(payload),
+      }),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual([200, 201]);
+    const bodies = (await Promise.all([json(first), json(second)])) as Array<{
+      data: { id: string };
+    }>;
+    expect(bodies[0]?.data.id).toBe(bodies[1]?.data.id);
+    const count = await pool.query<{ count: string }>(
+      "SELECT count(*)::text FROM app.bookings WHERE idempotency_key = $1",
+      ["purchase-flow-concurrent-001"],
+    );
+    expect(count.rows[0]?.count).toBe("1");
+  });
+
+  it("handles catalog, availability and booking validation branches", async () => {
+    const allMeals = await fetch(`${baseUrl}/api/v1/catalog/meals`);
+    expect(allMeals.status).toBe(200);
+    expect(JSON.stringify(await json(allMeals))).toContain("chicken-peri-peri");
+
+    const meal = await fetch(`${baseUrl}/api/v1/catalog/meals/chicken-peri-peri`);
+    expect(meal.status).toBe(200);
+    expect(await json(meal)).toMatchObject({ data: { slug: "chicken-peri-peri" } });
+
+    const missingMeal = await fetch(`${baseUrl}/api/v1/catalog/meals/no-such-meal`);
+    expect(missingMeal.status).toBe(404);
+    expect(await json(missingMeal)).toMatchObject({ code: "NOT_FOUND" });
+
+    for (const suffix of ["", "?date=not-a-date"] as const) {
+      const unavailable = await fetch(`${baseUrl}/api/v1/availability/slots${suffix}`);
+      expect(unavailable.status).toBe(400);
+      expect(await json(unavailable)).toMatchObject({ code: "VALIDATION_FAILED" });
+    }
+
+    const invalidQuoteBodies = [
+      null,
+      { mainSlug: "chicken-peri-peri", sideSlugs: "side-coleslaw", dessertSlug: null },
+      { mainSlug: "", sideSlugs: [], dessertSlug: null },
+      {
+        mainSlug: "chicken-peri-peri",
+        sideSlugs: [],
+        dessertSlug: 12,
+        customRequest: null,
+        giftCode: null,
+      },
+    ];
+    for (const body of invalidQuoteBodies) {
+      const response = await fetch(`${baseUrl}/api/v1/booking-requests/quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      expect(response.status).toBe(400);
+    }
+
+    const validPayload = {
+      source: "landing-order-flow",
+      goalId: "just-good-food",
+      mainSlug: "chicken-peri-peri",
+      sideSlugs: [],
+      dessertSlug: null,
+      customRequest: null,
+      scheduledDate: "2026-08-15",
+      timeSlot: "18:30",
+      address: { street: "12 Jacaranda Ave", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test" },
+      giftCode: null,
+    };
+
+    const missingIdempotency = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validPayload),
+    });
+    expect(missingIdempotency.status).toBe(400);
+
+    for (const [field, value] of [
+      ["source", "other"],
+      ["scheduledDate", "15-08-2026"],
+      ["timeSlot", "evening"],
+      ["address", null],
+    ] as const) {
+      const response = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": `invalid-${field}` },
+        body: JSON.stringify({ ...validPayload, [field]: value }),
+      });
+      expect(response.status).toBe(400);
+    }
+
+    const customRequest = await fetch(`${baseUrl}/api/v1/booking-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": "custom-review-001" },
+      body: JSON.stringify({
+        ...validPayload,
+        mainSlug: "custom-request",
+        customRequest: "Please build a birthday menu around lamb.",
+        planSelection: {
+          planId: "family",
+          preferredDays: ["Monday", 123, "Wednesday"],
+          schedulePreference: " evenings ",
+          favoriteMealSlug: "chicken-peri-peri",
+        },
+      }),
+    });
+    expect(customRequest.status).toBe(201);
+    expect(await json(customRequest)).toMatchObject({
+      data: { status: "NEEDS_REVIEW", payment: null },
+    });
   });
 });

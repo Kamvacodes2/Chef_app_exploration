@@ -6,9 +6,8 @@
  * with `FOR UPDATE SKIP LOCKED`, sends through an idempotent provider adapter,
  * records the result, and retries with bounded exponential backoff.
  *
- * S02 owns the *loop*, not the workload. The `outbox_events` table itself is
- * S05, and every concrete job type belongs to the step that introduces it, so
- * the loop talks to an injected {@link OutboxSource} rather than to SQL.
+ * The loop talks to an injected {@link OutboxSource}; the production source is SQL-backed
+ * and tests can still inject in-memory sources for deterministic failure paths.
  */
 
 export interface OutboxEvent {
@@ -30,25 +29,32 @@ export interface OutboxSource {
    * multiple worker replicas never process the same row concurrently.
    */
   claim(batchSize: number): Promise<readonly OutboxEvent[]>;
-  markProcessed(eventId: string): Promise<void>;
+  markProcessed(event: OutboxEvent): Promise<void>;
   /** `nextAttemptAt` is `undefined` when the event has been dead-lettered. */
-  markFailed(eventId: string, reason: string, nextAttemptAt: Date | undefined): Promise<void>;
+  markFailed(event: OutboxEvent, reason: string, nextAttemptAt: Date | undefined): Promise<void>;
 }
 
 export type OutboxHandler = (event: OutboxEvent) => Promise<void>;
 
 /**
- * The canonical claim statement, kept next to the port it constrains so S05's
+ * The canonical claim statement, kept next to the port it constrains so the
  * SQL-backed source cannot drift away from the documented pattern.
  */
 export const CLAIM_SQL_SHAPE = `
-  SELECT id, event_type, payload, correlation_id, attempts, available_at
-    FROM app.outbox_events
-   WHERE processed_at IS NULL
-     AND available_at <= now()
-   ORDER BY available_at ASC
-   LIMIT $1
+  WITH due AS (
+    SELECT id
+      FROM app.outbox_events
+     WHERE status IN ('PENDING', 'PROCESSING')
+       AND available_at <= now()
+     ORDER BY available_at ASC
+     LIMIT $1
      FOR UPDATE SKIP LOCKED
+  )
+  UPDATE app.outbox_events event
+     SET status = 'PROCESSING', attempts = attempts + 1
+    FROM due
+   WHERE event.id = due.id
+   RETURNING event.id, event.event_type, event.payload, event.correlation_id, event.attempts, event.available_at
 ` as const;
 
 /** Bounded exponential backoff with a hard dead-letter ceiling. */
@@ -57,7 +63,7 @@ const BASE_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS = 15 * 60 * 1_000;
 
 /**
- * Returns when an event should next be attempted, or `undefined` once it has
+ * Returns when an event should next be attempted for this claimed attempt, or `undefined` once it has
  * exhausted {@link MAX_ATTEMPTS} and must be dead-lettered for admin operations.
  */
 export function nextAttemptAt(attempts: number, now: Date): Date | undefined {

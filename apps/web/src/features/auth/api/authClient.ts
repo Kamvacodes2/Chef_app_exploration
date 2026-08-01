@@ -68,6 +68,22 @@ export async function getCurrentUser(
   return authResponseSchema.parse(await response.json()).data.user;
 }
 
+export async function logout(options: AuthRequestOptions = {}): Promise<void> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchWithTimeout(
+    fetchImpl,
+    apiUrl(options.baseUrl ?? getChefmateApiUrl(), "/api/v1/auth/logout"),
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    const message = await readErrorMessage(response);
+    throw new Error(message);
+  }
+}
 async function sendAuthRequest(
   path: string,
   body: SignInInput | CreateCustomerAccountInput,

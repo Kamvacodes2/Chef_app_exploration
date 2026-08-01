@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Pool } from "pg";
 import { createOutboxLoop } from "../../apps/worker/src/outbox/loop.js";
 import { createHandlerRegistry } from "../../apps/worker/src/outbox/registry.js";
-import { PendingSchemaOutboxSource } from "../../apps/worker/src/outbox/pendingSchemaSource.js";
+import { SqlOutboxSource } from "../../apps/worker/src/outbox/sqlSource.js";
 import type { OutboxEvent, OutboxSource } from "../../apps/worker/src/outbox/types.js";
 import { createPool, migrate } from "../../packages/database/src/index.js";
 import { createLogger, installGracefulShutdown } from "../../packages/observability/src/index.js";
@@ -17,8 +17,8 @@ import {
 /**
  * Worker lifecycle suite.
  *
- * Covers the two things S02 actually delivers for the worker: a drain loop that
- * starts and stops cleanly, and SIGTERM handling that releases resources in the
+ * Covers the worker drain loop against in-memory and SQL outbox sources, plus SIGTERM
+ * handling that releases resources in the
  * right order.
  *
  * The signal is delivered through an injected `EventEmitter` rather than by
@@ -77,13 +77,13 @@ class RecordingSource implements OutboxSource {
     return Promise.resolve(batch);
   }
 
-  markProcessed(eventId: string): Promise<void> {
-    this.processed.push(eventId);
+  markProcessed(event: OutboxEvent): Promise<void> {
+    this.processed.push(event.id);
     return Promise.resolve();
   }
 
-  markFailed(eventId: string, reason: string, nextAttemptAt: Date | undefined): Promise<void> {
-    this.failed.push({ id: eventId, reason, retryAt: nextAttemptAt });
+  markFailed(event: OutboxEvent, reason: string, nextAttemptAt: Date | undefined): Promise<void> {
+    this.failed.push({ id: event.id, reason, retryAt: nextAttemptAt });
     return Promise.resolve();
   }
 }
@@ -96,16 +96,43 @@ describe("the worker connects to a real migrated database", () => {
 });
 
 describe("outbox drain loop", () => {
-  it("claims nothing while the outbox schema is still S05's to create", async () => {
-    const source = new PendingSchemaOutboxSource(logger);
+  it("drains SQL communication events and records disabled providers explicitly", async () => {
+    const log = await pool.query<{ id: string }>(
+      "INSERT INTO app.communication_logs (channel, status, recipient, subject, template_key, body_preview) VALUES ('EMAIL', 'QUEUED', 'chef@example.test', 'New job', 'chef.booking.offer', 'You receive R437.35') RETURNING id::text",
+    );
+    const logId = log.rows[0]?.id;
+    await pool.query(
+      "INSERT INTO app.outbox_events (topic, event_type, aggregate_type, aggregate_id, correlation_id, payload) VALUES ('communication.email.transactional.v1', 'communication.email.transactional.v1', 'communication', $1, 'corr-worker-sql', $2::jsonb)",
+      [
+        logId,
+        JSON.stringify({
+          communicationLogId: logId,
+          recipient: "chef@example.test",
+          subject: "New job",
+          templateKey: "chef.booking.offer",
+          bodyPreview: "You receive R437.35",
+          metadata: {},
+        }),
+      ],
+    );
     const loop = createOutboxLoop({
-      source,
-      registry: createHandlerRegistry(),
+      source: new SqlOutboxSource(pool),
+      registry: createHandlerRegistry({ pool, logger }),
       logger,
       pollIntervalMs: 10,
       batchSize: 5,
     });
-    expect(await loop.runOnce()).toBe(0);
+    expect(await loop.runOnce()).toBe(1);
+    const communication = await pool.query<{ status: string; provider: string | null }>(
+      "SELECT status, provider FROM app.communication_logs WHERE id = $1",
+      [logId],
+    );
+    expect(communication.rows[0]).toMatchObject({ status: "SKIPPED", provider: "mail-disabled" });
+    const outbox = await pool.query<{ status: string; processed_at: Date | null }>(
+      "SELECT status, processed_at FROM app.outbox_events WHERE aggregate_id = $1",
+      [logId],
+    );
+    expect(outbox.rows[0]).toMatchObject({ status: "SENT", processed_at: expect.any(Date) });
   });
 
   it("dispatches a claimed event to its handler and acknowledges it", async () => {

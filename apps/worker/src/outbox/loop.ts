@@ -41,18 +41,18 @@ export function createOutboxLoop(options: OutboxLoopOptions): OutboxLoop {
       try {
         const handler = options.registry.resolve(event.eventType);
         await handler(event);
-        await options.source.markProcessed(event.id);
+        await options.source.markProcessed(event);
         options.logger.info(
           { eventId: event.id, eventType: event.eventType },
           "outbox event processed",
         );
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        const retryAt = nextAttemptAt(event.attempts + 1, now());
-        await options.source.markFailed(event.id, reason, retryAt);
+        const retryAt = nextAttemptAt(event.attempts, now());
+        await options.source.markFailed(event, reason, retryAt);
         if (retryAt === undefined) {
           options.logger.error(
-            { eventId: event.id, eventType: event.eventType, attempts: event.attempts + 1 },
+            { eventId: event.id, eventType: event.eventType, attempts: event.attempts },
             "outbox event dead-lettered",
           );
         } else {

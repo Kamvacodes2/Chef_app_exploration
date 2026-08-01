@@ -17,6 +17,19 @@ const healthyPool = (): Pool =>
   ({ query: () => Promise.resolve({ rows: [{ "?column?": 1 }] }) }) as unknown as Pool;
 const brokenPool = (): Pool =>
   ({ query: () => Promise.reject(new Error("password authentication failed")) }) as unknown as Pool;
+const bookingSessionLookupFailurePool = (): Pool =>
+  ({
+    query: (text: string) => {
+      if (text.includes("app.rate_limit_buckets")) {
+        return Promise.resolve({ rows: [{ attempts: 1 }] });
+      }
+      if (text.includes("FROM app.bookings")) return Promise.resolve({ rows: [] });
+      if (text.includes("FROM app.sessions")) {
+        return Promise.reject(new Error("session database unavailable"));
+      }
+      return Promise.resolve({ rows: [] });
+    },
+  }) as unknown as Pool;
 
 let app: FastifyInstance | undefined;
 
@@ -137,6 +150,37 @@ describe("problem responses", () => {
 });
 
 describe("business route surface", () => {
+  it("does not create anonymous bookings when authenticated session lookup fails", async () => {
+    app = await buildApp({ logger, pool: bookingSessionLookupFailurePool() });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/booking-requests",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "session-lookup-failure-001",
+        cookie: "chefmate_session=session-token",
+      },
+      payload: JSON.stringify({
+        source: "landing-order-flow",
+        goalId: "just-good-food",
+        mainSlug: "chicken-peri-peri",
+        sideSlugs: [],
+        dessertSlug: null,
+        customRequest: null,
+        scheduledDate: "2026-08-15",
+        timeSlot: "18:30",
+        address: { street: "12 Jacaranda Ave", area: "Fourways" },
+        contact: { name: "Test Customer", email: "customer@example.test" },
+        giftCode: null,
+      }),
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(problemSchema.parse(response.json())).toMatchObject({
+      code: "SESSION_LOOKUP_FAILED",
+      retryable: true,
+    });
+  });
   it("registers health plus the browser-consumed purchase-flow routes", async () => {
     app = await buildApp({ logger, pool: healthyPool() });
     await app.ready();
@@ -147,5 +191,100 @@ describe("business route surface", () => {
     expect(routes).toContain("/api/v1/catalog/categories");
     expect(routes).toContain("/api/v1/availability/slots");
     expect(routes).toContain("/api/v1/booking-requests");
+  });
+});
+
+describe("CORS preflight", () => {
+  it("answers browser preflight requests for configured and local origins", async () => {
+    app = await buildApp({
+      logger,
+      pool: healthyPool(),
+      webAppBaseUrl: "https://app.chefmate.test/dashboard",
+    });
+
+    const local = await app.inject({
+      method: "OPTIONS",
+      url: "/api/v1/auth/login",
+      headers: { origin: "http://localhost:3000" },
+    });
+    expect(local.statusCode).toBe(204);
+    expect(local.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+    expect(local.headers["access-control-allow-credentials"]).toBe("true");
+    expect(local.headers["access-control-allow-methods"]).toContain("PATCH");
+
+    const loopback = await app.inject({
+      method: "GET",
+      url: "/health/live",
+      headers: { origin: "http://127.0.0.1:3100" },
+    });
+    expect(loopback.headers["access-control-allow-origin"]).toBe("http://127.0.0.1:3100");
+
+    const configured = await app.inject({
+      method: "GET",
+      url: "/health/live",
+      headers: { origin: "https://app.chefmate.test" },
+    });
+    expect(configured.headers["access-control-allow-origin"]).toBe("https://app.chefmate.test");
+
+    const external = await app.inject({
+      method: "GET",
+      url: "/health/live",
+      headers: { origin: "https://example.test" },
+    });
+    expect(external.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+
+  it("rejects unsafe credentialed requests from untrusted browser origins", async () => {
+    app = await buildApp({
+      logger,
+      pool: brokenPool(),
+      webAppBaseUrl: "https://app.chefmate.test",
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/logout",
+      headers: {
+        origin: "https://evil.chefmate.test",
+        cookie: "chefmate_session=session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(problemSchema.parse(response.json())).toMatchObject({ code: "CSRF_ORIGIN_DENIED" });
+  });
+
+  it("allows unsafe credentialed requests from the configured browser origin", async () => {
+    app = await buildApp({
+      logger,
+      pool: healthyPool(),
+      webAppBaseUrl: "https://app.chefmate.test",
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/logout",
+      headers: {
+        origin: "https://app.chefmate.test",
+        cookie: "chefmate_session=session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+  });
+});
+
+describe("trusted proxy handling", () => {
+  it("can derive request.ip from a trusted forwarded-for header", async () => {
+    app = await buildApp({ logger, pool: healthyPool(), trustProxy: true });
+    app.get("/debug-ip", (request) => ({ ip: request.ip }));
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/debug-ip",
+      headers: { "x-forwarded-for": "203.0.113.7, 10.0.0.1" },
+    });
+
+    expect(response.json()).toEqual({ ip: "203.0.113.7" });
   });
 });

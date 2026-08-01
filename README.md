@@ -113,6 +113,22 @@ For the integrated local purchase flow, `.env.local` should contain
 `NEXT_PUBLIC_MEALS_DATA_SOURCE=http`. With that setup the web app reads catalog,
 availability, quote and booking data from `apps/api`.
 
+For a full local platform smoke test with the actual API, worker, migrations and
+a disposable seeded PostgreSQL/PostGIS database, run:
+
+```powershell
+pnpm dev:local
+```
+
+The script writes live fixture details to `.local-dev/chefmate-local-dev.json`
+while it is running. The seeded logins are:
+
+- Admin: `admin.local@chefmate.test` / `StrongPass12345`
+- Approved chef: `chef.lerato.local@chefmate.test` / `StrongPass12345`
+
+Open `http://localhost:3000/admin` for the admin dashboard and
+`http://localhost:3000/chef/portal` for the chef dashboard.
+
 When `NEXT_PUBLIC_CHEFMATE_API_URL` is unset in development, the browser contract
 still defaults booking calls to the legacy-safe `http://localhost:3001` fallback
 characterized in S01. Booking submission uses `NEXT_PUBLIC_CHEFMATE_API_URL`

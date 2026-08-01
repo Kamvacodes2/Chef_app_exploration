@@ -1,12 +1,24 @@
 import type { OutboxHandler } from "./types.js";
+import {
+  EMAIL_EVENT,
+  WHATSAPP_EVENT,
+  emailHandler,
+  whatsAppHandler,
+  type CommunicationHandlerDependencies,
+} from "./handlers.js";
 
 /**
  * Handler registry.
  *
- * Empty in S02. Registering nothing is deliberate: an unrecognised event type
+ * Registering nothing in bare unit tests is deliberate: an unrecognised event type
  * must be an explicit, visible failure rather than a silent discard, so the
  * loop dead-letters it into admin operations instead of acknowledging it.
  */
+
+export const BOOKING_REQUESTED_EVENT = "booking.requested";
+export const BOOKING_REVIEW_REQUESTED_EVENT = "booking.review_requested";
+
+const acknowledgeOnlyHandler: OutboxHandler = async () => undefined;
 
 export class UnknownEventTypeError extends Error {
   public readonly eventType: string;
@@ -46,7 +58,22 @@ export class HandlerRegistry {
   }
 }
 
-/** The S02 registry: no job types exist yet. */
-export function createHandlerRegistry(): HandlerRegistry {
-  return new HandlerRegistry();
+/**
+ * Creates the worker handler registry.
+ *
+ * Tests may call this without dependencies to assert the bare registry behavior;
+ * the production worker passes dependencies and receives the communication
+ * handlers that send/log email and WhatsApp events.
+ */
+export function createHandlerRegistry(
+  dependencies?: CommunicationHandlerDependencies,
+): HandlerRegistry {
+  const registry = new HandlerRegistry();
+  if (dependencies !== undefined) {
+    registry.register(EMAIL_EVENT, emailHandler(dependencies));
+    registry.register(WHATSAPP_EVENT, whatsAppHandler(dependencies));
+    registry.register(BOOKING_REQUESTED_EVENT, acknowledgeOnlyHandler);
+    registry.register(BOOKING_REVIEW_REQUESTED_EVENT, acknowledgeOnlyHandler);
+  }
+  return registry;
 }

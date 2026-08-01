@@ -1,9 +1,10 @@
 import { loadLocalDotEnv, loadWorkerEnv } from "@chefmate/config";
 import { createPoolFromEnv } from "@chefmate/database";
 import { createLogger, installGracefulShutdown } from "@chefmate/observability";
+import { MetaWhatsAppProvider, ResendMailProvider } from "@chefmate/integrations";
 import { createOutboxLoop } from "./outbox/loop.js";
 import { createHandlerRegistry } from "./outbox/registry.js";
-import { PendingSchemaOutboxSource } from "./outbox/pendingSchemaSource.js";
+import { SqlOutboxSource } from "./outbox/sqlSource.js";
 
 export const WORKER_SERVICE_NAME = "chefmate-worker";
 
@@ -20,9 +21,29 @@ async function main(): Promise<void> {
   const logger = createLogger({ name: WORKER_SERVICE_NAME, level: env.LOG_LEVEL });
 
   const pool = createPoolFromEnv(env, WORKER_SERVICE_NAME);
+  const mail =
+    env.RESEND_API_KEY && env.RESEND_FROM_EMAIL
+      ? new ResendMailProvider({
+          apiKey: env.RESEND_API_KEY,
+          fromEmail: env.RESEND_FROM_EMAIL,
+        })
+      : undefined;
+  const messaging =
+    env.META_WHATSAPP_ACCESS_TOKEN && env.META_WHATSAPP_PHONE_NUMBER_ID
+      ? new MetaWhatsAppProvider({
+          accessToken: env.META_WHATSAPP_ACCESS_TOKEN,
+          phoneNumberId: env.META_WHATSAPP_PHONE_NUMBER_ID,
+        })
+      : undefined;
   const loop = createOutboxLoop({
-    source: new PendingSchemaOutboxSource(logger),
-    registry: createHandlerRegistry(),
+    source: new SqlOutboxSource(pool),
+    registry: createHandlerRegistry({
+      pool,
+      logger,
+      mail,
+      messaging,
+      linkTokenSecret: env.LINK_TOKEN_SECRET,
+    }),
     logger,
     pollIntervalMs: env.WORKER_POLL_INTERVAL_MS,
     batchSize: env.WORKER_BATCH_SIZE,
