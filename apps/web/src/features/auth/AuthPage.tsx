@@ -96,12 +96,17 @@ export function AuthPage() {
               <p className="text-base leading-7 text-[var(--color-charcoal)]/80">
                 Signed in as {user.displayName}.
               </p>
-              <Link
-                href="/#order-flow"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-              >
-                Book a chef
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                {postLoginLinks(user.roles).map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           ) : (
             <form className="mt-6 space-y-5" onSubmit={submit}>
@@ -186,6 +191,29 @@ export function AuthPage() {
       </div>
     </main>
   );
+}
+
+interface PostLoginLink {
+  readonly href: string;
+  readonly label: string;
+}
+
+function postLoginLinks(roles: AuthenticatedUser["roles"]): readonly PostLoginLink[] {
+  const links: PostLoginLink[] = [];
+
+  if (roles.includes("ADMIN") || roles.includes("SUPPORT")) {
+    links.push({ href: "/admin", label: "Go to admin dashboard" });
+  }
+
+  if (roles.includes("CHEF")) {
+    links.push({ href: "/chef/portal", label: "Go to chef portal" });
+  }
+
+  if (links.length === 0) {
+    links.push({ href: "/#order-flow", label: "Book a chef" });
+  }
+
+  return links;
 }
 
 function tabClassName(isActive: boolean): string {
