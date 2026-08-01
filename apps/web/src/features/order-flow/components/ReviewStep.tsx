@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { findChefmatePlan, PREFERRED_DAYS } from "@/features/plans/planCatalog";
 import { findItem } from "../state/orderReducer";
 import { useOrder } from "../state/OrderContext";
+import { GiftCodeForm } from "./GiftCodeForm";
 import type { OrderMenuItem } from "../types";
 
 function friendlyDateTime(iso: string | null, time: string | null): string {
@@ -167,6 +168,8 @@ export function ReviewStep(): ReactElement {
               <p className="text-sm text-[var(--color-bone)]/80">{contactEmail}</p>
             ) : null}
           </div>
+
+          <GiftCodeForm />
         </div>
 
         <aside className="flex h-fit flex-col gap-4 rounded-3xl bg-[var(--color-bone)] p-5 text-[var(--color-oxblood)] lg:sticky lg:top-4">
