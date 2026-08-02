@@ -62,7 +62,18 @@ describe("LandingPage", () => {
       throw new Error("Expected final callout section");
     }
 
-    expect(screen.getByRole("heading", { name: "Choose your Chefmate" })).toBeInTheDocument();
+    const pricingHeading = screen.getByRole("heading", { name: "Choose your chefmate" });
+    expect(pricingHeading).toBeInTheDocument();
+    expect(pricingHeading).toHaveClass("items-baseline", "text-[#611a1e]");
+    const pricingHeadingWordmark = screen.getByTestId("pricing-heading-wordmark");
+    expect(pricingHeadingWordmark).toHaveAttribute(
+      "src",
+      expect.stringContaining("logo-wordmark.webp"),
+    );
+    expect(pricingHeadingWordmark).toHaveAttribute("width", "720");
+    expect(pricingHeadingWordmark).toHaveAttribute("height", "142");
+    expect(pricingHeadingWordmark).toHaveClass("h-[1em]");
+    expect(pricingHeadingWordmark).toHaveAttribute("aria-hidden", "true");
     const cards = screen.getAllByTestId("pricing-plan-card");
     expect(cards).toHaveLength(4);
     expect(cards.map((card) => card.getAttribute("href"))).toEqual([
@@ -172,7 +183,7 @@ describe("LandingPage", () => {
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     expect(
-      await screen.findByRole("heading", { name: "What are you feeding?" }),
+      await screen.findByRole("heading", { name: "How can chefmate help?" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "goal");
   });
@@ -208,7 +219,7 @@ describe("LandingPage", () => {
     fireEvent.click(screen.getByRole("link", { name: "Explore meals" }));
 
     expect(
-      await screen.findByRole("heading", { name: "What are you feeding?" }),
+      await screen.findByRole("heading", { name: "How can chefmate help?" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Find what you want to eat." }),

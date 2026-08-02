@@ -68,7 +68,7 @@ export function GoalSelect(): ReactElement {
     <div className="flex w-full flex-col items-center gap-8">
       <div className="flex flex-col items-center gap-2 text-center">
         <h2 className="font-display text-4xl font-semibold text-[var(--color-bone)] sm:text-5xl">
-          What are you feeding?
+          How can chefmate help?
         </h2>
         <p className="max-w-md text-sm text-[var(--color-bone)]/70 sm:text-base">
           Pick a goal and we&apos;ll line up the plates to match &mdash; or just show you the good

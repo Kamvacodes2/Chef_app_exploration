@@ -10,7 +10,7 @@ test("order flow supports focused meal search and custom request interactions", 
   await page.getByRole("link", { name: "Book a chef" }).first().click();
   await expect(page.getByTestId("order-flow")).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "What are you feeding?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "How can chefmate help?" })).toBeVisible();
   await expect(page.getByTestId("order-flow")).toHaveAttribute("data-step", "goal");
   await page.getByTestId("goal-tile-track").getByRole("button").first().click();
 
