@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import { findChefmatePlan, PREFERRED_DAYS } from "@/features/plans/planCatalog";
+import { INCLUDED_SIDE_COUNT } from "../constants/menu";
 import { findItem } from "../state/orderReducer";
 import { useOrder } from "../state/OrderContext";
 import { GiftCodeForm } from "./GiftCodeForm";
@@ -67,14 +68,33 @@ function SelectionRow({
 }
 
 export function ReviewStep(): ReactElement {
-  const { state, pricingQuote, isPricingLoading, authenticatedUser } = useOrder();
+  const { state, pricingQuote, isPricingLoading, authenticatedUser, subtotal, discount, total } =
+    useOrder();
   const address = [state.address.unit, state.address.street, state.address.area]
     .filter(Boolean)
     .join(", ");
   const contactName = authenticatedUser?.displayName ?? state.contact.name;
   const contactEmail = authenticatedUser?.email ?? state.contact.email;
+  const hasPricingQuote = pricingQuote != null;
   const pricesBySlug = new Map(pricingQuote?.items.map((item) => [item.slug, item.priceCents]));
-  const priceFor = (item: OrderMenuItem): number | undefined => pricesBySlug.get(item.id);
+  const fallbackPriceFor = (
+    item: OrderMenuItem,
+    kind: "main" | "side" | "dessert",
+    index = 0,
+  ): number => {
+    if (kind === "main") return 0;
+    if (kind === "side" && index < INCLUDED_SIDE_COUNT) return 0;
+    return Math.round(item.price * 100);
+  };
+  const priceFor = (
+    item: OrderMenuItem,
+    kind: "main" | "side" | "dessert",
+    index = 0,
+  ): number | undefined => {
+    const quotedPrice = pricesBySlug.get(item.id);
+    if (quotedPrice !== undefined) return quotedPrice;
+    return hasPricingQuote ? undefined : fallbackPriceFor(item, kind, index);
+  };
   const catalogPlan = findChefmatePlan(state.planId);
   const plan =
     pricingQuote?.plan ??
@@ -87,11 +107,47 @@ export function ReviewStep(): ReactElement {
           priceCents: catalogPlan.priceCents,
         }
       : null);
-  const subtotalCents = pricingQuote?.subtotalCents;
-  const discountCents = pricingQuote?.discountCents ?? 0;
-  const totalCents = pricingQuote?.totalCents;
+  const subtotalCents = pricingQuote?.subtotalCents ?? Math.round(subtotal * 100);
+  const discountCents = pricingQuote?.discountCents ?? Math.round(discount * 100);
+  const totalCents = pricingQuote?.totalCents ?? Math.round(total * 100);
   const isCustomRequest = state.main?.id === "custom-request";
   const isPlanRequest = Boolean(plan?.recurring);
+  const isEstimatedPricing = !isCustomRequest && !hasPricingQuote;
+  const totalLabel = isCustomRequest
+    ? "Custom quote"
+    : isEstimatedPricing
+      ? isPlanRequest
+        ? "Estimated monthly plan"
+        : plan
+          ? "Estimated package total"
+          : "Estimated order total"
+      : isPlanRequest
+        ? "Monthly plan"
+        : isPricingLoading
+          ? "Updating total"
+          : plan
+            ? "Session total"
+            : "Order total";
+  const subtotalLabel = isCustomRequest
+    ? "Recipe details"
+    : isEstimatedPricing
+      ? plan
+        ? "Estimated package price"
+        : "Estimated items"
+      : plan
+        ? "Package price"
+        : "Items";
+  const nextStepCopy = isCustomRequest
+    ? "Send your request and Chefmate will review the recipe, confirm your tailored price, then send payment details before matching a chef."
+    : isEstimatedPricing
+      ? isPlanRequest
+        ? "Estimated from your plan choices while Chefmate confirms the latest server price. You can send the plan request once the confirmed quote is ready."
+        : "Estimated from your selections while Chefmate confirms the latest server price. Checkout will unlock once the confirmed quote is ready."
+      : isPlanRequest
+        ? "Send your plan request. Chefmate will confirm your recurring session schedule and email payment details before activating the plan."
+        : plan
+          ? "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we confirm your first session and keep these package preferences with your booking."
+          : "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we match you with an available Chefmate.";
   const favourite = state.favoriteMealId
     ? (findItem(state.favoriteMealId)?.name ?? "Your selected favourite")
     : null;
@@ -114,16 +170,21 @@ export function ReviewStep(): ReactElement {
       <div className="grid w-full gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           {state.main ? (
-            <SelectionRow item={state.main} kind="main" priceCents={priceFor(state.main)} />
+            <SelectionRow item={state.main} kind="main" priceCents={priceFor(state.main, "main")} />
           ) : null}
-          {state.sides.map((side) => (
-            <SelectionRow key={side.id} item={side} kind="side" priceCents={priceFor(side)} />
+          {state.sides.map((side, index) => (
+            <SelectionRow
+              key={side.id}
+              item={side}
+              kind="side"
+              priceCents={priceFor(side, "side", index)}
+            />
           ))}
           {state.dessert ? (
             <SelectionRow
               item={state.dessert}
               kind="dessert"
-              priceCents={priceFor(state.dessert)}
+              priceCents={priceFor(state.dessert, "dessert")}
             />
           ) : null}
 
@@ -187,17 +248,7 @@ export function ReviewStep(): ReactElement {
               </p>
             ) : null}
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-[var(--color-charcoal)]/75">
-                {isCustomRequest
-                  ? "Custom quote"
-                  : isPlanRequest
-                    ? "Monthly plan"
-                    : isPricingLoading
-                      ? "Updating total"
-                      : plan
-                        ? "Session total"
-                        : "Order total"}
-              </span>
+              <span className="text-sm text-[var(--color-charcoal)]/75">{totalLabel}</span>
               <span className="font-display text-2xl font-semibold">
                 {isCustomRequest
                   ? "To be confirmed"
@@ -207,7 +258,7 @@ export function ReviewStep(): ReactElement {
               </span>
             </div>
             <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
-              <span>{isCustomRequest ? "Recipe details" : plan ? "Package price" : "Items"}</span>
+              <span>{subtotalLabel}</span>
               <span>
                 {isCustomRequest
                   ? "Chefmate will confirm"
@@ -223,15 +274,7 @@ export function ReviewStep(): ReactElement {
               </div>
             ) : null}
           </div>
-          <p className="text-sm leading-6 text-[var(--color-charcoal)]/75">
-            {isCustomRequest
-              ? "Send your request and Chefmate will review the recipe, confirm your tailored price, then send payment details before matching a chef."
-              : isPlanRequest
-                ? "Send your plan request. Chefmate will confirm your recurring session schedule and email payment details before activating the plan."
-                : plan
-                  ? "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we confirm your first session and keep these package preferences with your booking."
-                  : "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we match you with an available Chefmate."}
-          </p>
+          <p className="text-sm leading-6 text-[var(--color-charcoal)]/75">{nextStepCopy}</p>
         </aside>
       </div>
     </div>

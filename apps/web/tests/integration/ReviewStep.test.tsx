@@ -104,4 +104,64 @@ describe("ReviewStep — main dish never shows an individual price", () => {
     // but only one "Included" (bare) label should exist — the dessert's.
     expect(screen.getByText("Included")).toBeInTheDocument();
   });
+
+  it("uses local estimated prices while the server quote is unavailable", () => {
+    renderWith(
+      controller({
+        pricingQuote: null,
+        subtotal: 617.85,
+        discount: 0,
+        total: 617.85,
+      }),
+    );
+
+    expect(screen.queryByText("--")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pending")).not.toBeInTheDocument();
+    expect(screen.getByText("Estimated order total")).toBeInTheDocument();
+    expect(screen.getByText("Estimated items")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Checkout will unlock once the confirmed quote is ready/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/617[,.]85/)).toHaveLength(2);
+    expect(screen.getByText(/R\s?90|90[.,]00/)).toBeInTheDocument();
+  });
+
+  it("does not mix local item prices into an incomplete server quote", () => {
+    renderWith(
+      controller({
+        pricingQuote: {
+          subtotalCents: 18000,
+          discountCents: 0,
+          totalCents: 18000,
+          items: [
+            { kind: "main", slug: main.id, name: main.name, priceCents: 0, sortOrder: 0 },
+            { kind: "dessert", slug: dessert.id, name: dessert.name, priceCents: 0, sortOrder: 2 },
+          ],
+        },
+      }),
+    );
+
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.queryByText(/R\s?55|55[.,]00/)).not.toBeInTheDocument();
+  });
+
+  it("uses plan-request wording for estimated recurring package prices", () => {
+    const base = controller();
+
+    renderWith(
+      controller({
+        state: { ...base.state, planId: "family", planScheduleDeferred: true },
+        pricingQuote: null,
+        subtotal: 3799,
+        discount: 0,
+        total: 3799,
+      }),
+    );
+
+    expect(screen.getByText("Estimated monthly plan")).toBeInTheDocument();
+    expect(
+      screen.getByText(/send the plan request once the confirmed quote is ready/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Checkout will unlock/)).not.toBeInTheDocument();
+  });
 });
