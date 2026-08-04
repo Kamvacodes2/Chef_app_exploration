@@ -1,10 +1,115 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MealSelect } from "@/features/order-flow/components/MealSelect";
-import { MAINS } from "@/features/order-flow/constants/menu";
 import { OrderContext } from "@/features/order-flow/state/OrderContext";
 import { INITIAL_ORDER_STATE } from "@/features/order-flow/state/orderReducer";
 import type { OrderController } from "@/features/order-flow/state/useOrderController";
+import type { BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
+
+const catalogApi = vi.hoisted(() => ({
+  fetchMeals: vi.fn(),
+  fetchCategories: vi.fn(),
+}));
+
+vi.mock("@/features/meal-browser/api/mealCatalogClient", () => catalogApi);
+
+function meal(overrides: Partial<BrowserMeal> & Pick<BrowserMeal, "slug" | "name">): BrowserMeal {
+  return {
+    menuId: null,
+    categorySlug: "everyday-classics",
+    categoryName: "Everyday Classics",
+    description: "A South African home supper.",
+    serves: "4-6",
+    servesMin: 4,
+    servesMax: 6,
+    sessionFit: "Weeknight session",
+    ingredients: null,
+    recipeGuidelines: null,
+    recommendedSides: null,
+    optionalSides: null,
+    chefNote: null,
+    measurementNote: null,
+    image: {
+      src: `/images/meals/catalog/${overrides.slug}.webp`,
+      alt: overrides.name,
+      width: 736,
+      height: 1030,
+    },
+    paletteId: "persimmon",
+    goalTags: [],
+    isHot: true,
+    hasCutlery: false,
+    isSignature: false,
+    sortOrder: 1,
+    isActive: true,
+    isFeatured: false,
+    featuredOrder: null,
+    nutritionProfiles: [
+      {
+        plateType: "STANDARD",
+        caloriesKcal: 900,
+        proteinG: 40,
+        carbsG: 95,
+        fatG: 30,
+        starchType: "Pap",
+        starchCookedG: 250,
+      },
+    ],
+    ...overrides,
+  } as BrowserMeal;
+}
+
+const worsPap = meal({
+  slug: "wors-pap-chakalaka",
+  name: "Wors, Pap and Chakalaka",
+  ingredients: "Boerewors; Maize meal; Chakalaka relish",
+  recipeGuidelines: "1) Braai the wors. 2) Cook the pap. 3) Warm the chakalaka.",
+  chefNote: "Ask the chef for extra chakalaka.",
+});
+
+const gyroBowl = meal({
+  slug: "chicken-gyro-bowl",
+  name: "Chicken Gyro Bowl",
+  categorySlug: "healthy-bowls",
+  categoryName: "Healthy Bowls",
+  ingredients: "Chicken thigh; Tzatziki sauce; Cucumber",
+  nutritionProfiles: [
+    {
+      plateType: "STANDARD",
+      caloriesKcal: 540,
+      proteinG: 45,
+      carbsG: 30,
+      fatG: 20,
+      starchType: null,
+      starchCookedG: null,
+    },
+    {
+      plateType: "LOW_CARB",
+      caloriesKcal: 430,
+      proteinG: 46,
+      carbsG: 12,
+      fatG: 21,
+      starchType: null,
+      starchCookedG: null,
+    },
+  ],
+});
+
+/** The one real meal with no nutrition profiles, no ingredients and no recipe. */
+const charcuterie = meal({
+  slug: "charcuterie-board",
+  name: "Charcuterie Board",
+  categorySlug: "platters",
+  categoryName: "Platters",
+  serves: null,
+  nutritionProfiles: [],
+});
+
+const categories = [
+  { slug: "everyday-classics", name: "Everyday Classics", sortOrder: 1, mealCount: 1 },
+  { slug: "healthy-bowls", name: "Healthy Bowls", sortOrder: 2, mealCount: 1 },
+  { slug: "platters", name: "Platters", sortOrder: 3, mealCount: 1 },
+];
 
 function createController(overrides: Partial<OrderController> = {}): OrderController {
   return {
@@ -56,58 +161,252 @@ function renderMealSelect(overrides: Partial<OrderController> = {}): OrderContro
   return controller;
 }
 
-describe("MealSelect", () => {
-  it("filters meals through every category branch", () => {
-    renderMealSelect();
+function search(value: string): void {
+  fireEvent.change(screen.getByLabelText("Search meals or ingredients"), { target: { value } });
+}
 
-    const categoryCases = [
-      ["In demand", "Oxtail Stew"],
-      ["Healthy", "Chicken Gyro Bowl"],
-      ["Chicken", "Peri-Peri Chicken"],
-      ["Beef & meat", "Steak & Chips"],
-      ["Pasta & family", "Beef Lasagne"],
-      ["Sunday colours", "Chicken Seven Colours"],
-      ["All meals", "Overnight Oats"],
-    ] as const;
-
-    for (const [category, expectedMeal] of categoryCases) {
-      fireEvent.click(screen.getByRole("button", { name: category }));
-      expect(screen.getByRole("button", { name: category })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
-      expect(screen.getAllByText(expectedMeal, { exact: true }).length).toBeGreaterThan(0);
-    }
+describe("MealSelect meal browser", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    catalogApi.fetchMeals.mockResolvedValue([worsPap, gyroBowl, charcuterie]);
+    catalogApi.fetchCategories.mockResolvedValue(categories);
   });
 
-  it("searches meal details and shows the no-match fallback", () => {
+  it("renders live catalog sections ordered by the categories endpoint", async () => {
     renderMealSelect();
-    const search = screen.getByPlaceholderText("Search meals, ingredients or cravings");
 
-    fireEvent.change(search, { target: { value: "tzatziki" } });
-    expect(screen.getByRole("button", { name: /Chicken Gyro Bowl/ })).toBeInTheDocument();
-    expect(screen.queryByText("Ingredients:")).not.toBeInTheDocument();
-
-    fireEvent.change(search, { target: { value: "not-on-the-menu-yet" } });
-    expect(screen.getByText("No exact match yet.")).toBeInTheDocument();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+    const sections = screen.getAllByTestId(/^meal-section-/).map((el) => el.dataset.testid);
+    expect(sections).toEqual([
+      "meal-section-everyday-classics",
+      "meal-section-healthy-bowls",
+      "meal-section-platters",
+    ]);
+    expect(screen.getByTestId("meal-result-count")).toHaveTextContent("3 meals found");
   });
 
-  it("dispatches menu selections and highlights the selected main", () => {
-    const selectedMeal = MAINS.find((meal) => meal.id === "chicken-peri-peri")!;
-    const controller = renderMealSelect({
-      state: { ...INITIAL_ORDER_STATE, step: "meal", main: selectedMeal },
+  it("searches on the meal name", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    search("gyro");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("meal-result-count")).toHaveTextContent("1 meal"),
+    );
+    expect(screen.getByTestId("meal-card-chicken-gyro-bowl")).toBeInTheDocument();
+    expect(screen.queryByTestId("meal-card-wors-pap-chakalaka")).not.toBeInTheDocument();
+  });
+
+  it("searches non-name fields such as ingredients", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    search("tzatziki");
+    await waitFor(() => {
+      expect(screen.getByTestId("meal-card-chicken-gyro-bowl")).toBeInTheDocument();
+      expect(screen.queryByTestId("meal-card-wors-pap-chakalaka")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Selected: Peri-Peri Chicken")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /BBQ Chicken/ }));
-
-    expect(controller.selectMain).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "chicken-bbq" }),
-    );
+    search("chakalaka");
+    await waitFor(() => {
+      expect(screen.getByTestId("meal-card-wors-pap-chakalaka")).toBeInTheDocument();
+      expect(screen.queryByTestId("meal-card-chicken-gyro-bowl")).not.toBeInTheDocument();
+    });
   });
 
-  it("submits and clears custom meal requests", () => {
+  it("narrows to a single section when a category chip is selected", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    fireEvent.click(screen.getByRole("button", { name: "Healthy Bowls" }));
+
+    expect(screen.getByRole("button", { name: "Healthy Bowls" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getAllByTestId(/^meal-section-/)).toHaveLength(1);
+    expect(screen.getByTestId("meal-section-healthy-bowls")).toBeInTheDocument();
+  });
+
+  it("filters by nutrition-profile calories, not the measurement note", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    fireEvent.click(screen.getByRole("button", { name: "Under 600" }));
+    expect(screen.getByTestId("meal-card-chicken-gyro-bowl")).toBeInTheDocument();
+    expect(screen.queryByTestId("meal-card-wors-pap-chakalaka")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "800-1000 kcal" }));
+    expect(screen.getByTestId("meal-card-wors-pap-chakalaka")).toBeInTheDocument();
+    expect(screen.queryByTestId("meal-card-chicken-gyro-bowl")).not.toBeInTheDocument();
+  });
+
+  it("renders a meal with no nutrition profiles cleanly and only under All Calories", async () => {
+    renderMealSelect();
+    const card = await screen.findByTestId("meal-card-charcuterie-board");
+
+    expect(card).not.toHaveTextContent(/kcal/);
+    expect(screen.queryByLabelText("Macros for Charcuterie Board")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Plate options for Charcuterie Board")).not.toBeInTheDocument();
+    // Missing `serves` still reads as a real serving size.
+    expect(card).toHaveTextContent("Serves 4-6");
+
+    for (const label of ["Under 600", "600-800 kcal", "800-1000 kcal", "Over 1000 kcal"]) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+      expect(screen.queryByTestId("meal-card-charcuterie-board")).not.toBeInTheDocument();
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "All Calories" }));
+    expect(screen.getByTestId("meal-card-charcuterie-board")).toBeInTheDocument();
+  });
+
+  it("opens the drawer from the card body and hides sections the catalog has no data for", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-charcuterie-board");
+
+    fireEvent.click(screen.getByRole("button", { name: "View Charcuterie Board details" }));
+
+    const drawer = await screen.findByTestId("meal-detail-drawer");
+    expect(drawer).toHaveTextContent("Charcuterie Board");
+    expect(drawer).toHaveTextContent("Ingredients will be confirmed before your session.");
+    expect(screen.queryByRole("button", { name: /How the chef cooks it/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Chef note")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Nutrition")).not.toBeInTheDocument();
+  });
+
+  it("shows ingredients, collapsible recipe steps and the chef note when present", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    fireEvent.click(screen.getByRole("button", { name: "View Wors, Pap and Chakalaka details" }));
+    const drawer = await screen.findByTestId("meal-detail-drawer");
+
+    expect(drawer).toHaveTextContent("Boerewors");
+    expect(drawer).toHaveTextContent("Chakalaka relish");
+    expect(screen.getByLabelText("Chef note")).toHaveTextContent(
+      "Ask the chef for extra chakalaka",
+    );
+
+    const recipeToggle = screen.getByRole("button", { name: /How the chef cooks it/ });
+    expect(recipeToggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(recipeToggle);
+    expect(recipeToggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Braai the wors.")).toBeInTheDocument();
+    expect(screen.getByText("Cook the pap.")).toBeInTheDocument();
+  });
+
+  it("closes the drawer with the Escape key", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-chicken-gyro-bowl");
+
+    fireEvent.click(screen.getByRole("button", { name: "View Chicken Gyro Bowl details" }));
+    await screen.findByTestId("meal-detail-drawer");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("meal-detail-drawer")).not.toBeInTheDocument());
+  });
+
+  it("selects the catalog slug from the plus button without opening the drawer", async () => {
     const controller = renderMealSelect();
+    await screen.findByTestId("meal-card-chicken-gyro-bowl");
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose Chicken Gyro Bowl" }));
+
+    expect(controller.selectMain).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "chicken-gyro-bowl",
+        course: "main",
+        name: "Chicken Gyro Bowl",
+      }),
+    );
+    expect(screen.queryByTestId("meal-detail-drawer")).not.toBeInTheDocument();
+  });
+
+  it("selects from the drawer CTA and closes the drawer", async () => {
+    const controller = renderMealSelect();
+    await screen.findByTestId("meal-card-chicken-gyro-bowl");
+
+    fireEvent.click(screen.getByRole("button", { name: "View Chicken Gyro Bowl details" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Continue to session" }));
+
+    expect(controller.selectMain).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "chicken-gyro-bowl" }),
+    );
+    await waitFor(() => expect(screen.queryByTestId("meal-detail-drawer")).not.toBeInTheDocument());
+  });
+
+  it("highlights the meal already stored in order state", async () => {
+    renderMealSelect({
+      state: {
+        ...INITIAL_ORDER_STATE,
+        step: "meal",
+        main: {
+          id: "chicken-gyro-bowl",
+          name: "Chicken Gyro Bowl",
+          description: "",
+          priceDisplay: "Included in package",
+          price: 0,
+          course: "main",
+          imageSrc: "/images/meals/catalog/chicken-gyro-bowl.webp",
+          imageAlt: "Chicken Gyro Bowl",
+          paletteId: "persimmon",
+          goalTags: [],
+        },
+      },
+    });
+
+    expect(await screen.findByText("Selected: Chicken Gyro Bowl")).toBeInTheDocument();
+  });
+
+  it("offers the custom request from the empty state when nothing matches", async () => {
+    renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    search("not-on-the-menu-yet");
+    await waitFor(() => expect(screen.getByText("No exact match yet.")).toBeInTheDocument());
+    expect(screen.getByTestId("meal-result-count")).toHaveTextContent("0 meals found");
+
+    fireEvent.click(screen.getByRole("button", { name: "Describe what you want" }));
+    expect(screen.getByLabelText("Tell the kitchen what you're craving")).toBeInTheDocument();
+  });
+
+  it("keeps the custom request usable when the catalog fetch fails", async () => {
+    catalogApi.fetchMeals.mockRejectedValue(
+      new Error("Chefmate catalog meals request failed (503)"),
+    );
+
+    const controller = renderMealSelect();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Chefmate catalog meals request failed (503)",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Describe what you want instead" }));
+    fireEvent.change(screen.getByLabelText("Tell the kitchen what you're craving"), {
+      target: { value: "Ouma's chicken curry" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Request this" }));
+
+    expect(controller.setCustomRequest).toHaveBeenCalledWith("Ouma's chicken curry");
+  });
+
+  it("retries the catalog load after a failure", async () => {
+    catalogApi.fetchMeals.mockRejectedValueOnce(
+      new Error("Chefmate catalog meals request failed (503)"),
+    );
+
+    renderMealSelect();
+    await screen.findByRole("alert");
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(await screen.findByTestId("meal-card-wors-pap-chakalaka")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("submits and clears custom meal requests", async () => {
+    const controller = renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
 
     fireEvent.click(screen.getByRole("button", { name: "Can't find what you want?" }));
     expect(screen.getByRole("button", { name: "Request this" })).toBeDisabled();
