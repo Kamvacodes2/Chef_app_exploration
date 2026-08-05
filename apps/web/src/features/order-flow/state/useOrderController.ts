@@ -50,6 +50,8 @@ export interface OrderController {
   readonly selectPlanFavorite: (item: OrderMenuItem) => void;
   readonly decidePlanFavorite: () => void;
   readonly selectMain: (item: OrderMenuItem) => void;
+  /** Highlights a deep-linked meal on the meal step without advancing it. */
+  readonly preselectMain: (item: OrderMenuItem) => void;
   readonly toggleSide: (item: OrderMenuItem) => void;
   readonly selectDessert: (item: OrderMenuItem) => void;
   readonly skipDessert: () => void;
@@ -259,6 +261,7 @@ export function useOrderController(): OrderController {
     selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
     decidePlanFavorite: useCallback(() => dispatch({ type: "DECIDE_PLAN_FAVORITE" }), []),
     selectMain: useCallback((item) => dispatch({ type: "SELECT_MAIN", item }), []),
+    preselectMain: useCallback((item) => dispatch({ type: "PRESELECT_MAIN", item }), []),
     toggleSide: useCallback((item) => dispatch({ type: "TOGGLE_SIDE", item }), []),
     selectDessert: useCallback((item) => dispatch({ type: "SELECT_DESSERT", item }), []),
     skipDessert: useCallback(() => dispatch({ type: "SKIP_DESSERT" }), []),

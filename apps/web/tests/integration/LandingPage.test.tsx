@@ -1,12 +1,75 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LandingPage } from "@/features/landing/LandingPage";
 
-// The marquee live-fetches featured meals; an empty response keeps the static
-// in-demand fallback these assertions are written against.
+/**
+ * Both the marquee and the order flow read the real catalog, so these tests
+ * drive a small live catalog rather than the retired static placeholder menu.
+ */
+const CATALOG_MEALS = vi.hoisted(() => [
+  {
+    slug: "wors-pap-chakalaka",
+    menuId: null,
+    categorySlug: "everyday-classics",
+    categoryName: "Everyday Classics",
+    name: "Wors, Pap and Chakalaka",
+    description: "A South African home supper.",
+    serves: "4-6",
+    servesMin: 4,
+    servesMax: 6,
+    sessionFit: null,
+    ingredients: null,
+    recipeGuidelines: null,
+    recommendedSides: null,
+    optionalSides: null,
+    chefNote: null,
+    measurementNote: null,
+    image: {
+      src: "/images/meals/catalog/wors-pap-chakalaka.webp",
+      alt: "Wors, Pap and Chakalaka",
+      width: 736,
+      height: 1030,
+    },
+    paletteId: "persimmon",
+    goalTags: [],
+    isHot: true,
+    hasCutlery: false,
+    isSignature: false,
+    sortOrder: 1,
+    isActive: true,
+    isFeatured: true,
+    featuredOrder: 0,
+    nutritionProfiles: [],
+  },
+]);
+
+vi.mock("@/features/meal-browser/api/mealCatalogClient", () => ({
+  fetchMeals: vi.fn().mockResolvedValue(CATALOG_MEALS),
+  fetchCategories: vi
+    .fn()
+    .mockResolvedValue([
+      { slug: "everyday-classics", name: "Everyday Classics", sortOrder: 1, mealCount: 1 },
+    ]),
+}));
+
 vi.mock("@/features/featured-meals/api/featuredMealsClient", () => ({
   FEATURED_MEAL_COUNT: 6,
-  fetchCatalogMeals: vi.fn().mockResolvedValue([]),
+  fetchCatalogMeals: vi.fn().mockResolvedValue([
+    {
+      slug: "wors-pap-chakalaka",
+      categorySlug: "everyday-classics",
+      name: "Wors, Pap and Chakalaka",
+      description: "A South African home supper.",
+      image: {
+        src: "/images/meals/catalog/wors-pap-chakalaka.webp",
+        alt: "Wors, Pap and Chakalaka",
+        width: 736,
+        height: 1030,
+      },
+      isFeatured: true,
+      featuredOrder: 0,
+    },
+  ]),
   fetchFeaturedMeals: vi.fn(),
   updateFeaturedMeals: vi.fn(),
   FeaturedMealsError: class extends Error {},
@@ -112,7 +175,7 @@ describe("LandingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "What would you like most often?" }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Oxtail Stew/i }));
+    fireEvent.click(await screen.findByTestId("plan-favourite-wors-pap-chakalaka"));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
@@ -142,7 +205,7 @@ describe("LandingPage", () => {
       await screen.findByRole("heading", { name: "What would you like most often?" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-favorite");
-    fireEvent.click(screen.getByRole("button", { name: /Oxtail Stew/i }));
+    fireEvent.click(await screen.findByTestId("plan-favourite-wors-pap-chakalaka"));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
@@ -197,20 +260,27 @@ describe("LandingPage", () => {
     expect(rail?.children[4]).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("opens sides after selecting a popular meal card", async () => {
+  it("carries a live featured slug into meal discovery and highlights it there", async () => {
     render(<LandingPage />);
 
-    const firstPopularMeal = screen.getAllByTestId("popular-meal-card")[0];
-    if (!firstPopularMeal) {
-      throw new Error("Expected at least one popular meal card");
-    }
-    expect(firstPopularMeal).toHaveAttribute("data-order-meal-id", "winter-oxtail-stew");
-    expect(firstPopularMeal).toHaveAttribute("href", "#order-flow?meal=winter-oxtail-stew");
+    // The live featured fetch replaces the static fallback tiles.
+    await waitFor(() =>
+      expect(screen.getAllByTestId("popular-meal-card")[0]).toHaveAttribute(
+        "data-order-meal-id",
+        "wors-pap-chakalaka",
+      ),
+    );
+    const firstPopularMeal = screen.getAllByTestId("popular-meal-card")[0]!;
+    expect(firstPopularMeal).toHaveAttribute("href", "#order-flow?meal=wors-pap-chakalaka");
 
     fireEvent.click(firstPopularMeal);
 
-    expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
-    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "sides");
+    // The customer lands on the meal step with that exact catalog meal selected.
+    expect(
+      await screen.findByRole("heading", { name: "Find what you want to eat." }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
+    expect(await screen.findByText("Selected: Wors, Pap and Chakalaka")).toBeInTheDocument();
   });
 
   it("keeps regular booking calls at the goal selection", async () => {

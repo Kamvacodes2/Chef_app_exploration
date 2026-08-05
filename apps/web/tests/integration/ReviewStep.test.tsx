@@ -56,6 +56,7 @@ function controller(overrides: Partial<OrderController> = {}): OrderController {
     selectPlanFavorite: vi.fn(),
     decidePlanFavorite: vi.fn(),
     selectMain: vi.fn(),
+    preselectMain: vi.fn(),
     toggleSide: vi.fn(),
     selectDessert: vi.fn(),
     skipDessert: vi.fn(),

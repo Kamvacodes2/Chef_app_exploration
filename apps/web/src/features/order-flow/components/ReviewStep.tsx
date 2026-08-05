@@ -148,8 +148,12 @@ export function ReviewStep(): ReactElement {
         : plan
           ? "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we confirm your first session and keep these package preferences with your booking."
           : "Checkout to receive your bank-transfer details and payment reference. Once payment is verified, we match you with an available Chefmate.";
+  // The favourite is a live-catalog slug, so its display name comes from the
+  // item the plan step stored; `findItem` only still resolves legacy ids.
   const favourite = state.favoriteMealId
-    ? (findItem(state.favoriteMealId)?.name ?? "Your selected favourite")
+    ? state.main?.id === state.favoriteMealId
+      ? state.main.name
+      : (findItem(state.favoriteMealId)?.name ?? "Your selected favourite")
     : null;
   const preferredDays = state.preferredDays.flatMap((dayId) => {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
