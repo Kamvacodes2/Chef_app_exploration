@@ -45,9 +45,21 @@ export function MealSection({
         One DOM set, two layouts: a scroll-snapping rail under `md` and a grid
         above it. Rendering the cards twice would duplicate every button and
         image in the accessibility tree, so the layout switches by class.
+
+        Column tiers (the grid lives inside the order flow's `max-w-6xl`
+        (1152px) shell, so widths stop growing past a 1152px content box):
+          768-1439px  -> 3 columns  (1024px viewport => ~315px cards,
+                                     1280px viewport => ~373px cards)
+          >= 1440px   -> 4 columns  (~276px cards)
+        `lg:` (1024px) was previously used for the 4-column tier, which made the
+        3-column tier unreachable on every real desktop width. 1440px is not a
+        default Tailwind breakpoint (`xl` is 1280px, `2xl` is 1536px) and this
+        app defines no custom screens, so the exact tier is expressed with an
+        arbitrary `min-[1440px]:` variant.
       */}
       <div
-        className="-mx-4 flex items-stretch gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex items-stretch gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 min-[1440px]:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+        data-testid={`meal-grid-${slug}`}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {meals.map((meal) => (
