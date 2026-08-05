@@ -79,7 +79,29 @@ describe("Confirmation — completed order", () => {
     reference: "CM-1001",
     status: "CONFIRMED",
     totalCents: 52_785,
-    payment: { status: "PENDING", bankTransfer },
+    payment: {
+      method: "BANK_TRANSFER",
+      provider: "BANK_TRANSFER",
+      status: "PENDING",
+      bankTransfer,
+      paystack: null,
+    },
+  } as unknown as OrderController["bookingConfirmation"];
+
+  const paystackConfirmed = {
+    reference: "CM-1002",
+    status: "CONFIRMED",
+    totalCents: 52_785,
+    payment: {
+      method: "PAYSTACK",
+      provider: "PAYSTACK",
+      status: "PENDING",
+      bankTransfer: null,
+      paystack: {
+        authorizationUrl: "https://checkout.paystack.com/test-auth",
+        accessCode: "test-access-code",
+      },
+    },
   } as unknown as OrderController["bookingConfirmation"];
 
   it("announces the order and shows the reference", () => {
@@ -109,6 +131,17 @@ describe("Confirmation — completed order", () => {
 
     expect(screen.getByText("Order received")).toBeInTheDocument();
     expect(screen.getByText("Visit complete")).toBeInTheDocument();
+  });
+
+  it("renders the Paystack checkout fallback link for Paystack orders", () => {
+    renderWith(controller({ bookingConfirmation: paystackConfirmed }));
+
+    expect(screen.getByRole("heading", { name: "Secure checkout" })).toBeInTheDocument();
+    expect(screen.getByText(/secure Paystack checkout/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Continue to Paystack" })).toHaveAttribute(
+      "href",
+      "https://checkout.paystack.com/test-auth",
+    );
   });
 
   it("resets the flow when the customer starts another request", () => {
