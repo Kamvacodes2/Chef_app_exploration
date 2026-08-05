@@ -42,6 +42,7 @@ function Harness(): React.ReactElement {
     selectPlanFavorite: () => {},
     decidePlanFavorite: () => {},
     selectMain: () => {},
+    preselectMain: () => {},
     toggleSide: () => {},
     selectDessert: () => {},
     skipDessert: () => {},

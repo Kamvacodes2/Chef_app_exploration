@@ -15,7 +15,7 @@ import { LEGACY_BASE_URL, legacyBookingResponse } from "./support/fixtures";
  *
  * Provider status: consumer expectation only (D001). This is the only client
  * that sends `Idempotency-Key`, and the only one whose response carries the
- * legacy 8-value booking status enum plus plaintext bank-transfer instructions.
+ * legacy 8-value booking status enum plus payment instructions.
  * All bank values in fixtures are fabricated.
  */
 const IDEMPOTENCY_KEY = "synthetic-idempotency-key-0001";
@@ -148,7 +148,7 @@ describe("legacy contract: booking submission", () => {
     );
   });
 
-  it("pins the legacy booking response projection, including bank-transfer instructions", async () => {
+  it("pins the booking response projection, including bank-transfer instructions", async () => {
     const fetchImpl = fakeFetch({ status: 201, body: legacyBookingResponse });
 
     await expect(
@@ -157,10 +157,17 @@ describe("legacy contract: booking submission", () => {
         baseUrl: LEGACY_BASE_URL,
         fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
-    ).resolves.toEqual(legacyBookingResponse.data);
+    ).resolves.toEqual({
+      ...legacyBookingResponse.data,
+      payment: {
+        ...legacyBookingResponse.data.payment,
+        provider: "BANK_TRANSFER",
+        paystack: null,
+      },
+    });
   });
 
-  it("LEGACY FACT: accepts only BANK_TRANSFER and the 8-value legacy status enum", async () => {
+  it("accepts Paystack, bank transfer, and the 8-value legacy status enum", async () => {
     const legacyStatuses = [
       "REQUESTED",
       "NEEDS_REVIEW",
@@ -199,13 +206,20 @@ describe("legacy contract: booking submission", () => {
       }),
     ).rejects.toThrow();
 
-    // Only BANK_TRANSFER is a permitted payment method today.
     const paystack = fakeFetch({
       status: 201,
       body: {
         data: {
           ...legacyBookingResponse.data,
-          payment: { method: "PAYSTACK", status: "PENDING", bankTransfer: null },
+          payment: {
+            method: "PAYSTACK",
+            status: "PENDING",
+            bankTransfer: null,
+            paystack: {
+              authorizationUrl: "https://checkout.paystack.com/test-auth",
+              accessCode: "test-access-code",
+            },
+          },
         },
       },
     });
@@ -215,7 +229,17 @@ describe("legacy contract: booking submission", () => {
         baseUrl: LEGACY_BASE_URL,
         fetchImpl: paystack as unknown as typeof fetch,
       }),
-    ).rejects.toThrow();
+    ).resolves.toMatchObject({
+      payment: {
+        method: "PAYSTACK",
+        provider: "PAYSTACK",
+        bankTransfer: null,
+        paystack: {
+          authorizationUrl: "https://checkout.paystack.com/test-auth",
+          accessCode: "test-access-code",
+        },
+      },
+    });
   });
 
   it("uses readApiErrorMessage on failure, unlike the quote and availability clients", async () => {

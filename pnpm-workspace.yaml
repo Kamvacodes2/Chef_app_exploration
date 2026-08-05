@@ -15,15 +15,17 @@ allowBuilds:
 #            GHSA-qx2v-qp2m-jg93 (moderate). Patched minimum is 8.5.18.
 #   sharp:   next@15.5.22 declares optional sharp ^0.34.3, vulnerable to
 #            GHSA-f88m-g3jw-g9cj (high). Patched minimum is 0.35.0.
-#   brace-expansion@5: GHSA-mh99-v99m-4gvg (high) declares every version <=5.0.7
-#            vulnerable and only 5.0.8 patched. The override is scoped to the
-#            5.x line (reached via minimatch@10) because brace-expansion 5.x
-#            exports `{ expand }` instead of a callable default: an unscoped
-#            `brace-expansion: ^5.0.8` override was tested and breaks eslint
-#            ("TypeError: expand is not a function" in minimatch@3.1.5) and the
-#            minimatch@9 chain under @vitest/coverage-v8. Those two dev-only
-#            chains are tracked in tests/security/dev-dependency-exceptions.json.
+#   fast-uri@3/@4: fastify reaches fast-uri through ajv and
+#            fast-json-stringify. GHSA-7p8r-x3mc-p8w7 is high severity in the
+#            production API tree; patched minimums are 3.1.5 and 4.1.2.
+#   brace-expansion@1/@5: eslint / typescript-eslint dev tooling reaches both
+#            legacy minimatch@3 and modern minimatch@10 chains. The pins are
+#            scoped by major because brace-expansion 5.x changed exports in a
+#            way that minimatch@3 cannot consume.
 overrides:
   postcss: ^8.5.18
   sharp: ^0.35.0
-  brace-expansion@5: ^5.0.8
+  fast-uri@3: ^3.1.5
+  fast-uri@4: ^4.1.2
+  brace-expansion@1: ^1.1.18
+  brace-expansion@5: ^5.0.9

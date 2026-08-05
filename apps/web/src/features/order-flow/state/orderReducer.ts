@@ -83,6 +83,7 @@ export type OrderAction =
   | { type: "SELECT_PLAN_FAVORITE"; item: OrderMenuItem }
   | { type: "DECIDE_PLAN_FAVORITE" }
   | { type: "SELECT_MAIN"; item: OrderMenuItem }
+  | { type: "PRESELECT_MAIN"; item: OrderMenuItem }
   | { type: "TOGGLE_SIDE"; item: OrderMenuItem }
   | { type: "SELECT_DESSERT"; item: OrderMenuItem }
   | { type: "SKIP_DESSERT" }
@@ -183,6 +184,15 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       };
     case "SELECT_MAIN":
       return { ...state, main: action.item, customRequest: null, step: "sides" };
+    // Deep links (a landing-page "Popular this week" tile) resolve their meal
+    // asynchronously from the catalog. The customer must stay on the meal step
+    // with that meal highlighted, so this never advances the step and never
+    // overrides a choice the customer has already made in the browser.
+    case "PRESELECT_MAIN":
+      if (state.step !== "meal" || state.main !== null || state.customRequest !== null) {
+        return state;
+      }
+      return { ...state, main: action.item };
     case "TOGGLE_SIDE": {
       const exists = state.sides.some((side) => side.id === action.item.id);
       const sides = exists

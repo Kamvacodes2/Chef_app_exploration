@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { usePrefersReducedMotion } from "@/features/hero/hooks/useMediaQuery";
-import { findItem } from "./state/orderReducer";
+import { fetchMeals } from "@/features/meal-browser/api/mealCatalogClient";
+import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
 import { useOrderController } from "./state/useOrderController";
 import { OrderContext } from "./state/OrderContext";
 import type { OrderStep } from "./state/orderReducer";
@@ -89,7 +90,7 @@ export function OrderFlow(): ReactElement {
     startMealDiscovery,
     startPlanSetup,
     reset,
-    selectMain,
+    preselectMain,
     isSubmittingRequest,
     submissionError,
     isPricingLoading,
@@ -125,6 +126,10 @@ export function OrderFlow(): ReactElement {
 
   useEffect(() => {
     let pendingFrame: number | null = null;
+    // Aborted on unmount and superseded by the next deep link, so a slow
+    // catalog response can never highlight a meal the customer navigated away
+    // from.
+    let mealLookup: AbortController | null = null;
 
     const scrollToOrderFlow = (): void => {
       if (pendingFrame !== null) {
@@ -142,15 +147,32 @@ export function OrderFlow(): ReactElement {
       scrollToOrderFlow();
     };
 
-    const openMealDiscovery = (mealId?: string): void => {
+    /**
+     * `mealSlug` comes from a landing-page tile and is a real catalog slug, so
+     * it is resolved against the live catalog (the same source the meal browser
+     * renders) instead of the static placeholder menu. The step opens
+     * immediately; the highlight lands when the lookup resolves.
+     */
+    const openMealDiscovery = (mealSlug?: string): void => {
       startMealDiscovery();
-      if (mealId) {
-        const meal = findItem(mealId);
-        if (meal?.course === "main") {
-          selectMain(meal);
-        }
-      }
       scrollToOrderFlow();
+
+      mealLookup?.abort();
+      mealLookup = null;
+      if (!mealSlug) return;
+
+      const lookup = new AbortController();
+      mealLookup = lookup;
+      void fetchMeals({}, { signal: lookup.signal })
+        .then((meals) => {
+          if (lookup.signal.aborted) return;
+          const match = meals.find((meal) => meal.slug === mealSlug);
+          if (match) preselectMain(toOrderMenuItem(match));
+        })
+        .catch(() => {
+          // A failed lookup simply leaves the customer on the meal step with
+          // nothing pre-selected; the browser itself surfaces catalog errors.
+        });
     };
 
     const openPlanSetup = (planId: string): void => {
@@ -223,11 +245,12 @@ export function OrderFlow(): ReactElement {
       document.removeEventListener("click", handleDocumentClick);
       window.removeEventListener("hashchange", handleHashChange);
       window.removeEventListener("popstate", handleHashChange);
+      mealLookup?.abort();
       if (pendingFrame !== null) {
         window.cancelAnimationFrame(pendingFrame);
       }
     };
-  }, [reset, selectMain, startMealDiscovery, startPlanSetup]);
+  }, [preselectMain, reset, startMealDiscovery, startPlanSetup]);
 
   return (
     <OrderContext.Provider value={controller}>

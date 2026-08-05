@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentUser, type AuthenticatedUser } from "@/features/auth/api/authClient";
+import { ChefmateApiError } from "@/lib/apiError";
 import {
   buildPricingQuotePayload,
   fetchPricingQuote,
@@ -22,6 +23,7 @@ import type { ChefmatePlanId, PreferredDayId } from "@/features/plans/planCatalo
 import {
   bookingRequestFingerprint,
   buildBookingRequestPayload,
+  initializePaystackCheckout,
   submitBookingRequestPayload,
   type BookingRequestResult,
 } from "../api/bookingRequestClient";
@@ -50,6 +52,8 @@ export interface OrderController {
   readonly selectPlanFavorite: (item: OrderMenuItem) => void;
   readonly decidePlanFavorite: () => void;
   readonly selectMain: (item: OrderMenuItem) => void;
+  /** Highlights a deep-linked meal on the meal step without advancing it. */
+  readonly preselectMain: (item: OrderMenuItem) => void;
   readonly toggleSide: (item: OrderMenuItem) => void;
   readonly selectDessert: (item: OrderMenuItem) => void;
   readonly skipDessert: () => void;
@@ -82,6 +86,10 @@ const STEP_SEQUENCE: readonly OrderStep[] = Object.freeze([
 ]);
 
 const GENERIC_SUBMISSION_ERROR = "We couldn't send this request. Please try again.";
+const STALE_IDEMPOTENCY_CODES = new Set([
+  "idempotency_actor_mismatch",
+  "idempotency_payload_mismatch",
+]);
 
 function createIdempotencyKey(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -94,7 +102,18 @@ function submissionMessage(error: unknown): string {
   if (error instanceof Error && error.message.includes("NEXT_PUBLIC_CHEFMATE_API_URL"))
     return error.message;
   if (error instanceof Error && error.message.includes("Chefmate API URL")) return error.message;
+  if (error instanceof ChefmateApiError && error.status === 503)
+    return "We created your request, but checkout is briefly unavailable. Please try again in a moment.";
   return GENERIC_SUBMISSION_ERROR;
+}
+
+function isStaleIdempotencyError(error: unknown): boolean {
+  return (
+    error instanceof ChefmateApiError &&
+    error.status === 409 &&
+    error.code !== undefined &&
+    STALE_IDEMPOTENCY_CODES.has(error.code)
+  );
 }
 
 export function useOrderController(): OrderController {
@@ -224,9 +243,36 @@ export function useOrderController(): OrderController {
         idempotencyKeyRef.current = createIdempotencyKey();
       }
 
-      const confirmation = await submitBookingRequestPayload(payload, {
+      let confirmation = await submitBookingRequestPayload(payload, {
         idempotencyKey: idempotencyKeyRef.current,
+      }).catch(async (error: unknown) => {
+        if (!isStaleIdempotencyError(error)) throw error;
+        idempotencyKeyRef.current = createIdempotencyKey();
+        return submitBookingRequestPayload(payload, {
+          idempotencyKey: idempotencyKeyRef.current,
+        });
       });
+
+      if (confirmation.payment?.method === "PAYSTACK") {
+        const existingAuthorizationUrl = confirmation.payment.paystack?.authorizationUrl;
+        if (existingAuthorizationUrl) {
+          setBookingConfirmation(confirmation);
+          dispatch({ type: "CONFIRM" });
+          window.location.assign(existingAuthorizationUrl);
+          return;
+        }
+
+        const checkout = await initializePaystackCheckout(confirmation.reference);
+        confirmation = {
+          ...confirmation,
+          payment: checkout.payment,
+        };
+        setBookingConfirmation(confirmation);
+        dispatch({ type: "CONFIRM" });
+        window.location.assign(checkout.authorizationUrl);
+        return;
+      }
+
       setBookingConfirmation(confirmation);
       dispatch({ type: "CONFIRM" });
     } catch (error) {
@@ -259,6 +305,7 @@ export function useOrderController(): OrderController {
     selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
     decidePlanFavorite: useCallback(() => dispatch({ type: "DECIDE_PLAN_FAVORITE" }), []),
     selectMain: useCallback((item) => dispatch({ type: "SELECT_MAIN", item }), []),
+    preselectMain: useCallback((item) => dispatch({ type: "PRESELECT_MAIN", item }), []),
     toggleSide: useCallback((item) => dispatch({ type: "TOGGLE_SIDE", item }), []),
     selectDessert: useCallback((item) => dispatch({ type: "SELECT_DESSERT", item }), []),
     skipDessert: useCallback(() => dispatch({ type: "SKIP_DESSERT" }), []),

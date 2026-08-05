@@ -1,0 +1,272 @@
+{
+  "EC-001": {
+    "src": "/images/meals/catalog/ec-001.webp",
+    "width": 736,
+    "height": 1030,
+    "alt": "Chicken stew and rice served as a South African home supper"
+  },
+  "EC-002": {
+    "src": "/images/meals/catalog/ec-002.webp",
+    "width": 736,
+    "height": 1060,
+    "alt": "Beef stew and rice served as a South African home supper"
+  },
+  "EC-003": {
+    "src": "/images/meals/catalog/ec-003.webp",
+    "width": 736,
+    "height": 806,
+    "alt": "Chicken curry and rice served as a South African home supper"
+  },
+  "EC-004": {
+    "src": "/images/meals/catalog/ec-004.webp",
+    "width": 736,
+    "height": 1104,
+    "alt": "Mince curry and rice served as a South African home supper"
+  },
+  "EC-005": {
+    "src": "/images/meals/catalog/ec-005.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Wors, pap and chakalaka served as a South African home supper"
+  },
+  "EC-006": {
+    "src": "/images/meals/catalog/ec-006.webp",
+    "width": 614,
+    "height": 750,
+    "alt": "Chicken livers and pap served as a South African home supper"
+  },
+  "EC-008": {
+    "src": "/images/meals/catalog/ec-008.webp",
+    "width": 736,
+    "height": 1104,
+    "alt": "Fried chicken, chips and salad served as a South African home supper"
+  },
+  "EC-009": {
+    "src": "/images/meals/catalog/ec-009.webp",
+    "width": 736,
+    "height": 904,
+    "alt": "Mogodu and pap served as a South African home supper"
+  },
+  "EC-010": {
+    "src": "/images/meals/catalog/ec-010.webp",
+    "width": 736,
+    "height": 919,
+    "alt": "Mala mogodu and pap served as a South African home supper"
+  },
+  "EC-011": {
+    "src": "/images/meals/catalog/ec-011.webp",
+    "width": 736,
+    "height": 736,
+    "alt": "Oxtail and dombolo served as a South African home supper"
+  },
+  "EC-012": {
+    "src": "/images/meals/catalog/ec-012.webp",
+    "width": 736,
+    "height": 1309,
+    "alt": "Beef stew and dombolo served as a South African home supper"
+  },
+  "EC-013": {
+    "src": "/images/meals/catalog/ec-013.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Chicken stew and dombolo served as a South African home supper"
+  },
+  "EC-014": {
+    "src": "/images/meals/catalog/ec-014.webp",
+    "width": 720,
+    "height": 706,
+    "alt": "Hardbody chicken / umleqwa and pap served as a South African home supper"
+  },
+  "EC-015": {
+    "src": "/images/meals/catalog/ec-015.webp",
+    "width": 735,
+    "height": 977,
+    "alt": "Amanqina / cow heels and pap served as a South African home supper"
+  },
+  "EC-016": {
+    "src": "/images/meals/catalog/ec-016.webp",
+    "width": 736,
+    "height": 859,
+    "alt": "Trotters stew and pap served as a South African home supper"
+  },
+  "EC-017": {
+    "src": "/images/meals/catalog/ec-017.webp",
+    "width": 736,
+    "height": 736,
+    "alt": "Roast chicken seven colours served as a South African home supper"
+  },
+  "EC-018": {
+    "src": "/images/meals/catalog/ec-018.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Fried chicken seven colours served as a South African home supper"
+  },
+  "EC-019": {
+    "src": "/images/meals/catalog/ec-019.webp",
+    "width": 736,
+    "height": 755,
+    "alt": "Beef stew seven colours served as a South African home supper"
+  },
+  "EC-020": {
+    "src": "/images/meals/catalog/ec-020.webp",
+    "width": 736,
+    "height": 1036,
+    "alt": "Oxtail seven colours served as a South African home supper"
+  },
+  "EC-021": {
+    "src": "/images/meals/catalog/ec-021.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Chicken curry seven colours served as a South African home supper"
+  },
+  "EC-022": {
+    "src": "/images/meals/catalog/ec-022.webp",
+    "width": 735,
+    "height": 996,
+    "alt": "Sunday mixed plate served as a South African home supper"
+  },
+  "EC-024": {
+    "src": "/images/meals/catalog/ec-024.webp",
+    "width": 736,
+    "height": 736,
+    "alt": "Pap, beef stew and cabbage served as a South African home supper"
+  },
+  "EC-025": {
+    "src": "/images/meals/catalog/ec-025.webp",
+    "width": 736,
+    "height": 904,
+    "alt": "Pap, mogodu and chakalaka served as a South African home supper"
+  },
+  "EC-026": {
+    "src": "/images/meals/catalog/ec-026.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Samp and beans with beef stew served as a South African home supper"
+  },
+  "EC-028": {
+    "src": "/images/meals/catalog/ec-028.webp",
+    "width": 720,
+    "height": 775,
+    "alt": "Dombolo with lamb stew served as a South African home supper"
+  },
+  "EC-029": {
+    "src": "/images/meals/catalog/ec-029.webp",
+    "width": 736,
+    "height": 1104,
+    "alt": "Roast chicken and vegetables served as a South African home supper"
+  },
+  "EC-030": {
+    "src": "/images/meals/catalog/ec-030.webp",
+    "width": 736,
+    "height": 1104,
+    "alt": "Peri-peri chicken and rice served as a South African home supper"
+  },
+  "EC-031": {
+    "src": "/images/meals/catalog/ec-031.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "BBQ chicken pieces and pap served as a South African home supper"
+  },
+  "EC-032": {
+    "src": "/images/meals/catalog/ec-032.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Chicken wings, chips and coleslaw served as a South African home supper"
+  },
+  "EC-033": {
+    "src": "/images/meals/catalog/ec-033.webp",
+    "width": 736,
+    "height": 1040,
+    "alt": "Chicken stir-fry with rice served as a South African home supper"
+  },
+  "EC-034": {
+    "src": "/images/meals/catalog/ec-034.webp",
+    "width": 736,
+    "height": 1106,
+    "alt": "Chicken à la king and rice served as a South African home supper"
+  },
+  "EC-035": {
+    "src": "/images/meals/catalog/ec-035.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Lamb curry and rice served as a South African home supper"
+  },
+  "EC-036": {
+    "src": "/images/meals/catalog/ec-036.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Lamb chops, pap and chakalaka served as a South African home supper"
+  },
+  "EC-037": {
+    "src": "/images/meals/catalog/ec-037.webp",
+    "width": 564,
+    "height": 1002,
+    "alt": "Steak, chips and salad served as a South African home supper"
+  },
+  "EC-038": {
+    "src": "/images/meals/catalog/ec-038.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Cottage pie served as a South African home supper"
+  },
+  "EC-039": {
+    "src": "/images/meals/catalog/ec-039.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Beef lasagne served as a South African home supper"
+  },
+  "EC-040": {
+    "src": "/images/meals/catalog/ec-040.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Meatballs and spaghetti served as a South African home supper"
+  },
+  "EC-041": {
+    "src": "/images/meals/catalog/ec-041.webp",
+    "width": 1000,
+    "height": 668,
+    "alt": "Charcuterie board with cured meats, cheeses, olives, nuts and dried fruit"
+  },
+  "EC-048": {
+    "src": "/images/meals/catalog/ec-048.webp",
+    "width": 736,
+    "height": 981,
+    "alt": "Chicken gyro bowl with rice, salad and tzatziki"
+  },
+  "EC-049": {
+    "src": "/images/meals/catalog/ec-049.webp",
+    "width": 1000,
+    "height": 1000,
+    "alt": "Chicken shawarma wraps with garlic yoghurt sauce and sumac onions"
+  },
+  "EC-050": {
+    "src": "/images/meals/catalog/ec-050.webp",
+    "width": 684,
+    "height": 1200,
+    "alt": "Trio of overnight oats jars with fruit and toppings"
+  },
+  "EC-051": {
+    "src": "/images/meals/catalog/ec-051.webp",
+    "width": 736,
+    "height": 1308,
+    "alt": "Big Mac-style burger bowl with beef, lettuce and burger sauce"
+  },
+  "EC-052": {
+    "src": "/images/meals/catalog/ec-052.webp",
+    "width": 736,
+    "height": 920,
+    "alt": "Greek chicken tzatziki bowl with rice and fresh salad"
+  },
+  "EC-124": {
+    "src": "/images/meals/catalog/ec-124.webp",
+    "width": 736,
+    "height": 1104,
+    "alt": "Shawarma-spiced steak, sliced and served with fresh salad"
+  },
+  "EC-DESSERT-001": {
+    "src": "/images/meals/catalog/ec-dessert-001.webp",
+    "width": 1000,
+    "height": 1000,
+    "alt": "Warm malva pudding served with custard or cream"
+  }
+}

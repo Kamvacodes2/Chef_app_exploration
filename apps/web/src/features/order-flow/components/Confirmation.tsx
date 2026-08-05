@@ -36,14 +36,18 @@ function DetailRow({
 export function Confirmation(): ReactElement {
   const { state, bookingConfirmation, reset } = useOrder();
   const payment = bookingConfirmation?.payment;
-  const bankTransfer = payment?.bankTransfer;
+  const bankTransfer = payment?.method === "BANK_TRANSFER" ? payment.bankTransfer : null;
+  const paystack = payment?.method === "PAYSTACK" ? payment.paystack : null;
   const isReviewRequest = bookingConfirmation?.status === "NEEDS_REVIEW";
   const isPlanRequest = isReviewRequest && Boolean(findChefmatePlan(state.planId)?.recurring);
+  const isPaystackOrder = payment?.method === "PAYSTACK";
   const milestones = isPlanRequest
     ? ["Plan request received", "Schedule review", "Payment details", "Plan activation"]
     : isReviewRequest
       ? ["Request received", "Chefmate review", "Price confirmation", "Chef matching"]
-      : ["Order received", "Payment review", "Chef matching", "Visit complete"];
+      : isPaystackOrder
+        ? ["Order received", "Secure checkout", "Chef matching", "Visit complete"]
+        : ["Order received", "Payment review", "Chef matching", "Visit complete"];
 
   return (
     <div className="flex w-full flex-col items-center gap-6 py-8 text-center">
@@ -76,7 +80,9 @@ export function Confirmation(): ReactElement {
             ? "We will confirm your recurring routine and monthly payment details before activating your plan."
             : isReviewRequest
               ? "Our team will review your recipe and email a tailored price before payment."
-              : "Keep your payment reference with your bank-transfer proof."}
+              : isPaystackOrder
+                ? "Complete your secure Paystack checkout so we can match your Chefmate."
+                : "Keep your payment reference with your bank-transfer proof."}
         </p>
       </div>
 
@@ -125,13 +131,34 @@ export function Confirmation(): ReactElement {
             </DetailRow>
           </dl>
         </div>
+      ) : paystack ? (
+        <div className="w-full max-w-lg rounded-3xl bg-[var(--color-bone)] p-5 text-left text-[var(--color-oxblood)]">
+          <div className="mb-3 flex items-baseline justify-between gap-4">
+            <h3 className="font-display text-2xl font-semibold">Secure checkout</h3>
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]/60">
+              {payment?.status}
+            </span>
+          </div>
+          <p className="text-sm leading-6 text-[var(--color-charcoal)]/75">
+            We are sending you to Paystack to complete payment. If the redirect does not open, use
+            the secure checkout button below.
+          </p>
+          {paystack.authorizationUrl ? (
+            <a
+              href={paystack.authorizationUrl}
+              className="mt-4 inline-flex rounded-2xl bg-[var(--color-oxblood)] px-5 py-3 font-display text-sm text-[var(--color-bone)] shadow-lg transition-transform hover:scale-105 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)]"
+            >
+              Continue to Paystack
+            </a>
+          ) : null}
+        </div>
       ) : (
         <p className="max-w-md text-sm text-[var(--color-bone)]/70">
           {isPlanRequest
             ? "Chefmate will email your confirmed recurring schedule and payment details before the plan is activated."
             : isReviewRequest
               ? "Chefmate will email your tailored quote and payment details once the request is approved."
-              : "Chefmate will confirm the bank-transfer details for this order."}
+              : "Chefmate will prepare the secure payment link for this order."}
         </p>
       )}
 

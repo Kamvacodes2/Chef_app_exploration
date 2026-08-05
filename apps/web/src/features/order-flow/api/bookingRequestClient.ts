@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getChefmateApiUrl } from "@/lib/env";
-import { readApiErrorMessage } from "@/lib/apiError";
+import { ChefmateApiError, readApiErrorDetails } from "@/lib/apiError";
 import type { Address, ContactDetails, GoalId } from "../types";
 import type { OrderState } from "../state/orderReducer";
 import { buildPlanSelection } from "@/features/plans/planSelection";
@@ -46,10 +46,17 @@ export interface BankTransferInstructions {
   readonly paymentReference: string;
 }
 
+export interface PaystackCheckoutDetails {
+  readonly authorizationUrl: string | null;
+  readonly accessCode: string | null;
+}
+
 export interface BookingPayment {
-  readonly method: "BANK_TRANSFER";
+  readonly method: "BANK_TRANSFER" | "PAYSTACK";
+  readonly provider: "BANK_TRANSFER" | "PAYSTACK";
   readonly status: "PENDING" | "SUBMITTED" | "VERIFIED" | "DECLINED";
   readonly bankTransfer: BankTransferInstructions | null;
+  readonly paystack: PaystackCheckoutDetails | null;
 }
 
 export interface BookingRequestResult {
@@ -68,6 +75,49 @@ export interface SubmitBookingRequestOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
+export interface InitializePaystackCheckoutOptions {
+  readonly baseUrl?: string;
+  readonly fetchImpl?: typeof fetch;
+}
+
+export interface PaystackCheckoutResult {
+  readonly payment: BookingPayment;
+  readonly authorizationUrl: string;
+}
+
+const paymentStatusSchema = z.enum(["PENDING", "SUBMITTED", "VERIFIED", "DECLINED"]);
+
+const bankTransferSchema = z.object({
+  bankName: z.string().min(1),
+  branchName: z.string().min(1),
+  branchCode: z.string().min(1),
+  accountHolder: z.string().min(1),
+  accountNumber: z.string().min(1),
+  accountType: z.string().min(1),
+  paymentReference: z.string().min(1),
+});
+
+const paystackCheckoutDetailsSchema = z.object({
+  authorizationUrl: z.string().min(1).nullable(),
+  accessCode: z.string().min(1).nullable(),
+});
+
+const bookingPaymentSchema = z
+  .object({
+    method: z.enum(["BANK_TRANSFER", "PAYSTACK"]),
+    provider: z.enum(["BANK_TRANSFER", "PAYSTACK"]).optional(),
+    status: paymentStatusSchema,
+    bankTransfer: bankTransferSchema.nullable().optional(),
+    paystack: paystackCheckoutDetailsSchema.nullable().optional(),
+  })
+  .transform((payment): BookingPayment => ({
+    method: payment.method,
+    provider: payment.provider ?? payment.method,
+    status: payment.status,
+    bankTransfer: payment.bankTransfer ?? null,
+    paystack: payment.paystack ?? null,
+  }));
+
 const bookingResponseSchema = z.object({
   data: z.object({
     id: z.string().min(1),
@@ -85,23 +135,13 @@ const bookingResponseSchema = z.object({
     subtotalCents: z.number().int().nonnegative(),
     discountCents: z.number().int().nonnegative(),
     totalCents: z.number().int().nonnegative(),
-    payment: z
-      .object({
-        method: z.literal("BANK_TRANSFER"),
-        status: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "DECLINED"]),
-        bankTransfer: z
-          .object({
-            bankName: z.string().min(1),
-            branchName: z.string().min(1),
-            branchCode: z.string().min(1),
-            accountHolder: z.string().min(1),
-            accountNumber: z.string().min(1),
-            accountType: z.string().min(1),
-            paymentReference: z.string().min(1),
-          })
-          .nullable(),
-      })
-      .nullable(),
+    payment: bookingPaymentSchema.nullable(),
+  }),
+});
+
+const paystackCheckoutResponseSchema = z.object({
+  data: z.object({
+    payment: bookingPaymentSchema,
   }),
 });
 
@@ -190,19 +230,55 @@ export async function submitBookingRequestPayload(
   );
 
   if (!response.ok) {
-    throw new Error(
-      await readApiErrorMessage(
-        response,
-        "Chefmate booking request failed (" + response.status + ")",
-      ),
+    throw await chefmateApiError(
+      response,
+      "Chefmate booking request failed (" + response.status + ")",
     );
   }
 
   return bookingResponseSchema.parse(await response.json()).data;
 }
 
+export async function initializePaystackCheckout(
+  bookingReference: string,
+  options: InitializePaystackCheckoutOptions = {},
+): Promise<PaystackCheckoutResult> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      "/api/v1/payments/checkout/" + encodeURIComponent(bookingReference),
+    ),
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw await chefmateApiError(response, "Chefmate checkout failed (" + response.status + ")");
+  }
+
+  const payment = paystackCheckoutResponseSchema.parse(await response.json()).data.payment;
+  if (payment.method !== "PAYSTACK" || !payment.paystack?.authorizationUrl) {
+    throw new Error("Chefmate checkout did not return a Paystack payment link.");
+  }
+
+  return {
+    payment,
+    authorizationUrl: payment.paystack.authorizationUrl,
+  };
+}
+
 function apiUrl(baseUrl: string, path: string): string {
   const trimmed = baseUrl.trim().replace(/\/$/, "");
   if (!trimmed) throw new Error("Chefmate API URL is not configured.");
   return trimmed + path;
+}
+
+async function chefmateApiError(response: Response, fallback: string): Promise<ChefmateApiError> {
+  return new ChefmateApiError(response.status, await readApiErrorDetails(response, fallback));
 }

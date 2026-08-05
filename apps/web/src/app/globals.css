@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+/*
+  Custom named breakpoint for the 1440px "wide desktop" tier (see MealSection).
+
+  Two things here are load-bearing; changing either silently breaks the CSS
+  cascade at >=1440px rather than producing any error.
+
+  1. It must be a NAMED breakpoint, not an arbitrary `min-[1440px]:` variant.
+     Tailwind v4 groups arbitrary variants into a block emitted before the
+     named-breakpoint blocks, so `min-[1440px]:grid-cols-4` was emitted BEFORE
+     `md:grid-cols-3`. At >=1440px both media queries match and both selectors
+     have identical specificity, so the later `md` rule won and pinned every
+     wide desktop to 3 columns.
+
+  2. The value MUST be in `rem`, matching the units Tailwind's own default
+     breakpoints use (sm 40rem, md 48rem, lg 64rem, xl 80rem, 2xl 96rem).
+     Tailwind v4 orders breakpoint variants by comparing their values, and it
+     cannot compare `1440px` against `48rem` -- declaring this as `1440px`
+     put the `wide` block BEFORE `sm`/`md` and reproduced the exact same
+     cascade bug the named breakpoint was meant to fix.
+     90rem = 1440px, which correctly sorts between `xl` and `2xl`.
+
+  `xl` (1280px) and `2xl` (1536px) are intentionally left at their defaults:
+  AdminDashboardPage and ChefPortalPage both rely on `xl:` meaning 1280px.
+*/
+@theme {
+  --breakpoint-wide: 90rem;
+}
+
 :root {
   --color-oxblood: #7e2422;
   --color-terracotta: #d97a4a;

@@ -1,196 +1,71 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactElement } from "react";
-import { GOALS } from "../constants/goals";
-import { getMealDetail } from "../constants/mealDetails";
-import { IN_DEMAND_IDS, MAINS } from "../constants/menu";
+import { MealBrowser } from "@/features/meal-browser/MealBrowser";
+import type { BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
+import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
+import { defaultCategorySlugForGoal } from "../constants/goalMealDefaults";
 import { useOrder } from "../state/OrderContext";
-import { DishCard } from "./DishCard";
-import type { OrderMenuItem } from "../types";
-
-type MealCategoryId = "all" | "in-demand" | "healthy" | "chicken" | "beef" | "pasta" | "sunday";
-
-const MEAL_CATEGORIES: ReadonlyArray<{ readonly id: MealCategoryId; readonly label: string }> = [
-  { id: "all", label: "All meals" },
-  { id: "in-demand", label: "In demand" },
-  { id: "healthy", label: "Healthy" },
-  { id: "chicken", label: "Chicken" },
-  { id: "beef", label: "Beef & meat" },
-  { id: "pasta", label: "Pasta & family" },
-  { id: "sunday", label: "Sunday colours" },
-];
-
-function matchesCategory(item: OrderMenuItem, category: MealCategoryId): boolean {
-  if (category === "all") return true;
-  if (category === "in-demand") return IN_DEMAND_IDS.includes(item.id);
-
-  const haystack =
-    `${item.id} ${item.name} ${item.description} ${item.goalTags.join(" ")}`.toLowerCase();
-  switch (category) {
-    case "healthy":
-      return item.goalTags.some((tag) =>
-        ["light", "low-carb", "mediterranean", "plant-forward"].includes(tag),
-      );
-    case "chicken":
-      return haystack.includes("chicken");
-    case "beef":
-      return ["beef", "oxtail", "lamb", "steak"].some((word) => haystack.includes(word));
-    case "pasta":
-      return ["pasta", "lasagne", "kid", "meatball", "mince"].some((word) =>
-        haystack.includes(word),
-      );
-    case "sunday":
-      return ["seven", "colours", "sunday"].some((word) => haystack.includes(word));
-    default:
-      return true;
-  }
-}
-
-function matchesQuery(item: OrderMenuItem, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  const detail = getMealDetail(item);
-  return [item.name, item.description, ...item.goalTags, ...(detail?.ingredients ?? [])]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalized);
-}
 
 /**
- * Meal discovery. Guests can search, filter by category, pick a dish, or send
- * a custom request for something they saw elsewhere.
+ * Meal discovery step. The catalog browser does the discovery work; this step
+ * keeps the order-flow contract: selecting a meal stores an `OrderMenuItem`
+ * whose `id` is the catalog slug (submitted as `mainSlug`), and guests can
+ * always fall back to a custom request.
  */
 export function MealSelect(): ReactElement {
   const { state, selectMain, setCustomRequest, clearCustomRequest } = useOrder();
   const [customOpen, setCustomOpen] = useState(false);
   const [customText, setCustomText] = useState("");
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<MealCategoryId>("all");
+  const customRef = useRef<HTMLTextAreaElement>(null);
 
-  const goal = GOALS.find((g) => g.id === state.goalId);
-  const visibleMeals = useMemo(() => {
-    const goalMatches =
-      !goal || goal.matchTags.length === 0
-        ? MAINS
-        : MAINS.filter((meal) => meal.goalTags.some((tag) => goal.matchTags.includes(tag)));
+  const openCustomRequest = useCallback(() => {
+    setCustomOpen(true);
+    // Focus lands on the textarea so the escape hatch is usable by keyboard.
+    requestAnimationFrame(() => customRef.current?.focus());
+  }, []);
 
-    return goalMatches.filter(
-      (meal) => matchesCategory(meal, activeCategory) && matchesQuery(meal, query),
-    );
-  }, [activeCategory, goal, query]);
+  const handleSelectMeal = useCallback(
+    (meal: BrowserMeal) => {
+      selectMain(toOrderMenuItem(meal));
+    },
+    [selectMain],
+  );
 
-  const isSelected = (item: OrderMenuItem) =>
-    state.main?.id === item.id && state.customRequest === null;
+  const selectedSlug = state.customRequest === null ? (state.main?.id ?? null) : null;
+  // The Goal step's choice pre-selects a starting category chip here — a soft
+  // default, not a filter. `MealBrowser` reads this only once on mount, so
+  // it never fights the customer's own chip choices.
+  const initialCategorySlug = defaultCategorySlugForGoal(state.goalId);
 
   return (
     <div className="flex w-full flex-col gap-8">
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-bone)]/70">
-            Meal discovery
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-bone)]/70">
+          Meal discovery
+        </p>
+        <h2 className="font-display text-4xl font-semibold leading-tight text-[var(--color-bone)] sm:text-5xl">
+          Find what you want to eat.
+        </h2>
+        <p className="max-w-xl text-sm leading-6 text-[var(--color-bone)]/72 sm:text-base">
+          Browse by category or search ingredients, cravings and meal names. Tap a meal to see the
+          detail, or tap the plus to build your Chefmate session with it.
+        </p>
+        {state.main && state.customRequest === null ? (
+          <p className="w-fit rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-[var(--color-bone)]">
+            Selected: {state.main.name}
           </p>
-          <h2 className="font-display text-4xl font-semibold leading-tight text-[var(--color-bone)] sm:text-5xl">
-            Find what you want to eat.
-          </h2>
-          <p className="max-w-xl text-sm leading-6 text-[var(--color-bone)]/72 sm:text-base">
-            Browse by category or search ingredients, cravings and meal names. Pick a main to build
-            your Chefmate session.
-          </p>
-        </div>
-
-        <label className="relative block" htmlFor="meal-search">
-          <span className="sr-only">Search meals or ingredients</span>
-          <input
-            id="meal-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search meals, ingredients or cravings"
-            className="min-h-14 w-full rounded-2xl border border-white/20 bg-[var(--color-bone)] px-6 pr-20 text-sm font-semibold text-[var(--color-oxblood)] shadow-lg placeholder:text-[var(--color-oxblood)]/45 focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-[var(--color-bone)]"
-          />
-          <span
-            className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--color-oxblood)]"
-            aria-hidden="true"
-          >
-            Search
-          </span>
-        </label>
+        ) : null}
       </div>
 
-      <div
-        className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
-        aria-label="Meal categories"
-      >
-        {MEAL_CATEGORIES.map((category) => {
-          const isActive = activeCategory === category.id;
-          return (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => setActiveCategory(category.id)}
-              className={`min-h-11 shrink-0 rounded-xl px-5 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-bone)] ${
-                isActive
-                  ? "bg-[var(--color-bone)] text-[var(--color-oxblood)]"
-                  : "border border-white/20 bg-white/10 text-[var(--color-bone)] hover:bg-white/15"
-              }`}
-              aria-pressed={isActive}
-            >
-              {category.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <section aria-label="Meals">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--color-bone)]/80">
-              {goal && goal.matchTags.length > 0
-                ? `Good matches for ${goal.title}`
-                : "All chefmate meals"}
-            </h3>
-            <p className="mt-1 text-sm text-[var(--color-bone)]/60">
-              {visibleMeals.length} meal{visibleMeals.length === 1 ? "" : "s"} found
-            </p>
-          </div>
-          {state.main ? (
-            <p className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-[var(--color-bone)]">
-              Selected: {state.main.name}
-            </p>
-          ) : null}
-        </div>
-
-        {visibleMeals.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleMeals.map((meal) => (
-              <DishCard
-                key={meal.id}
-                item={meal}
-                selected={isSelected(meal)}
-                onSelect={() => selectMain(meal)}
-                badge={
-                  IN_DEMAND_IDS.includes(meal.id)
-                    ? "In demand"
-                    : meal.isSignature
-                      ? "SA favourite"
-                      : undefined
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-3xl bg-white/[0.08] p-6 text-[var(--color-bone)] ring-1 ring-white/10">
-            <h3 className="font-display text-2xl">No exact match yet.</h3>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-bone)]/70">
-              If you saw something on TikTok, Instagram, Pinterest or anywhere else, send it as a
-              custom request and the kitchen can confirm it.
-            </p>
-          </div>
-        )}
-      </section>
+      <MealBrowser
+        selectedSlug={selectedSlug}
+        onSelectMeal={handleSelectMeal}
+        onRequestCustom={openCustomRequest}
+        initialCategorySlug={initialCategorySlug}
+      />
 
       <div className="flex flex-col items-center gap-3">
         <button
@@ -218,6 +93,7 @@ export function MealSelect(): ReactElement {
                 </label>
                 <textarea
                   id="custom-request"
+                  ref={customRef}
                   rows={3}
                   value={customText}
                   onChange={(event) => setCustomText(event.target.value)}
