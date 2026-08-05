@@ -126,8 +126,7 @@ const isDevOnly = (advisory: AuditAdvisory): boolean => {
 };
 
 describe("dev-only advisory exception register: shape", () => {
-  it("names at least one advisory and is not a blanket wildcard", () => {
-    expect(manifest.exceptions.length).toBeGreaterThan(0);
+  it("contains only concrete advisory ids when exceptions are present", () => {
     const ids = manifest.exceptions.map((entry) => entry.advisoryId);
     // Every entry must be a concrete GHSA id: no "*", no module-wide cover.
     expect(ids.filter((id) => !/^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/.test(id))).toEqual([]);

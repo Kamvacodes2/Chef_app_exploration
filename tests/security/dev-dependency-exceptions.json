@@ -9,7 +9,7 @@
     "",
     "Scope rules enforced by tests/security/devDependencyExceptions.test.ts:",
     "  1. every entry must carry all required fields;",
-    "  2. every entry must have a future review/expiry date — an expired entry",
+    "  2. every entry must have a future review/expiry date - an expired entry",
     "     fails the suite, which forces a decision instead of silent drift;",
     "  3. an advisory is only excused if `pnpm audit` reports every one of its",
     "     findings as dev-only. A production finding is never excused here;",
@@ -17,20 +17,5 @@
     "     newly introduced advisory cannot arrive unnoticed."
   ],
   "policyVersion": 1,
-  "exceptions": [
-    {
-      "advisoryId": "GHSA-mh99-v99m-4gvg",
-      "module": "brace-expansion",
-      "severity": "high",
-      "title": "brace-expansion regular expression denial of service",
-      "vulnerableVersions": "<=5.0.7",
-      "patchedVersions": ">=5.0.8",
-      "justification": "PARTIALLY REMEDIATED. The advisory marks every release up to 5.0.7 vulnerable and only 5.0.8 patched, so no in-major patch exists for the 1.x line. A pnpm override pins the 5.x line (reached via minimatch@10) to ^5.0.8. An unscoped `brace-expansion: ^5.0.8` override was attempted and tested: it breaks eslint outright (`TypeError: expand is not a function` in minimatch@3.1.5) because brace-expansion 5.x replaced the callable default export with a named `{ expand }` export, so minimatch@3 consumers cannot take it. The Vitest/Vite migration cleared the former @vitest/coverage-v8 glob/minimatch chain; the only remaining vulnerable path is eslint 9 / @eslint tooling through minimatch ^3.1.5. This is lint tooling that only expands glob patterns authored inside this repository — a ReDoS needs an attacker-supplied pattern, and there is none.",
-      "scope": "devDependency only — eslint tooling chain; brace-expansion is absent from every production dependency tree.",
-      "owner": "Kamva (kamva@speccon.co.za)",
-      "createdOn": "2026-07-29",
-      "reviewBy": "2026-08-26",
-      "removalCondition": "Remove when eslint's minimatch@3 chain resolves brace-expansion >=5.0.8 (expected to require eslint 10 / @eslint/config-array >=0.23.x and @eslint/eslintrc on minimatch 10). Verify with `pnpm why brace-expansion`, then delete this entry and the `brace-expansion@5` override in pnpm-workspace.yaml if it is no longer needed."
-    }
-  ]
+  "exceptions": []
 }
