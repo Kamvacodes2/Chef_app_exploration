@@ -21,6 +21,13 @@ export interface MealBrowserProps {
   readonly onSelectMeal: (meal: BrowserMeal) => void;
   /** Opens the "can't find it" custom-request escape hatch. */
   readonly onRequestCustom: () => void;
+  /**
+   * Soft starting category chip (e.g. derived from the guest's onboarding
+   * goal). Applied once as the initial chip selection only — it is never
+   * re-applied once the customer interacts with the chips, and it never
+   * hides a category; "All" (or any other chip) is always reachable.
+   */
+  readonly initialCategorySlug?: string | null;
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -41,10 +48,16 @@ export function MealBrowser({
   selectedSlug,
   onSelectMeal,
   onRequestCustom,
+  initialCategorySlug = null,
 }: MealBrowserProps): ReactElement {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES);
+  // Lazy initializer: read once on mount only, so a goal default never
+  // re-overrides a chip the customer has already touched, and never refires
+  // on catalog refetches (see `reloadToken` below).
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => initialCategorySlug ?? ALL_CATEGORIES,
+  );
   const [selectedCalorieIndex, setSelectedCalorieIndex] = useState(0);
   const [catalog, setCatalog] = useState<CatalogState>({ meals: [], categories: [] });
   const [isLoading, setIsLoading] = useState(true);

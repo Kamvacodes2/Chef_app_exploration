@@ -421,3 +421,93 @@ describe("MealSelect meal browser", () => {
     expect(controller.clearCustomRequest).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("MealSelect goal pre-selection", () => {
+  const carbCleverMeal = meal({
+    slug: "carb-clever-bowl",
+    name: "Carb Clever Bowl",
+    categorySlug: "carb-clever",
+    categoryName: "Carb Clever",
+    goalTags: ["high-protein", "low-carb"],
+  });
+
+  const familySupperMeal = meal({
+    slug: "family-supper",
+    name: "Family Supper",
+    categorySlug: "popular-family-suppers",
+    categoryName: "Popular Family Suppers",
+    goalTags: ["balanced", "family-friendly"],
+  });
+
+  const goalCategories = [
+    { slug: "carb-clever", name: "Carb Clever", sortOrder: 1, mealCount: 1 },
+    { slug: "popular-family-suppers", name: "Popular Family Suppers", sortOrder: 2, mealCount: 1 },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    catalogApi.fetchMeals.mockResolvedValue([carbCleverMeal, familySupperMeal]);
+    catalogApi.fetchCategories.mockResolvedValue(goalCategories);
+  });
+
+  it("pre-selects the Carb Clever chip for the lose-weight goal", async () => {
+    renderMealSelect({
+      state: { ...INITIAL_ORDER_STATE, step: "meal", goalId: "lose-weight" },
+    });
+
+    await screen.findByTestId("meal-card-carb-clever-bowl");
+
+    expect(screen.getByRole("button", { name: "Carb Clever" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByTestId("meal-card-family-supper")).not.toBeInTheDocument();
+  });
+
+  it("lets the customer override the lose-weight default by tapping All", async () => {
+    renderMealSelect({
+      state: { ...INITIAL_ORDER_STATE, step: "meal", goalId: "lose-weight" },
+    });
+
+    await screen.findByTestId("meal-card-carb-clever-bowl");
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
+
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("meal-card-carb-clever-bowl")).toBeInTheDocument();
+    expect(screen.getByTestId("meal-card-family-supper")).toBeInTheDocument();
+  });
+
+  it("starts on All for a goal with no clean category mapping (just-good-food)", async () => {
+    renderMealSelect({
+      state: { ...INITIAL_ORDER_STATE, step: "meal", goalId: "just-good-food" },
+    });
+
+    await screen.findByTestId("meal-card-carb-clever-bowl");
+
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("meal-card-family-supper")).toBeInTheDocument();
+  });
+
+  it("starts on All for goals without a real-data category match (post-partum)", async () => {
+    renderMealSelect({
+      state: { ...INITIAL_ORDER_STATE, step: "meal", goalId: "post-partum" },
+    });
+
+    await screen.findByTestId("meal-card-carb-clever-bowl");
+
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("meal-card-family-supper")).toBeInTheDocument();
+  });
+
+  it("never permanently hides a meal: every category chip remains reachable regardless of goal", async () => {
+    renderMealSelect({
+      state: { ...INITIAL_ORDER_STATE, step: "meal", goalId: "lose-weight" },
+    });
+
+    await screen.findByTestId("meal-card-carb-clever-bowl");
+    fireEvent.click(screen.getByRole("button", { name: "Popular Family Suppers" }));
+
+    expect(screen.getByTestId("meal-card-family-supper")).toBeInTheDocument();
+    expect(screen.queryByTestId("meal-card-carb-clever-bowl")).not.toBeInTheDocument();
+  });
+});

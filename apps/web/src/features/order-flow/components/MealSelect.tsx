@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 import { MealBrowser } from "@/features/meal-browser/MealBrowser";
 import type { BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
 import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
+import { defaultCategorySlugForGoal } from "../constants/goalMealDefaults";
 import { useOrder } from "../state/OrderContext";
 
 /**
@@ -34,6 +35,10 @@ export function MealSelect(): ReactElement {
   );
 
   const selectedSlug = state.customRequest === null ? (state.main?.id ?? null) : null;
+  // The Goal step's choice pre-selects a starting category chip here — a soft
+  // default, not a filter. `MealBrowser` reads this only once on mount, so
+  // it never fights the customer's own chip choices.
+  const initialCategorySlug = defaultCategorySlugForGoal(state.goalId);
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -59,6 +64,7 @@ export function MealSelect(): ReactElement {
         selectedSlug={selectedSlug}
         onSelectMeal={handleSelectMeal}
         onRequestCustom={openCustomRequest}
+        initialCategorySlug={initialCategorySlug}
       />
 
       <div className="flex flex-col items-center gap-3">
