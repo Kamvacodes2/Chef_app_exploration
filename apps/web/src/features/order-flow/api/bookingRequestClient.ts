@@ -110,15 +110,13 @@ const bookingPaymentSchema = z
     bankTransfer: bankTransferSchema.nullable().optional(),
     paystack: paystackCheckoutDetailsSchema.nullable().optional(),
   })
-  .transform(
-    (payment): BookingPayment => ({
-      method: payment.method,
-      provider: payment.provider ?? payment.method,
-      status: payment.status,
-      bankTransfer: payment.bankTransfer ?? null,
-      paystack: payment.paystack ?? null,
-    }),
-  );
+  .transform((payment): BookingPayment => ({
+    method: payment.method,
+    provider: payment.provider ?? payment.method,
+    status: payment.status,
+    bankTransfer: payment.bankTransfer ?? null,
+    paystack: payment.paystack ?? null,
+  }));
 
 const bookingResponseSchema = z.object({
   data: z.object({

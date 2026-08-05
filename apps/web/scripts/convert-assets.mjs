@@ -284,51 +284,231 @@ const CATALOG_BASE_URL = "https://dev.easychefapp.co.za";
 // `alt` falls back to a hand-written description where the API's
 // `websiteAltText` was null.
 const CATALOG_SOURCES = [
-  { menuId: "EC-001", imageUrl: "/meal-images/Chicken Meals/chicken_stew_rice.jpg", alt: "Chicken stew and rice served as a South African home supper" },
-  { menuId: "EC-002", imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_rice.jpg", alt: "Beef stew and rice served as a South African home supper" },
-  { menuId: "EC-003", imageUrl: "/meal-images/Chicken Meals/chicken_curry.jpg", alt: "Chicken curry and rice served as a South African home supper" },
-  { menuId: "EC-004", imageUrl: "/meal-images/Beef and Meat Premium Meals/mince_curry_rice.jpg", alt: "Mince curry and rice served as a South African home supper" },
-  { menuId: "EC-005", imageUrl: "/meal-images/Beef and Meat Premium Meals/wors_pap_and_chakalaka.jpg", alt: "Wors, pap and chakalaka served as a South African home supper" },
-  { menuId: "EC-006", imageUrl: "/meal-images/Chicken Meals/chicken_stew.jpg", alt: "Chicken livers and pap served as a South African home supper" },
-  { menuId: "EC-008", imageUrl: "/meal-images/Chicken Meals/fried_chicken.jpg", alt: "Fried chicken, chips and salad served as a South African home supper" },
-  { menuId: "EC-049", imageUrl: "/meal-images/chicken_shwarma_wrap.jpg", alt: "Chicken shawarma wraps with garlic yoghurt sauce and sumac onions" },
-  { menuId: "EC-009", imageUrl: "/meal-images/Traditional Favorites/Mogodu_and_pap.jpg", alt: "Mogodu and pap served as a South African home supper" },
-  { menuId: "EC-010", imageUrl: "/meal-images/Traditional Favorites/Mala_Mogodu.jpg", alt: "Mala mogodu and pap served as a South African home supper" },
-  { menuId: "EC-011", imageUrl: "/meal-images/Traditional Favorites/Oxtail_and_dombolo.jpg", alt: "Oxtail and dombolo served as a South African home supper" },
-  { menuId: "EC-012", imageUrl: "/meal-images/Traditional Favorites/Beef_stew_and_dombolo.jpg", alt: "Beef stew and dombolo served as a South African home supper" },
-  { menuId: "EC-013", imageUrl: "/meal-images/Traditional Favorites/Chicken_stew_and_dombolo.jpg", alt: "Chicken stew and dombolo served as a South African home supper" },
-  { menuId: "EC-014", imageUrl: "/meal-images/Traditional Favorites/umleqwa_and_pap.jpg", alt: "Hardbody chicken / umleqwa and pap served as a South African home supper" },
-  { menuId: "EC-015", imageUrl: "/meal-images/Traditional Favorites/Amanqina_cow_heels_and_pap.jpg", alt: "Amanqina / cow heels and pap served as a South African home supper" },
-  { menuId: "EC-016", imageUrl: "/meal-images/Traditional Favorites/Trotters_stew_and_pap.jpg", alt: "Trotters stew and pap served as a South African home supper" },
-  { menuId: "EC-024", imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_pap.jpg", alt: "Pap, beef stew and cabbage served as a South African home supper" },
-  { menuId: "EC-025", imageUrl: "/meal-images/Traditional Favorites/Mogodu_and_pap.jpg", alt: "Pap, mogodu and chakalaka served as a South African home supper" },
-  { menuId: "EC-026", imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_samp.jpg", alt: "Samp and beans with beef stew served as a South African home supper" },
-  { menuId: "EC-028", imageUrl: "/meal-images/Beef and Meat Premium Meals/lamb_stew.jpg", alt: "Dombolo with lamb stew served as a South African home supper" },
-  { menuId: "EC-017", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Roast_chicken_seven_colours.jpg", alt: "Roast chicken seven colours served as a South African home supper" },
-  { menuId: "EC-018", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Fried_chicken_seven_colours.jpg", alt: "Fried chicken seven colours served as a South African home supper" },
-  { menuId: "EC-019", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Roast_chicken_seven_colours(1).jpg", alt: "Beef stew seven colours served as a South African home supper" },
-  { menuId: "EC-020", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Oxtail_seven_colours.jpg", alt: "Oxtail seven colours served as a South African home supper" },
-  { menuId: "EC-021", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Chicken_curry_seven_colours.jpg", alt: "Chicken curry seven colours served as a South African home supper" },
-  { menuId: "EC-022", imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Sunday_mixed_plate_seven_colours.jpg", alt: "Sunday mixed plate served as a South African home supper" },
-  { menuId: "EC-030", imageUrl: "/meal-images/Chicken Meals/peri_peri_chicken.jpg", alt: "Peri-peri chicken and rice served as a South African home supper" },
-  { menuId: "EC-031", imageUrl: "/meal-images/Chicken Meals/bbq_chicken.jpg", alt: "BBQ chicken pieces and pap served as a South African home supper" },
-  { menuId: "EC-032", imageUrl: "/meal-images/Chicken Meals/chicken_wings.jpg", alt: "Chicken wings, chips and coleslaw served as a South African home supper" },
-  { menuId: "EC-035", imageUrl: "/meal-images/Beef and Meat Premium Meals/lamb_curry_and_rice.jpg", alt: "Lamb curry and rice served as a South African home supper" },
-  { menuId: "EC-036", imageUrl: "/meal-images/Beef and Meat Premium Meals/Lamb_chops_pap_and_chakalaka.jpg", alt: "Lamb chops, pap and chakalaka served as a South African home supper" },
-  { menuId: "EC-038", imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/cottage_pie.jpg", alt: "Cottage pie served as a South African home supper" },
-  { menuId: "EC-039", imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/beef_lasagne.jpg", alt: "Beef lasagne served as a South African home supper" },
-  { menuId: "EC-040", imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/Meatball_pasta.jpg", alt: "Meatballs and spaghetti served as a South African home supper" },
-  { menuId: "EC-124", imageUrl: "/meal-images/shwarma_steak.jpg", alt: "Shawarma-spiced steak, sliced and served with fresh salad" },
-  { menuId: "EC-029", imageUrl: "/meal-images/Chicken Meals/roasted_chicken.jpg", alt: "Roast chicken and vegetables served as a South African home supper" },
-  { menuId: "EC-033", imageUrl: "/meal-images/Chicken Meals/chicken_stir_fry_rice.jpg", alt: "Chicken stir-fry with rice served as a South African home supper" },
-  { menuId: "EC-034", imageUrl: "/meal-images/Chicken Meals/creamy_chicken.jpg", alt: "Chicken à la king and rice served as a South African home supper" },
-  { menuId: "EC-037", imageUrl: "/meal-images/Beef and Meat Premium Meals/steak_and_chips.jpg", alt: "Steak, chips and salad served as a South African home supper" },
-  { menuId: "EC-041", imageUrl: "/meal-images/Charcuterie_1.jpg", alt: "Charcuterie board with cured meats, cheeses, olives, nuts and dried fruit" },
-  { menuId: "EC-048", imageUrl: "/meal-images/chicken_gyro_bowl.jpg", alt: "Chicken gyro bowl with rice, salad and tzatziki" },
-  { menuId: "EC-051", imageUrl: "/meal-images/Burger_bowl.jpg", alt: "Big Mac-style burger bowl with beef, lettuce and burger sauce" },
-  { menuId: "EC-052", imageUrl: "/meal-images/GREEK_CHICKEN_TZATZIKI_BOWLS.jpg", alt: "Greek chicken tzatziki bowl with rice and fresh salad" },
-  { menuId: "EC-050", imageUrl: "/meal-images/overnight_oats.jpg", alt: "Trio of overnight oats jars with fruit and toppings" },
-  { menuId: "EC-DESSERT-001", imageUrl: "/meal-images/malva_pudding.webp", alt: "Warm malva pudding served with custard or cream" },
+  {
+    menuId: "EC-001",
+    imageUrl: "/meal-images/Chicken Meals/chicken_stew_rice.jpg",
+    alt: "Chicken stew and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-002",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_rice.jpg",
+    alt: "Beef stew and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-003",
+    imageUrl: "/meal-images/Chicken Meals/chicken_curry.jpg",
+    alt: "Chicken curry and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-004",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/mince_curry_rice.jpg",
+    alt: "Mince curry and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-005",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/wors_pap_and_chakalaka.jpg",
+    alt: "Wors, pap and chakalaka served as a South African home supper",
+  },
+  {
+    menuId: "EC-006",
+    imageUrl: "/meal-images/Chicken Meals/chicken_stew.jpg",
+    alt: "Chicken livers and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-008",
+    imageUrl: "/meal-images/Chicken Meals/fried_chicken.jpg",
+    alt: "Fried chicken, chips and salad served as a South African home supper",
+  },
+  {
+    menuId: "EC-049",
+    imageUrl: "/meal-images/chicken_shwarma_wrap.jpg",
+    alt: "Chicken shawarma wraps with garlic yoghurt sauce and sumac onions",
+  },
+  {
+    menuId: "EC-009",
+    imageUrl: "/meal-images/Traditional Favorites/Mogodu_and_pap.jpg",
+    alt: "Mogodu and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-010",
+    imageUrl: "/meal-images/Traditional Favorites/Mala_Mogodu.jpg",
+    alt: "Mala mogodu and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-011",
+    imageUrl: "/meal-images/Traditional Favorites/Oxtail_and_dombolo.jpg",
+    alt: "Oxtail and dombolo served as a South African home supper",
+  },
+  {
+    menuId: "EC-012",
+    imageUrl: "/meal-images/Traditional Favorites/Beef_stew_and_dombolo.jpg",
+    alt: "Beef stew and dombolo served as a South African home supper",
+  },
+  {
+    menuId: "EC-013",
+    imageUrl: "/meal-images/Traditional Favorites/Chicken_stew_and_dombolo.jpg",
+    alt: "Chicken stew and dombolo served as a South African home supper",
+  },
+  {
+    menuId: "EC-014",
+    imageUrl: "/meal-images/Traditional Favorites/umleqwa_and_pap.jpg",
+    alt: "Hardbody chicken / umleqwa and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-015",
+    imageUrl: "/meal-images/Traditional Favorites/Amanqina_cow_heels_and_pap.jpg",
+    alt: "Amanqina / cow heels and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-016",
+    imageUrl: "/meal-images/Traditional Favorites/Trotters_stew_and_pap.jpg",
+    alt: "Trotters stew and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-024",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_pap.jpg",
+    alt: "Pap, beef stew and cabbage served as a South African home supper",
+  },
+  {
+    menuId: "EC-025",
+    imageUrl: "/meal-images/Traditional Favorites/Mogodu_and_pap.jpg",
+    alt: "Pap, mogodu and chakalaka served as a South African home supper",
+  },
+  {
+    menuId: "EC-026",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/beef_stew_and_samp.jpg",
+    alt: "Samp and beans with beef stew served as a South African home supper",
+  },
+  {
+    menuId: "EC-028",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/lamb_stew.jpg",
+    alt: "Dombolo with lamb stew served as a South African home supper",
+  },
+  {
+    menuId: "EC-017",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Roast_chicken_seven_colours.jpg",
+    alt: "Roast chicken seven colours served as a South African home supper",
+  },
+  {
+    menuId: "EC-018",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Fried_chicken_seven_colours.jpg",
+    alt: "Fried chicken seven colours served as a South African home supper",
+  },
+  {
+    menuId: "EC-019",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Roast_chicken_seven_colours(1).jpg",
+    alt: "Beef stew seven colours served as a South African home supper",
+  },
+  {
+    menuId: "EC-020",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Oxtail_seven_colours.jpg",
+    alt: "Oxtail seven colours served as a South African home supper",
+  },
+  {
+    menuId: "EC-021",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Chicken_curry_seven_colours.jpg",
+    alt: "Chicken curry seven colours served as a South African home supper",
+  },
+  {
+    menuId: "EC-022",
+    imageUrl: "/meal-images/Seven Colours - Sunday Lunch/Sunday_mixed_plate_seven_colours.jpg",
+    alt: "Sunday mixed plate served as a South African home supper",
+  },
+  {
+    menuId: "EC-030",
+    imageUrl: "/meal-images/Chicken Meals/peri_peri_chicken.jpg",
+    alt: "Peri-peri chicken and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-031",
+    imageUrl: "/meal-images/Chicken Meals/bbq_chicken.jpg",
+    alt: "BBQ chicken pieces and pap served as a South African home supper",
+  },
+  {
+    menuId: "EC-032",
+    imageUrl: "/meal-images/Chicken Meals/chicken_wings.jpg",
+    alt: "Chicken wings, chips and coleslaw served as a South African home supper",
+  },
+  {
+    menuId: "EC-035",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/lamb_curry_and_rice.jpg",
+    alt: "Lamb curry and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-036",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/Lamb_chops_pap_and_chakalaka.jpg",
+    alt: "Lamb chops, pap and chakalaka served as a South African home supper",
+  },
+  {
+    menuId: "EC-038",
+    imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/cottage_pie.jpg",
+    alt: "Cottage pie served as a South African home supper",
+  },
+  {
+    menuId: "EC-039",
+    imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/beef_lasagne.jpg",
+    alt: "Beef lasagne served as a South African home supper",
+  },
+  {
+    menuId: "EC-040",
+    imageUrl: "/meal-images/Pasta Bakes and Kid Friendly/Meatball_pasta.jpg",
+    alt: "Meatballs and spaghetti served as a South African home supper",
+  },
+  {
+    menuId: "EC-124",
+    imageUrl: "/meal-images/shwarma_steak.jpg",
+    alt: "Shawarma-spiced steak, sliced and served with fresh salad",
+  },
+  {
+    menuId: "EC-029",
+    imageUrl: "/meal-images/Chicken Meals/roasted_chicken.jpg",
+    alt: "Roast chicken and vegetables served as a South African home supper",
+  },
+  {
+    menuId: "EC-033",
+    imageUrl: "/meal-images/Chicken Meals/chicken_stir_fry_rice.jpg",
+    alt: "Chicken stir-fry with rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-034",
+    imageUrl: "/meal-images/Chicken Meals/creamy_chicken.jpg",
+    alt: "Chicken à la king and rice served as a South African home supper",
+  },
+  {
+    menuId: "EC-037",
+    imageUrl: "/meal-images/Beef and Meat Premium Meals/steak_and_chips.jpg",
+    alt: "Steak, chips and salad served as a South African home supper",
+  },
+  {
+    menuId: "EC-041",
+    imageUrl: "/meal-images/Charcuterie_1.jpg",
+    alt: "Charcuterie board with cured meats, cheeses, olives, nuts and dried fruit",
+  },
+  {
+    menuId: "EC-048",
+    imageUrl: "/meal-images/chicken_gyro_bowl.jpg",
+    alt: "Chicken gyro bowl with rice, salad and tzatziki",
+  },
+  {
+    menuId: "EC-051",
+    imageUrl: "/meal-images/Burger_bowl.jpg",
+    alt: "Big Mac-style burger bowl with beef, lettuce and burger sauce",
+  },
+  {
+    menuId: "EC-052",
+    imageUrl: "/meal-images/GREEK_CHICKEN_TZATZIKI_BOWLS.jpg",
+    alt: "Greek chicken tzatziki bowl with rice and fresh salad",
+  },
+  {
+    menuId: "EC-050",
+    imageUrl: "/meal-images/overnight_oats.jpg",
+    alt: "Trio of overnight oats jars with fruit and toppings",
+  },
+  {
+    menuId: "EC-DESSERT-001",
+    imageUrl: "/meal-images/malva_pudding.webp",
+    alt: "Warm malva pudding served with custard or cream",
+  },
 ];
 
 async function fetchWithRetry(url, attempts = 3) {
@@ -426,7 +606,9 @@ async function convertCatalogMeals() {
     Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)),
   );
   writeFileSync(manifestPath, `${JSON.stringify(sortedManifest, null, 2)}\n`, "utf8");
-  console.log(`[ok] public/images/meals/catalog/manifest.json (${Object.keys(manifest).length} entries)`);
+  console.log(
+    `[ok] public/images/meals/catalog/manifest.json (${Object.keys(manifest).length} entries)`,
+  );
 
   if (failures.length > 0) {
     console.warn(`[warn] ${failures.length} catalog meal image(s) failed to import:`);
@@ -435,7 +617,11 @@ async function convertCatalogMeals() {
     }
   }
 
-  return { succeeded: results.filter((r) => r.ok).length, failed: failures, manifestEntries: Object.keys(manifest).length };
+  return {
+    succeeded: results.filter((r) => r.ok).length,
+    failed: failures,
+    manifestEntries: Object.keys(manifest).length,
+  };
 }
 
 async function ensureDir(filePath) {

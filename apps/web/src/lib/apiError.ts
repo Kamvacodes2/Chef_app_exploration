@@ -2,10 +2,7 @@ import { z } from "zod";
 
 const apiErrorResponseSchema = z.object({
   error: z
-    .union([
-      z.string(),
-      z.object({ code: z.string().optional(), message: z.string().optional() }),
-    ])
+    .union([z.string(), z.object({ code: z.string().optional(), message: z.string().optional() })])
     .optional(),
   code: z.string().optional(),
   message: z.string().optional(),
@@ -36,7 +33,9 @@ export async function readApiErrorDetails(
     const parsed = apiErrorResponseSchema.safeParse(await response.json());
     if (!parsed.success) return { message: fallback };
     const nestedCode =
-      parsed.data.error && typeof parsed.data.error !== "string" ? parsed.data.error.code : undefined;
+      parsed.data.error && typeof parsed.data.error !== "string"
+        ? parsed.data.error.code
+        : undefined;
     const message =
       parsed.data.message ??
       (typeof parsed.data.error === "string" ? parsed.data.error : parsed.data.error?.message) ??
