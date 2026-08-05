@@ -53,12 +53,19 @@ export function MealSection({
           >= 1440px   -> 4 columns  (~276px cards)
         `lg:` (1024px) was previously used for the 4-column tier, which made the
         3-column tier unreachable on every real desktop width. 1440px is not a
-        default Tailwind breakpoint (`xl` is 1280px, `2xl` is 1536px) and this
-        app defines no custom screens, so the exact tier is expressed with an
-        arbitrary `min-[1440px]:` variant.
+        default Tailwind breakpoint (`xl` is 1280px, `2xl` is 1536px), so it is
+        declared as a custom NAMED breakpoint (`wide`, see the `@theme` block in
+        `app/globals.css`).
+
+        Do not switch this back to an arbitrary `min-[1440px]:` variant: at
+        >=1440px both the `md` and the 1440px media queries match, both rules
+        have identical specificity, and Tailwind v4 only guarantees value-order
+        emission for NAMED breakpoints. As an arbitrary variant it was emitted
+        before `md:grid-cols-3`, which then won the cascade and pinned every
+        wide desktop to 3 columns.
       */}
       <div
-        className="-mx-4 flex items-stretch gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 min-[1440px]:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex items-stretch gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 wide:grid-cols-4 [&::-webkit-scrollbar]:hidden"
         data-testid={`meal-grid-${slug}`}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
