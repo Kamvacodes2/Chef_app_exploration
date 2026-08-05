@@ -391,7 +391,22 @@ async function convertCatalogMeals() {
     results.push(await convertCatalogMeal(source));
   }
 
-  const manifest = {};
+  const manifestPath = join(ROOT, "public/images/meals/catalog/manifest.json");
+  let existingManifest = {};
+  if (existsSync(manifestPath)) {
+    try {
+      existingManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    } catch {
+      console.warn(`[warn] could not parse ${manifestPath}, starting merge from an empty manifest`);
+      existingManifest = {};
+    }
+  }
+
+  // Merge this run's fresh results on top of the existing manifest rather than
+  // replacing it wholesale: any menuId that failed to (re-)fetch/convert this
+  // run keeps whatever entry it had on disk from a prior successful run,
+  // instead of being silently dropped.
+  const manifest = { ...existingManifest };
   const failures = [];
   for (const result of results) {
     if (result.ok) {
@@ -406,7 +421,6 @@ async function convertCatalogMeals() {
     }
   }
 
-  const manifestPath = join(ROOT, "public/images/meals/catalog/manifest.json");
   await ensureDir(manifestPath);
   const sortedManifest = Object.fromEntries(
     Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)),
@@ -421,7 +435,7 @@ async function convertCatalogMeals() {
     }
   }
 
-  return { succeeded: Object.keys(manifest).length, failed: failures };
+  return { succeeded: results.filter((r) => r.ok).length, failed: failures, manifestEntries: Object.keys(manifest).length };
 }
 
 async function ensureDir(filePath) {
@@ -829,8 +843,14 @@ async function main() {
   console.log("Converting meal catalog photography (remote import)...");
   const catalogResult = await convertCatalogMeals();
   console.log(
-    `Catalog import: ${catalogResult.succeeded}/${CATALOG_SOURCES.length} succeeded, ${catalogResult.failed.length} failed.`,
+    `Catalog import: ${catalogResult.succeeded}/${CATALOG_SOURCES.length} succeeded, ${catalogResult.failed.length} failed, manifest has ${catalogResult.manifestEntries} entries.`,
   );
+  if (catalogResult.failed.length > 0) {
+    console.warn(
+      `[warn] ${catalogResult.failed.length} catalog meal image(s) failed this run; manifest.json was merged with prior entries for those menuIds, but the underlying fetch/convert failure should be investigated.`,
+    );
+    process.exitCode = 1;
+  }
   console.log("Done.");
   saveCache();
 }
