@@ -42,6 +42,7 @@ export function MealCard({ meal }: MealCardProps) {
             src={meal.image.src}
             alt={meal.image.alt}
             fill
+            unoptimized
             sizes="(max-width: 767px) 40vw, 22vw"
             style={{ objectFit: "cover" }}
           />
