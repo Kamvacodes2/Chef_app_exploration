@@ -1,20 +1,24 @@
 import { IN_DEMAND_IDS, MAINS } from "@/features/order-flow/constants/menu";
+import heroAfterWorkImage from "../../../Assets/Tiniefied New Landing Page/come_home_switchoff.jpg";
+import heroCoupleImage from "../../../Assets/Tiniefied New Landing Page/hero_couple.jpg";
+import heroFamilyImage from "../../../Assets/Tiniefied New Landing Page/hero_mom_child_daddy.jpg";
+import heroHomeworkImage from "../../../Assets/Tiniefied New Landing Page/hero_mom_and_child.jpg";
 
 export const LANDING_ASSETS = {
   heroFamily: {
-    src: "/images/chefmate/hero-family-evening.png",
+    src: heroFamilyImage,
     alt: "A family relaxing on the sofa while a Chefmate chef cooks in their home kitchen",
   },
   homework: {
-    src: "/images/chefmate/story-homework-time.png",
+    src: heroHomeworkImage,
     alt: "A parent helping a child with homework while a Chefmate chef cooks in the background",
   },
   afterWork: {
-    src: "/images/chefmate/story-after-work.png",
+    src: heroAfterWorkImage,
     alt: "A customer smiling at her phone on the sofa, feet up, while a Chefmate chef preps dinner in the kitchen behind her",
   },
   couple: {
-    src: "/images/chefmate/story-couple-time.png",
+    src: heroCoupleImage,
     alt: "A couple catching up on the sofa while a Chefmate chef prepares dinner behind them",
   },
   groceryHandoff: {

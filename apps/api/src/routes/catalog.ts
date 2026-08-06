@@ -1,4 +1,4 @@
-﻿import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
 
 function meta(request: FastifyRequest) {
@@ -35,16 +35,24 @@ export async function registerCatalogRoutes(app: FastifyInstance, pool: Pool): P
     "/api/v1/catalog/meals",
     async (request, reply) => {
       const values: string[] = [];
-      const where = request.query.category ? "WHERE category_slug = $1 AND active" : "WHERE active";
+      const where = request.query.category
+        ? "WHERE ci.category_slug = $1 AND ci.active"
+        : "WHERE ci.active";
       if (request.query.category) values.push(request.query.category);
 
       const result = await pool.query(
-        `SELECT slug, category_slug, name, description, price_display,
-                image_src, image_alt, image_width, image_height,
-                is_hot, has_cutlery, sort_order
-           FROM app.catalog_items
+        `SELECT ci.slug,
+                ci.category_slug,
+                cc.name AS category_name,
+                ci.name,
+                ci.description,
+                ci.price_display,
+                ci.image_src, ci.image_alt, ci.image_width, ci.image_height,
+                ci.is_hot, ci.has_cutlery, ci.sort_order, ci.active
+           FROM app.catalog_items ci
+      INNER JOIN app.catalog_categories cc ON cc.slug = ci.category_slug
            ${where}
-          ORDER BY sort_order ASC`,
+          ORDER BY ci.sort_order ASC`,
         values,
       );
 
@@ -54,11 +62,17 @@ export async function registerCatalogRoutes(app: FastifyInstance, pool: Pool): P
 
   app.get<{ Params: { slug: string } }>("/api/v1/catalog/meals/:slug", async (request, reply) => {
     const result = await pool.query(
-      `SELECT slug, category_slug, name, description, price_display,
-              image_src, image_alt, image_width, image_height,
-              is_hot, has_cutlery, sort_order
-         FROM app.catalog_items
-        WHERE slug = $1 AND active`,
+      `SELECT ci.slug,
+              ci.category_slug,
+              cc.name AS category_name,
+              ci.name,
+              ci.description,
+              ci.price_display,
+              ci.image_src, ci.image_alt, ci.image_width, ci.image_height,
+              ci.is_hot, ci.has_cutlery, ci.sort_order, ci.active
+         FROM app.catalog_items ci
+    INNER JOIN app.catalog_categories cc ON cc.slug = ci.category_slug
+        WHERE ci.slug = $1 AND ci.active`,
       [request.params.slug],
     );
 
@@ -79,6 +93,7 @@ function toMeal(row: Record<string, unknown>) {
   return {
     slug: String(row.slug),
     categorySlug: String(row.category_slug),
+    categoryName: String(row.category_name ?? row.category_slug),
     name: String(row.name),
     description: String(row.description),
     priceDisplay: String(row.price_display),
@@ -90,6 +105,7 @@ function toMeal(row: Record<string, unknown>) {
     },
     isHot: Boolean(row.is_hot),
     hasCutlery: Boolean(row.has_cutlery),
+    isActive: Boolean(row.active),
     sortOrder: Number(row.sort_order),
   };
 }

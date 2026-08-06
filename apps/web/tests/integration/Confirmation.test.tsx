@@ -66,11 +66,15 @@ function renderWith(value: OrderController): ReactElement {
 
 const bankTransfer = {
   bankName: "Test Bank",
+  legalEntityName: "CHEF MATE (PTY) LTD",
+  registrationNumber: "2026/593342/07",
   branchName: "Sandton",
   branchCode: "250655",
+  electronicBranchCode: "051001",
+  swiftCode: "SBZA ZA JJ",
   accountHolder: "Chefmate Pty Ltd",
   accountNumber: "000123456",
-  accountType: "Cheque",
+  accountType: "MYMOBIZ CURRENT ACCOUNT",
   paymentReference: "CM-REF-001",
 };
 
@@ -118,12 +122,22 @@ describe("Confirmation — completed order", () => {
     expect(screen.queryByText("52785")).not.toBeInTheDocument();
   });
 
-  it("renders every bank-transfer field the customer needs", () => {
+  it("renders the customer-facing bank-transfer fields only", () => {
     renderWith(controller({ bookingConfirmation: confirmed }));
 
-    for (const value of Object.values(bankTransfer)) {
-      expect(screen.getByText(new RegExp(value.replace(/[()]/g, "\\$&")))).toBeInTheDocument();
-    }
+    expect(screen.getByText("Test Bank")).toBeInTheDocument();
+    expect(screen.queryByText("Legal entity")).not.toBeInTheDocument();
+    expect(screen.queryByText("CHEF MATE (PTY) LTD")).not.toBeInTheDocument();
+    expect(screen.queryByText("Registration")).not.toBeInTheDocument();
+    expect(screen.queryByText("2026/593342/07")).not.toBeInTheDocument();
+    expect(screen.getByText("Sandton (250655)")).toBeInTheDocument();
+    expect(screen.getByText("051001")).toBeInTheDocument();
+    expect(screen.getByText("SBZA ZA JJ")).toBeInTheDocument();
+    expect(screen.getByText("Chefmate Pty Ltd")).toBeInTheDocument();
+    expect(screen.getByText("000123456")).toBeInTheDocument();
+    expect(screen.getByText("CURRENT ACCOUNT")).toBeInTheDocument();
+    expect(screen.queryByText("MYMOBIZ CURRENT ACCOUNT")).not.toBeInTheDocument();
+    expect(screen.getByText("CM-REF-001")).toBeInTheDocument();
   });
 
   it("shows the once-off milestone sequence", () => {

@@ -40,6 +40,8 @@ export interface BankTransferInstructions {
   readonly bankName: string;
   readonly branchName: string;
   readonly branchCode: string;
+  readonly electronicBranchCode?: string;
+  readonly swiftCode?: string;
   readonly accountHolder: string;
   readonly accountNumber: string;
   readonly accountType: string;
@@ -91,6 +93,8 @@ const bankTransferSchema = z.object({
   bankName: z.string().min(1),
   branchName: z.string().min(1),
   branchCode: z.string().min(1),
+  electronicBranchCode: z.string().min(1).optional(),
+  swiftCode: z.string().min(1).optional(),
   accountHolder: z.string().min(1),
   accountNumber: z.string().min(1),
   accountType: z.string().min(1),

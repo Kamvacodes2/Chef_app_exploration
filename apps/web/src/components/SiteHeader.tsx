@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { BrandMark } from "@/features/hero/components/BrandMark";
 
 /** Homepage-level brand header. It belongs before every page section rather
@@ -23,49 +24,37 @@ export function SiteHeader() {
           className="hidden items-center gap-6 text-sm font-semibold text-[var(--color-charcoal)]/80 md:flex"
           aria-label="Primary"
         >
-          <a
+          <Link
             className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-            href="#how-it-works"
+            href="/#how-it-works"
           >
             How it works
-          </a>
-          <a
+          </Link>
+          <Link
             className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-            href="#meals"
+            href="/#meals"
           >
             Meals
-          </a>
-          <a
+          </Link>
+          <Link
             className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-            href="#plans"
+            href="/#plans"
           >
             Plans
-          </a>
-          <a
-            className="inline-flex min-h-10 items-center transition hover:text-[var(--color-oxblood)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)]"
-            href="/chef/apply"
-          >
-            Apply as chef
-          </a>
+          </Link>
         </nav>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <a
-            href="#order-flow"
+          <Link
+            href="/#order-flow"
             className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-oxblood)] px-3 text-xs font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-5 sm:text-sm"
           >
             Book a chef
-          </a>
+          </Link>
           <a
             href="/login"
             className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
           >
             Login
-          </a>
-          <a
-            href="/chef/portal"
-            className="hidden min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/20 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:inline-flex sm:px-4 sm:text-sm"
-          >
-            Chef portal
           </a>
         </div>
       </div>
