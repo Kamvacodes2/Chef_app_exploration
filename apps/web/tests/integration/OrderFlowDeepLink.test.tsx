@@ -121,14 +121,18 @@ describe("OrderFlow landing deep link into meal discovery", () => {
     expect(screen.queryByText(/^Selected: /)).not.toBeInTheDocument();
   });
 
-  it("does not look the catalog up for a plain booking link", async () => {
+  it("opens meal discovery with all meals when the hash has no plan or meal slug", async () => {
     setHash("#order-flow");
 
     render(<OrderFlow />);
 
+    // Skips the goal step entirely — "Book a chef" / "Get Started" / "Explore meals"
+    // all land directly on meal discovery with the default "All" category.
     await waitFor(() =>
-      expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "goal"),
+      expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal"),
     );
-    expect(catalogApi.fetchMeals).not.toHaveBeenCalled();
+    // Meal cards are rendered (catalog was fetched)
+    await screen.findByTestId("meal-card-chicken-gyro-bowl");
+    expect(screen.getByTestId("meal-card-wors-pap-chakalaka")).toBeInTheDocument();
   });
 });

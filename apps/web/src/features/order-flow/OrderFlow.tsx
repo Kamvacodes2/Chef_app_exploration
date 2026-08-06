@@ -200,9 +200,10 @@ export function OrderFlow(): ReactElement {
         openMealDiscovery(target.mealId);
         return;
       }
-      openBooking();
+      // Bare #order-flow — skip the goal step, start meal discovery with all meals.
+      // "Book a chef", "Get Started", "Explore meals", "Book a chefmate" all point here.
+      openMealDiscovery();
     };
-
     const handleHashChange = (): void => {
       openFromHash(window.location.hash);
     };

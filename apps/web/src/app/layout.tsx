@@ -22,7 +22,8 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: "ChefMate",
-  description: "Cinematic hero experience for ChefMate meal discovery.",
+  description:
+    'ChefMate answers the daily question, "What are we doing for dinner?" with affordable, trusted chefs who cook fresh meals in your home.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

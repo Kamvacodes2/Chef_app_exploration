@@ -283,17 +283,19 @@ describe("LandingPage", () => {
     expect(await screen.findByText("Selected: Wors, Pap and Chakalaka")).toBeInTheDocument();
   });
 
-  it("keeps regular booking calls at the goal selection", async () => {
+  it("lands CTA clicks directly on meal discovery with all meals", async () => {
     render(<LandingPage />);
 
     fireEvent.click(screen.getByRole("link", { name: "Explore meals" }));
 
+    // "Book a chef", "Get Started", "Explore meals", and "Book a chefmate"
+    // all skip the goal step and land on meal discovery with "All" selected.
     expect(
-      await screen.findByRole("heading", { name: "How can chefmate help?" }),
+      await screen.findByRole("heading", { name: "Find what you want to eat." }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "Find what you want to eat." }),
+      screen.queryByRole("heading", { name: "How can chefmate help?" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "goal");
+    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
   });
 });
