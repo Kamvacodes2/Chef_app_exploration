@@ -22,13 +22,15 @@ describe("landing content", () => {
     );
   });
 
-  it("uses the tinified JPG hero story images", () => {
+  it("uses public URLs for the tinified JPG hero story images", () => {
     const heroSources = HERO_STORIES.map((story) => assetSourceToString(story.asset.src));
 
-    expect(heroSources[0]).toContain("hero_mom_child_daddy.jpg");
-    expect(heroSources[1]).toContain("hero_mom_and_child.jpg");
-    expect(heroSources[2]).toContain("come_home_switchoff.jpg");
-    expect(heroSources[3]).toContain("hero_couple.jpg");
+    expect(heroSources).toEqual([
+      "/images/landing/hero_mom_child_daddy.jpg",
+      "/images/landing/hero_mom_and_child.jpg",
+      "/images/landing/come_home_switchoff.jpg",
+      "/images/landing/hero_couple.jpg",
+    ]);
   });
 
   it("uses the sharper chef cooking image in the kitchen trust card", () => {
