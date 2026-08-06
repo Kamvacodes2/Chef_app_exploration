@@ -7,7 +7,9 @@ import { findChefmatePlan } from "@/features/plans/planCatalog";
 import { useOrder } from "../state/OrderContext";
 
 function customerAccountType(accountType: string): string {
-  return accountType.trim().toUpperCase() === "MYMOBIZ CURRENT ACCOUNT" ? "CURRENT ACCOUNT" : accountType;
+  return accountType.trim().toUpperCase() === "MYMOBIZ CURRENT ACCOUNT"
+    ? "CURRENT ACCOUNT"
+    : accountType;
 }
 
 function formatZar(cents: number): string {
