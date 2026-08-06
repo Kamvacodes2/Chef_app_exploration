@@ -6,6 +6,12 @@ import type { ReactElement, ReactNode } from "react";
 import { findChefmatePlan } from "@/features/plans/planCatalog";
 import { useOrder } from "../state/OrderContext";
 
+function customerAccountType(accountType: string): string {
+  return accountType.trim().toUpperCase() === "MYMOBIZ CURRENT ACCOUNT"
+    ? "CURRENT ACCOUNT"
+    : accountType;
+}
+
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(cents / 100);
 }
@@ -117,6 +123,16 @@ export function Confirmation(): ReactElement {
             <DetailRow label="Branch" inverted>
               {bankTransfer.branchName} ({bankTransfer.branchCode})
             </DetailRow>
+            {bankTransfer.electronicBranchCode ? (
+              <DetailRow label="Electronic branch code" inverted>
+                {bankTransfer.electronicBranchCode}
+              </DetailRow>
+            ) : null}
+            {bankTransfer.swiftCode ? (
+              <DetailRow label="SWIFT" inverted>
+                {bankTransfer.swiftCode}
+              </DetailRow>
+            ) : null}
             <DetailRow label="Account holder" inverted>
               {bankTransfer.accountHolder}
             </DetailRow>
@@ -124,7 +140,7 @@ export function Confirmation(): ReactElement {
               {bankTransfer.accountNumber}
             </DetailRow>
             <DetailRow label="Account type" inverted>
-              {bankTransfer.accountType}
+              {customerAccountType(bankTransfer.accountType)}
             </DetailRow>
             <DetailRow label="Payment reference" inverted>
               {bankTransfer.paymentReference}

@@ -2,19 +2,19 @@ import { IN_DEMAND_IDS, MAINS } from "@/features/order-flow/constants/menu";
 
 export const LANDING_ASSETS = {
   heroFamily: {
-    src: "/images/chefmate/hero-family-evening.png",
+    src: "/images/landing/hero_mom_child_daddy.jpg",
     alt: "A family relaxing on the sofa while a Chefmate chef cooks in their home kitchen",
   },
   homework: {
-    src: "/images/chefmate/story-homework-time.png",
+    src: "/images/landing/hero_mom_and_child.jpg",
     alt: "A parent helping a child with homework while a Chefmate chef cooks in the background",
   },
   afterWork: {
-    src: "/images/chefmate/story-after-work.png",
+    src: "/images/landing/come_home_switchoff.jpg",
     alt: "A customer smiling at her phone on the sofa, feet up, while a Chefmate chef preps dinner in the kitchen behind her",
   },
   couple: {
-    src: "/images/chefmate/story-couple-time.png",
+    src: "/images/landing/hero_couple.jpg",
     alt: "A couple catching up on the sofa while a Chefmate chef prepares dinner behind them",
   },
   groceryHandoff: {

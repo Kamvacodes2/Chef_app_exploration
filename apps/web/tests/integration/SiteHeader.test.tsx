@@ -13,24 +13,18 @@ describe("SiteHeader", () => {
     expect(nav).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "How it works" })).toHaveAttribute(
       "href",
-      "#how-it-works",
+      "/#how-it-works",
     );
-    expect(screen.getByRole("link", { name: "Meals" })).toHaveAttribute("href", "#meals");
-    expect(screen.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "#plans");
-    expect(screen.getByRole("link", { name: "Apply as chef" })).toHaveAttribute(
-      "href",
-      "/chef/apply",
-    );
+    expect(screen.getByRole("link", { name: "Meals" })).toHaveAttribute("href", "/#meals");
+    expect(screen.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "/#plans");
+    expect(screen.queryByRole("link", { name: "Apply as chef" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Chefs" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Gift cards" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Book a chef" })).toHaveAttribute(
       "href",
-      "#order-flow",
+      "/#order-flow",
     );
     expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: "Chef portal" })).toHaveAttribute(
-      "href",
-      "/chef/portal",
-    );
+    expect(screen.queryByRole("link", { name: "Chef portal" })).not.toBeInTheDocument();
   });
 });
