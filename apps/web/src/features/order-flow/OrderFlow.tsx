@@ -225,7 +225,7 @@ export function OrderFlow(): ReactElement {
         return;
       }
 
-      const link = target.closest<HTMLAnchorElement>('a[href^="#order-flow"]');
+      const link = target.closest<HTMLAnchorElement>('a[href*="#order-flow"]');
       if (!link || !link.hash) {
         return;
       }

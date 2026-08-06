@@ -135,4 +135,18 @@ describe("OrderFlow landing deep link into meal discovery", () => {
     await screen.findByTestId("meal-card-chicken-gyro-bowl");
     expect(screen.getByTestId("meal-card-wors-pap-chakalaka")).toBeInTheDocument();
   });
+
+  it("handles the site header link prefix where the href starts with /#order-flow", async () => {
+    // The Next.js <Link> uses `href="/#order-flow"` (with a leading slash),
+    // while landing-page CTAs use `href="#order-flow"`. The click handler
+    // must match both via `[href*="#order-flow"]` (substring match).
+    setHash("/#order-flow");
+
+    render(<OrderFlow />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal"),
+    );
+    await screen.findByTestId("meal-card-chicken-gyro-bowl");
+  });
 });
