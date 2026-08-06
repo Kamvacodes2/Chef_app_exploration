@@ -209,26 +209,18 @@ export function OrderFlow(): ReactElement {
     };
 
     const handleDocumentClick = (event: MouseEvent): void => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-
+      // Always intercept #order-flow links first — the site header uses next/link
+      // which calls event.preventDefault(), so the guard below would bail out before
+      // we ever see the element. By resolving the link target before any early-return
+      // checks, both Next.js <Link> and plain <a> clicks are handled identically.
       const target = event.target;
-      if (!(target instanceof Element)) {
-        return;
-      }
-
+      if (!(target instanceof Element)) return;
       const link = target.closest<HTMLAnchorElement>('a[href*="#order-flow"]');
-      if (!link || !link.hash) {
+      if (!link || !link.hash) return;
+
+      // Still respect modifier-key overrides (Cmd+click etc.) for these links.
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
         return;
-      }
 
       event.preventDefault();
       if (window.location.hash !== link.hash) {
