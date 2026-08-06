@@ -1,0 +1,1140 @@
+{
+  "/images/showcase/hand-above-left.webp": {
+    "hash": "b4ff49ac",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/hand-above-right.webp": {
+    "hash": "6c7135e0",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/hand-below-left.webp": {
+    "hash": "b2067501",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/hand-below-right.webp": {
+    "hash": "57c885f0",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/hands-above.webp": {
+    "hash": "30e5ea45",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/hands-below.webp": {
+    "hash": "60275e3d",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/showcase/plate-1.webp": {
+    "hash": "29f18947",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/showcase/plate-2.webp": {
+    "hash": "08cef30a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/showcase/plate-3.webp": {
+    "hash": "208da3bb",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/showcase/plate-4.webp": {
+    "hash": "941d3ca8",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/showcase/plate-5.webp": {
+    "hash": "93e2429b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/showcase/plate-6.webp": {
+    "hash": "674e2172",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/showcase/plate-7.webp": {
+    "hash": "3a37d220",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/showcase/plate-8.webp": {
+    "hash": "056a3205",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/showcase/plate-9.webp": {
+    "hash": "2bffc7b1",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/pricing-plans/chefmate_family.jpg": {
+    "hash": "677359de",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/pricing-plans/chefmate_full_house.jpg": {
+    "hash": "da4fa598",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/pricing-plans/chefmate_rhythm.jpg": {
+    "hash": "9a509d9e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/pricing-plans/chefmate_tonight.jpg": {
+    "hash": "cba76634",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/model/frame-1.webp": {
+    "hash": "ec53bb71",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/model/frame-2.webp": {
+    "hash": "30a83f10",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/model/frame-3.webp": {
+    "hash": "6769fba9",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/menu/sides/beetroot.jpg": {
+    "hash": "4ff79523",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/coleslaw.jpg": {
+    "hash": "ec77bbc2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/creamed-spinach.jpg": {
+    "hash": "d489407c",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/green-salad.jpg": {
+    "hash": "cb5bf91d",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/mielies.jpg": {
+    "hash": "27636d0e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/potato-salad.jpg": {
+    "hash": "40248622",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/pumpkin-rocket-salad.jpg": {
+    "hash": "1d518231",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/menu/sides/tuna-pasta-salad.jpg": {
+    "hash": "d22fa4ad",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/sunday-lunch/chicken-seven-colours.webp": {
+    "hash": "daf9a25f",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/sunday-lunch/oxtail-seven-colours.webp": {
+    "hash": "b6fb4fb0",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/sunday-lunch/roast-chicken-seven-colours.webp": {
+    "hash": "e4a5f11e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/pasta-bakes/beef-lasagne.webp": {
+    "hash": "21a0f652",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/pasta-bakes/cheesy-mince-pasta.webp": {
+    "hash": "133b2ed2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/pasta-bakes/meatball-pasta.webp": {
+    "hash": "6d326ac2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/healthy/burger-bowl.webp": {
+    "hash": "601f8840",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/healthy/chicken-gyro-bowl.webp": {
+    "hash": "138cd6eb",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/healthy/chicken-salad-bowl.webp": {
+    "hash": "e399ad2a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/chicken/bbq-chicken.webp": {
+    "hash": "1da29dee",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/chicken/peri-peri-chicken.webp": {
+    "hash": "2a8725c1",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/chicken/roasted-chicken.webp": {
+    "hash": "e2281d6a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-001.webp": {
+    "hash": "7b882260",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-002.webp": {
+    "hash": "fa2c25a8",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-003.webp": {
+    "hash": "e0deecb5",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-004.webp": {
+    "hash": "7b2a9305",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-005.webp": {
+    "hash": "d1cdac3b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-006.webp": {
+    "hash": "9dffd9bd",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/meals/catalog/ec-008.webp": {
+    "hash": "e46c5493",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-009.webp": {
+    "hash": "041bb510",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-010.webp": {
+    "hash": "017ac31b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-011.webp": {
+    "hash": "be9ee20b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-012.webp": {
+    "hash": "0ea6615f",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-013.webp": {
+    "hash": "87b48639",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-014.webp": {
+    "hash": "3ec16943",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-015.webp": {
+    "hash": "9bf16b86",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-016.webp": {
+    "hash": "71d9af98",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-017.webp": {
+    "hash": "266121e3",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-018.webp": {
+    "hash": "7487fcd3",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-019.webp": {
+    "hash": "e4a5f11e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-020.webp": {
+    "hash": "b6fb4fb0",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-021.webp": {
+    "hash": "2bfe1f6b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-022.webp": {
+    "hash": "eb4c25a2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-024.webp": {
+    "hash": "7e8115f9",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-025.webp": {
+    "hash": "041bb510",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-026.webp": {
+    "hash": "c32d129f",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-028.webp": {
+    "hash": "dbcafef3",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-029.webp": {
+    "hash": "e2281d6a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-030.webp": {
+    "hash": "2a8725c1",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-031.webp": {
+    "hash": "1da29dee",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-032.webp": {
+    "hash": "ac1207ec",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-033.webp": {
+    "hash": "79ba2370",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-034.webp": {
+    "hash": "dda2faed",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-035.webp": {
+    "hash": "4da004d8",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-036.webp": {
+    "hash": "2852505b",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-037.webp": {
+    "hash": "2d202f75",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/meals/catalog/ec-038.webp": {
+    "hash": "c52537ee",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-039.webp": {
+    "hash": "21a0f652",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-040.webp": {
+    "hash": "6d326ac2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-041.webp": {
+    "hash": "f9afe42a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-048.webp": {
+    "hash": "138cd6eb",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-049.webp": {
+    "hash": "05020d0a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-050.webp": {
+    "hash": "15bd3aef",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-051.webp": {
+    "hash": "601f8840",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-052.webp": {
+    "hash": "b6baf92a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-124.webp": {
+    "hash": "587695ae",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/catalog/ec-dessert-001.webp": {
+    "hash": "55e626e5",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/breakfast/overnight-oats.webp": {
+    "hash": "15bd3aef",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/beef-premium/lamb-chops.webp": {
+    "hash": "d787c3a4",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/beef-premium/oxtail-stew.webp": {
+    "hash": "2f499b19",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/meals/beef-premium/steak-and-chips.webp": {
+    "hash": "2d202f75",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/loop/meal-1.webp": {
+    "hash": "959255d4",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-2.webp": {
+    "hash": "7ca3862e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-3.webp": {
+    "hash": "a094ac23",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-4.webp": {
+    "hash": "84a8a7f0",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-5.webp": {
+    "hash": "2dcfe88e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-6.webp": {
+    "hash": "2efc9b43",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-7.webp": {
+    "hash": "58c6f903",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-8.webp": {
+    "hash": "cdccdb31",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/loop/meal-9.webp": {
+    "hash": "8cde89a8",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/landing/come_home_switchoff.jpg": {
+    "hash": "87ce4af4",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/landing/hero_couple.jpg": {
+    "hash": "acb62295",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/landing/hero_mom_and_child.jpg": {
+    "hash": "37fec5f7",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/landing/hero_mom_child_daddy.jpg": {
+    "hash": "2a7b3e71",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/intro/cooking.webp": {
+    "hash": "7de1db48",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/intro/garnishing.webp": {
+    "hash": "8248c8c6",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/intro/prepping.webp": {
+    "hash": "18f18709",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/intro/relaxing.webp": {
+    "hash": "0ade3db9",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/how-it-works/book-a-time.webp": {
+    "hash": "3c9bb08f",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/choose-what-youre-craving.webp": {
+    "hash": "8150b8c3",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/enjoy-your-evening.webp": {
+    "hash": "722a0c11",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/freshly-cooked.webp": {
+    "hash": "852b7fb2",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/kitchen-left-spotless.webp": {
+    "hash": "f0ce472e",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/shop-with-confidence.webp": {
+    "hash": "fda753ee",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/we-match-you.webp": {
+    "hash": "f0892049",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/how-it-works/your-chef-arrives.webp": {
+    "hash": "d645a896",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/goals/anti-inflammatory.webp": {
+    "hash": "b563cc77",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/goals/build-muscle.webp": {
+    "hash": "f1714bb7",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/goals/just-good-food.webp": {
+    "hash": "d85e411f",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/goals/lose-weight.webp": {
+    "hash": "1188c997",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/goals/mediterranean.webp": {
+    "hash": "ae064815",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/goals/post-partum.webp": {
+    "hash": "f7f5ceaf",
+    "widths": {
+      "256": true,
+      "384": true
+    }
+  },
+  "/images/chefmate/category-meal-prep.png": {
+    "hash": "6ceaf560",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/hero-family-evening.png": {
+    "hash": "227be55d",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/outcome-family-dinner.png": {
+    "hash": "91c885ad",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/story-after-work.png": {
+    "hash": "8a743b9a",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/story-couple-time.png": {
+    "hash": "bcce6eb8",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/story-homework-time.png": {
+    "hash": "e4c03d7c",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/trust-chef-cooking.png": {
+    "hash": "aeeaa136",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/trust-chef-sprinkling-salt.png": {
+    "hash": "aeeaa136",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/trust-grocery-handoff.png": {
+    "hash": "18ef3894",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/book-a-time.jpg": {
+    "hash": "d2a7b6ef",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/family-relax-while-chef-cleans.jpg": {
+    "hash": "f92a6432",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/shopping.jpg": {
+    "hash": "5cbd5879",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/chef-prepping.png": {
+    "hash": "da90d467",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/choose-and-book.png": {
+    "hash": "7afae7fa",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/plating-cleanup.png": {
+    "hash": "25250fc1",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/chefmate/how-it-works/shopping-list.png": {
+    "hash": "3f1fafb7",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true,
+      "1080": true
+    }
+  },
+  "/images/brand/logo-icon.webp": {
+    "hash": "147e6bf7",
+    "widths": {}
+  },
+  "/images/brand/logo-wordmark.webp": {
+    "hash": "b5687189",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  },
+  "/images/brand/logo.webp": {
+    "hash": "7634ec32",
+    "widths": {
+      "256": true,
+      "384": true,
+      "640": true
+    }
+  }
+}

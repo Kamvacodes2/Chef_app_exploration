@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     formats: ["image/webp"],
-    minimumCacheTTL: 31536000, // 1 year — browser caches optimized images from /_next/image
+    loader: "custom",
+    loaderFile: "./imageLoader.ts",
+    minimumCacheTTL: 31536000,
   },
   async headers() {
     return [

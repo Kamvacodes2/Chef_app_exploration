@@ -100,7 +100,6 @@ export function PopularMealsGrid(): ReactElement {
                       src={meal.imageSrc}
                       alt={meal.imageAlt}
                       fill
-                      unoptimized
                       loading="lazy"
                       sizes="(max-width: 767px) 245px, 270px"
                       className="object-cover transition duration-300 group-hover:scale-[1.03]"

@@ -43,7 +43,6 @@ export function MealCard({ meal, selected, onOpenDetail, onSelect }: MealCardPro
           src={image.src}
           alt={image.alt}
           fill
-          unoptimized
           sizes="(max-width: 767px) 44vw, (max-width: 1023px) 33vw, 260px"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
