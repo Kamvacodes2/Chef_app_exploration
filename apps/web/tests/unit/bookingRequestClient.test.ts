@@ -113,7 +113,10 @@ describe("booking request client", () => {
               status: "PENDING",
               amountCents: 10000,
               reference: "CM-CHECKOUT-0001",
-              paystack: { authorizationUrl: "https://checkout.paystack.test/auth", accessCode: "access_test_1" },
+              paystack: {
+                authorizationUrl: "https://checkout.paystack.test/auth",
+                accessCode: "access_test_1",
+              },
             },
           },
         }),

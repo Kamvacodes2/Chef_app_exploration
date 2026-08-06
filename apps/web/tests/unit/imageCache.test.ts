@@ -13,20 +13,15 @@ describe("image cache configuration", () => {
     expect(rules).toBeInstanceOf(Array);
 
     const imageRule = rules.find(
-      (rule) =>
-        typeof rule.source === "string" && rule.source === "/images/:path*",
+      (rule) => typeof rule.source === "string" && rule.source === "/images/:path*",
     );
     expect(imageRule).toBeDefined();
     if (!imageRule || !("source" in imageRule)) {
       throw new Error("Expected a header rule for /images/:path*");
     }
 
-    const cacheHeader = imageRule.headers?.find(
-      (h) => h.key === "Cache-Control",
-    );
+    const cacheHeader = imageRule.headers?.find((h) => h.key === "Cache-Control");
     expect(cacheHeader).toBeDefined();
-    expect(cacheHeader?.value).toBe(
-      "public, max-age=31536000, immutable",
-    );
+    expect(cacheHeader?.value).toBe("public, max-age=31536000, immutable");
   });
 });
