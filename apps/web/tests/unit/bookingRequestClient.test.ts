@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildBookingRequestPayload,
+  initializePaystackCheckout,
   submitBookingRequestPayload,
   type BookingRequestPayload,
 } from "@/features/order-flow/api/bookingRequestClient";
@@ -100,6 +101,36 @@ describe("booking request client", () => {
         fetchImpl,
       }),
     ).rejects.toThrow("That time slot is no longer available.");
+  });
+  it("posts the checkout request without a JSON content type when there is no body", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            payment: {
+              method: "PAYSTACK",
+              provider: "PAYSTACK",
+              status: "PENDING",
+              amountCents: 10000,
+              reference: "CM-CHECKOUT-0001",
+              paystack: { authorizationUrl: "https://checkout.paystack.test/auth", accessCode: "access_test_1" },
+            },
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await initializePaystackCheckout("CM-CHECKOUT-0001", {
+      baseUrl: "http://api.example.test",
+      fetchImpl,
+    });
+
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://api.example.test/api/v1/payments/checkout/CM-CHECKOUT-0001");
+    expect(init).toMatchObject({ method: "POST", credentials: "include" });
+    expect(init.body).toBeUndefined();
+    expect(init.headers).toBeUndefined();
   });
 
   it("normalizes the displayed South African phone format before guest checkout", () => {

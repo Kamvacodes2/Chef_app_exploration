@@ -256,9 +256,8 @@ export async function initializePaystackCheckout(
     {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      // No request body: do not claim a JSON content type, or Fastify rejects the
+      // empty body with FST_ERR_CTP_EMPTY_JSON_BODY and the checkout never runs.
     },
   );
 
