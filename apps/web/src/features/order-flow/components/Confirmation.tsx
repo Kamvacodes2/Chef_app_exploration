@@ -88,8 +88,14 @@ export function Confirmation(): ReactElement {
               ? "Our team will review your recipe and email a tailored price before payment."
               : isPaystackOrder
                 ? "Complete your secure Paystack checkout so we can match your Chefmate."
-                : "Keep your payment reference with your bank-transfer proof."}
+                : `We have received your request for ${state.main?.name ?? "your meal"} on ${state.date ?? ""}${state.time ? " at " + state.time : ""}.`}
         </p>
+        {bankTransfer && (
+          <p className="mx-auto max-w-md text-sm text-[var(--color-bone)]/70">
+            Please use the reference below when making your bank transfer. Once payment is verified,
+            we will invite the nearest available chefs.
+          </p>
+        )}
       </div>
 
       <div className="flex w-full max-w-lg flex-col rounded-3xl bg-white/[0.06] p-5 text-left ring-1 ring-white/10">
@@ -99,7 +105,7 @@ export function Confirmation(): ReactElement {
           {state.date ?? "Not selected"}
           {state.time ? " - " + state.time : ""}
         </DetailRow>
-        <DetailRow label={isPlanRequest ? "Monthly plan" : isReviewRequest ? "Price" : "Total"}>
+        <DetailRow label={isPlanRequest ? "Monthly plan" : isReviewRequest ? "Price" : "Amount"}>
           {bookingConfirmation
             ? isReviewRequest && !isPlanRequest
               ? "To be confirmed"
