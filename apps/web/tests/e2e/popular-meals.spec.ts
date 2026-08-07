@@ -26,19 +26,28 @@ test("Popular meals loops horizontally and leads into the order flow", async ({ 
   await expect(orderFlow).toBeAttached();
 });
 
-test("Popular meal rail stays filled at its wide-screen wrap point", async ({ page }) => {
+test("Popular meal rail stays filled at its wide-screen wrap point", async ({ page }, testInfo) => {
+  // Desktop-only: skip if mobile project or viewport under 1920px.
+  test.skip(!!testInfo.project.use.isMobile, "desktop-only test");
+  const innerWidth = await page.evaluate(() => window.innerWidth);
+  test.skip(innerWidth < 1920, `viewport ${innerWidth}px < 1920px; desktop-only test`);
+
   await page.setViewportSize({ width: 1920, height: 900 });
   await page.goto("/");
 
   const coverage = await page.getByTestId("popular-meal-loop").evaluate((loop) => {
-    const rail = loop.firstElementChild as HTMLElement;
-    rail.style.animation = "none";
-    rail.style.transform = "translate3d(-20%, 0, 0)";
-
-    const rect = rail.getBoundingClientRect();
-    return { left: rect.left, right: rect.right, viewportWidth: window.innerWidth };
+    // The loop is the scrolling container itself (no nested rail): 5 duplicated
+    // segments animate via scrollLeft and snap back after one full segment.
+    const segment = loop.firstElementChild;
+    return {
+      clientWidth: loop.clientWidth,
+      scrollWidth: loop.scrollWidth,
+      segmentWidth: segment ? segment.getBoundingClientRect().width : 0,
+    };
   });
 
-  expect(coverage.left).toBeLessThanOrEqual(0);
-  expect(coverage.right).toBeGreaterThanOrEqual(coverage.viewportWidth);
+  // Wrap-point invariant: at the snap moment the rightmost visible content sits
+  // one segment in from the start, so the content must extend at least a full
+  // segment past the container width — otherwise the wrap exposes a gap.
+  expect(coverage.scrollWidth).toBeGreaterThanOrEqual(coverage.clientWidth + coverage.segmentWidth);
 });

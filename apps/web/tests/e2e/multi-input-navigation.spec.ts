@@ -10,18 +10,22 @@ test("order flow supports focused meal search and custom request interactions", 
   await page.getByRole("link", { name: "Book a chef" }).first().click();
   await expect(page.getByTestId("order-flow")).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "How can chefmate help?" })).toBeVisible();
-  await expect(page.getByTestId("order-flow")).toHaveAttribute("data-step", "goal");
-  await page.getByTestId("goal-tile-track").getByRole("button").first().click();
-
+  // CTA clicks skip the goal step and land directly on meal discovery
+  // (commit 99a62fd): the goal step only renders pre-navigation, so after the
+  // click the meal step is the visible contract.
   await expect(page.getByRole("heading", { name: "Find what you want to eat." })).toBeVisible();
-  await expect(page.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
-  const orderFlow = page.locator("#order-flow");
+  await expect
+    .poll(
+      async () => page.getByTestId("order-flow").getAttribute("data-step"),
+      { timeout: 5_000, intervals: [100] },
+    )
+    .toBe("meal");
+  const orderFlow = page.getByTestId("order-flow");
   await expect
     .poll(
       async () =>
         orderFlow.evaluate((element) => Math.abs(Math.round(element.getBoundingClientRect().top))),
-      { timeout: 5_000, interval: 100 },
+      { timeout: 5_000, intervals: [100] },
     )
     .toBeLessThanOrEqual(ORDER_FLOW_TOP_ALIGNMENT_TOLERANCE_PX);
   await page.getByLabel("Search meals or ingredients").fill("TikTok");
