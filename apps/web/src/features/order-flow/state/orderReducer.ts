@@ -130,11 +130,16 @@ function stepAfter(state: OrderState): OrderStep {
 }
 
 function stepBefore(state: OrderState): OrderStep {
-  if (state.step === "sides" && state.planId && !state.favoriteMealDeferred) {
+  if (state.step === "sides" && state.planId && !state.favoriteMealDeferred && isRecurringChefmatePlan(state.planId)) {
     return "plan-favorite";
   }
 
   if (state.step === "meal" && !state.planId) {
+    return "goal";
+  }
+
+  // Back from meal discovery for a one-off plan (tonight) returns to goal
+  if (state.step === "meal" && state.planId && !isRecurringChefmatePlan(state.planId)) {
     return "goal";
   }
 
@@ -156,7 +161,11 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return {
         ...INITIAL_ORDER_STATE,
         planId: action.planId,
-        step: isRecurringChefmatePlan(action.planId) ? "plan-days" : "plan-favorite",
+        // Recurring plans (rhythm, family, premium) start with day/personalisation
+        // setup. One-off plans (tonight) skip straight to meal discovery since
+        // they're a normal order, not an ongoing subscription.
+        goalId: isRecurringChefmatePlan(action.planId) ? null : NEUTRAL_DISCOVERY_GOAL_ID,
+        step: isRecurringChefmatePlan(action.planId) ? "plan-days" : "meal",
       };
     case "TOGGLE_PREFERRED_DAY": {
       const preferredDays = state.preferredDays.includes(action.day)

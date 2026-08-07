@@ -196,16 +196,16 @@ describe("LandingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-days");
   });
-  it("takes the once-off package straight to a favourite meal", async () => {
+  it("takes the once-off package straight to meal discovery", async () => {
     render(<LandingPage />);
 
     fireEvent.click(screen.getByRole("link", { name: /chefmate tonight/i }));
 
     expect(
-      await screen.findByRole("heading", { name: "What would you like most often?" }),
+      await screen.findByRole("heading", { name: "Find what you want to eat." }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-favorite");
-    fireEvent.click(await screen.findByTestId("plan-favourite-wors-pap-chakalaka"));
+    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
+    fireEvent.click(await screen.findByRole("button", { name: "Choose Wors, Pap and Chakalaka" }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();

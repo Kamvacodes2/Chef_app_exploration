@@ -159,10 +159,12 @@ describe("order flow end-to-end", () => {
     expect(s.step).toBe("meal");
   });
 
-  it("takes the one-off package straight to its favourite meal", () => {
+  it("takes the one-off package straight to meal discovery", () => {
     const s = orderReducer(INITIAL_ORDER_STATE, { type: "START_PLAN_SETUP", planId: "tonight" });
 
-    expect(s.step).toBe("plan-favorite");
+    expect(s.step).toBe("meal");
+    expect(s.goalId).toBe("just-good-food");
+    expect(s.planId).toBe("tonight");
   });
 
   it("returns recurring customers to their day choices from favourite selection", () => {
