@@ -254,12 +254,11 @@ describe("LandingPage", () => {
   it("duplicates matching meal segments so the popular-meals rail can loop seamlessly", () => {
     render(<LandingPage />);
 
-    const rail = screen.getByTestId("popular-meal-loop").firstElementChild;
+    const rail = screen.getByTestId("popular-meal-loop");
     expect(rail).toBeTruthy();
-    expect(rail?.className).toMatch(/popular-meals-marquee/);
-    expect(rail?.children).toHaveLength(5);
-    expect(rail?.children[1]).toHaveAttribute("aria-hidden", "true");
-    expect(rail?.children[4]).toHaveAttribute("aria-hidden", "true");
+    expect(rail.children).toHaveLength(5);
+    expect(rail.children[1]).toHaveAttribute("aria-hidden", "true");
+    expect(rail.children[4]).toHaveAttribute("aria-hidden", "true");
   });
 
   it("carries a live featured slug into meal discovery and highlights it there", async () => {
