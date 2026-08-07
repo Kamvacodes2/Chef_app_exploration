@@ -205,8 +205,9 @@ describe("LandingPage", () => {
       await screen.findByRole("heading", { name: "Find what you want to eat." }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
+    // Clicking the "+" button on a meal card dispatches SELECT_MAIN which
+    // auto-advances to sides, so no Continue click is needed here.
     fireEvent.click(await screen.findByRole("button", { name: "Choose Wors, Pap and Chakalaka" }));
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
   });
@@ -254,7 +255,8 @@ describe("LandingPage", () => {
     render(<LandingPage />);
 
     const rail = screen.getByTestId("popular-meal-loop").firstElementChild;
-    expect(rail).toHaveClass("popular-meals-marquee");
+    expect(rail).toBeTruthy();
+    expect(rail?.className).toMatch(/popular-meals-marquee/);
     expect(rail?.children).toHaveLength(5);
     expect(rail?.children[1]).toHaveAttribute("aria-hidden", "true");
     expect(rail?.children[4]).toHaveAttribute("aria-hidden", "true");
