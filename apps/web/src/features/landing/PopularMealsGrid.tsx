@@ -29,8 +29,9 @@ const FALLBACK_MEALS: readonly MarqueeMeal[] = POPULAR_MEALS.map((meal) => ({
  * Marquee of the admin-curated featured meals. Fetches on the client against
  * the real catalog API so an admin's saved change shows on the next page load.
  *
- * Interactive on all viewports: auto-scrolls, with pause/play and prev/next
- * controls so users can explore at their own pace.
+ * Auto-scrolls by default. Hovering or touching a card pauses the animation;
+ * it resumes when the pointer leaves. Users can also swipe or scroll-wheel
+ * freely — the scrollbar is hidden but touch/gesture scrolling works.
  */
 export function PopularMealsGrid(): ReactElement {
   const [meals, setMeals] = useState<readonly MarqueeMeal[]>(FALLBACK_MEALS);
@@ -38,7 +39,6 @@ export function PopularMealsGrid(): ReactElement {
   const marqueeRef = useRef<HTMLDivElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(0);
-  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -113,44 +113,6 @@ export function PopularMealsGrid(): ReactElement {
     };
   }, [isPaused, animateScroll]);
 
-  // Clear any pending auto-resume timer on unmount
-  useEffect(() => {
-    return () => {
-      if (resumeTimerRef.current !== null) {
-        clearTimeout(resumeTimerRef.current);
-      }
-    };
-  }, []);
-
-  const togglePause = useCallback(() => {
-    // Clear any pending auto-resume when the user manually toggles
-    if (resumeTimerRef.current !== null) {
-      clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = null;
-    }
-    setIsPaused((prev) => !prev);
-  }, []);
-
-  const scrollBy = useCallback((direction: 1 | -1) => {
-    const el = marqueeRef.current;
-    if (!el) return;
-
-    // Clear any pending auto-resume
-    if (resumeTimerRef.current !== null) {
-      clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = null;
-    }
-
-    setIsPaused(true);
-    el.scrollBy({ left: direction * CARD_WIDTH_PX, behavior: "smooth" });
-
-    // Auto-resume after a short pause
-    resumeTimerRef.current = setTimeout(() => {
-      resumeTimerRef.current = null;
-      setIsPaused(false);
-    }, 3000);
-  }, []);
-
   const mealGroups = Array.from({ length: POPULAR_MEAL_SEGMENT_COUNT }, () => meals);
 
   return (
@@ -219,60 +181,6 @@ export function PopularMealsGrid(): ReactElement {
               ))}
             </div>
           ))}
-        </div>
-
-        {/* Controls */}
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => scrollBy(-1)}
-            aria-label="Previous meals"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
-          >
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={togglePause}
-            aria-label={isPaused ? "Resume auto-scroll" : "Pause auto-scroll"}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
-          >
-            {isPaused ? (
-              <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            ) : (
-              <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollBy(1)}
-            aria-label="Next meals"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
-          >
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
         </div>
       </div>
 
