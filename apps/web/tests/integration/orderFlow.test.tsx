@@ -105,6 +105,17 @@ describe("order flow end-to-end", () => {
     expect(selectDiscount(s)).toBe(Math.round(527.85 * 0.5));
   });
 
+  it("applies the CHEFMATE15 launch code at 15% off", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    const main = MAINS.find((item) => item.id === "winter-oxtail-stew")!;
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "SET_GIFT_INPUT", value: "chefmate15" });
+    s = orderReducer(s, { type: "APPLY_GIFT" });
+    expect(s.appliedGift?.code).toBe("CHEFMATE15");
+    expect(s.appliedGift?.discountFraction).toBeCloseTo(0.15);
+    expect(selectDiscount(s)).toBe(Math.round(527.85 * 0.15));
+  });
+
   it("rejects an unknown gift code", () => {
     let s: OrderState = INITIAL_ORDER_STATE;
     s = orderReducer(s, { type: "SET_GIFT_INPUT", value: "NOPE" });
