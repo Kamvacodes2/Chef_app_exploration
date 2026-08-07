@@ -130,7 +130,12 @@ function stepAfter(state: OrderState): OrderStep {
 }
 
 function stepBefore(state: OrderState): OrderStep {
-  if (state.step === "sides" && state.planId && !state.favoriteMealDeferred && isRecurringChefmatePlan(state.planId)) {
+  if (
+    state.step === "sides" &&
+    state.planId &&
+    !state.favoriteMealDeferred &&
+    isRecurringChefmatePlan(state.planId)
+  ) {
     return "plan-favorite";
   }
 
