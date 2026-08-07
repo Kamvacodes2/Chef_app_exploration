@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactElement } from "react";
 import { cn } from "@/lib/cn";
 import type { BrowserMeal } from "./api/mealCatalogClient";
-import { PLATE_LABELS, mealImage, primaryProfile, servesLabel } from "./mealPresentation";
+import { mealImage, primaryProfile, servesLabel } from "./mealPresentation";
 
 export interface MealCardProps {
   readonly meal: BrowserMeal;
@@ -22,7 +22,6 @@ export interface MealCardProps {
 export function MealCard({ meal, selected, onOpenDetail, onSelect }: MealCardProps): ReactElement {
   const image = mealImage(meal);
   const profile = primaryProfile(meal);
-  const plateTypes = meal.nutritionProfiles.map((p) => p.plateType);
 
   return (
     <article
@@ -64,19 +63,6 @@ export function MealCard({ meal, selected, onOpenDetail, onSelect }: MealCardPro
         <p className="text-[11px] font-medium text-[var(--color-charcoal)]/70">
           {servesLabel(meal)}
         </p>
-
-        {plateTypes.length > 0 ? (
-          <ul className="flex flex-wrap gap-1" aria-label={`Plate options for ${meal.name}`}>
-            {plateTypes.map((plateType) => (
-              <li
-                key={plateType}
-                className="rounded-full bg-[var(--color-soft-beige)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--color-oxblood)]"
-              >
-                {PLATE_LABELS[plateType]}
-              </li>
-            ))}
-          </ul>
-        ) : null}
 
         {profile ? (
           <>
