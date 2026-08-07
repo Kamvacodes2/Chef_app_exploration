@@ -17,20 +17,5 @@
     "     newly introduced advisory cannot arrive unnoticed."
   ],
   "policyVersion": 1,
-  "exceptions": [
-    {
-      "advisoryId": "GHSA-5p4m-2wfm-xmqj",
-      "module": "js-yaml",
-      "severity": "high",
-      "title": "JS-YAML: Quadratic CPU consumption in !!omap resolution — CVE-2026-59870 fix not backported",
-      "vulnerableVersions": ">=4.0.0 <4.3.1",
-      "patchedVersions": ">=4.3.1",
-      "justification": "Dev-only transitive dependency reached exclusively through eslint toolchain (eslint → @eslint/eslintrc → js-yaml@4.3.0). No production exposure — js-yaml is never bundled or served. Upgrade to 4.3.1 is pinned in pnpm-workspace.yaml overrides; this exception exists until the lockfile can be regenerated on a machine with write access to node_modules.",
-      "scope": "dev tooling only — eslint static analysis, never runtime",
-      "owner": "Kamvacodes2",
-      "createdOn": "2026-08-07",
-      "reviewBy": "2026-11-07",
-      "removalCondition": "Remove once pnpm lockfile is regenerated with js-yaml ^4.3.1 override in pnpm-workspace.yaml"
-    }
-  ]
+  "exceptions": []
 }
