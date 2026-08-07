@@ -8,6 +8,15 @@ import type { Goal } from "../types";
  */
 export const GOALS: readonly Goal[] = Object.freeze([
   Object.freeze({
+    id: "just-good-food",
+    title: "Just Good Food",
+    tagline: "No goal — show me everything delicious.",
+    image: "/images/goal-icons/just-good-food-star.svg",
+    imageAlt: "Star icon for the just good food goal",
+    matchTags: Object.freeze([]),
+    paletteId: "persimmon",
+  }),
+  Object.freeze({
     id: "lose-weight",
     title: "Lose Weight",
     tagline: "Lighter plates, big flavour, no rabbit food.",
@@ -17,15 +26,6 @@ export const GOALS: readonly Goal[] = Object.freeze([
     paletteId: "olive",
   }),
   Object.freeze({
-    id: "build-muscle",
-    title: "Build Muscle",
-    tagline: "Protein-packed plates to fuel the work.",
-    image: "/images/goal-icons/build-muscle-dumbbell.svg",
-    imageAlt: "Dumbbell icon for the build muscle goal",
-    matchTags: Object.freeze(["high-protein"]),
-    paletteId: "espresso",
-  }),
-  Object.freeze({
     id: "post-partum",
     title: "Post-Partum",
     tagline: "Nourishing, comforting, one-hand-friendly.",
@@ -33,6 +33,15 @@ export const GOALS: readonly Goal[] = Object.freeze([
     imageAlt: "Illustration of a parent nourishing themselves while holding a baby",
     matchTags: Object.freeze(["nourishing", "iron-rich", "comfort"]),
     paletteId: "strawberry",
+  }),
+  Object.freeze({
+    id: "build-muscle",
+    title: "Build Muscle",
+    tagline: "Protein-packed plates to fuel the work.",
+    image: "/images/goal-icons/build-muscle-dumbbell.svg",
+    imageAlt: "Dumbbell icon for the build muscle goal",
+    matchTags: Object.freeze(["high-protein"]),
+    paletteId: "espresso",
   }),
   Object.freeze({
     id: "anti-inflammatory",
@@ -51,15 +60,6 @@ export const GOALS: readonly Goal[] = Object.freeze([
     imageAlt: "Olive branch icon for the mediterranean goal",
     matchTags: Object.freeze(["mediterranean", "light", "omega"]),
     paletteId: "vanilla",
-  }),
-  Object.freeze({
-    id: "just-good-food",
-    title: "Just Good Food",
-    tagline: "No goal — show me everything delicious.",
-    image: "/images/goal-icons/just-good-food-star.svg",
-    imageAlt: "Star icon for the just good food goal",
-    matchTags: Object.freeze([]),
-    paletteId: "persimmon",
   }),
 ]);
 
