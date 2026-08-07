@@ -131,28 +131,25 @@ export function PopularMealsGrid(): ReactElement {
     setIsPaused((prev) => !prev);
   }, []);
 
-  const scrollBy = useCallback(
-    (direction: 1 | -1) => {
-      const el = marqueeRef.current;
-      if (!el) return;
+  const scrollBy = useCallback((direction: 1 | -1) => {
+    const el = marqueeRef.current;
+    if (!el) return;
 
-      // Clear any pending auto-resume
-      if (resumeTimerRef.current !== null) {
-        clearTimeout(resumeTimerRef.current);
-        resumeTimerRef.current = null;
-      }
+    // Clear any pending auto-resume
+    if (resumeTimerRef.current !== null) {
+      clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
 
-      setIsPaused(true);
-      el.scrollBy({ left: direction * CARD_WIDTH_PX, behavior: "smooth" });
+    setIsPaused(true);
+    el.scrollBy({ left: direction * CARD_WIDTH_PX, behavior: "smooth" });
 
-      // Auto-resume after a short pause
-      resumeTimerRef.current = setTimeout(() => {
-        resumeTimerRef.current = null;
-        setIsPaused(false);
-      }, 3000);
-    },
-    [],
-  );
+    // Auto-resume after a short pause
+    resumeTimerRef.current = setTimeout(() => {
+      resumeTimerRef.current = null;
+      setIsPaused(false);
+    }, 3000);
+  }, []);
 
   const mealGroups = Array.from({ length: POPULAR_MEAL_SEGMENT_COUNT }, () => meals);
 
@@ -232,7 +229,14 @@ export function PopularMealsGrid(): ReactElement {
             aria-label="Previous meals"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
           >
-            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -258,7 +262,14 @@ export function PopularMealsGrid(): ReactElement {
             aria-label="Next meals"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
           >
-            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
