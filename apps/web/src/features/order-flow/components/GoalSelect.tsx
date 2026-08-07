@@ -68,8 +68,7 @@ export function GoalSelect(): ReactElement {
     <div className="flex w-full flex-col items-center gap-8">
       <div className="flex flex-col items-center gap-2 text-center">
         <h2 className="font-display text-4xl font-semibold text-[var(--color-bone)] sm:text-5xl">
-          How can{" "}
-          <span className="sr-only">chefmate</span>
+          How can <span className="sr-only">chefmate</span>
           <Image
             src="/images/brand/logo-wordmark.webp"
             alt=""
