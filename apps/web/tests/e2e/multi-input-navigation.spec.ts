@@ -15,10 +15,10 @@ test("order flow supports focused meal search and custom request interactions", 
   // click the meal step is the visible contract.
   await expect(page.getByRole("heading", { name: "Find what you want to eat." })).toBeVisible();
   await expect
-    .poll(
-      async () => page.getByTestId("order-flow").getAttribute("data-step"),
-      { timeout: 5_000, intervals: [100] },
-    )
+    .poll(async () => page.getByTestId("order-flow").getAttribute("data-step"), {
+      timeout: 5_000,
+      intervals: [100],
+    })
     .toBe("meal");
   const orderFlow = page.getByTestId("order-flow");
   await expect
