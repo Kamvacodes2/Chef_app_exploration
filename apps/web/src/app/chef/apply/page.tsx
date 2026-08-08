@@ -1,14 +1,16 @@
-import Link from "next/link";
+import { BrandMark } from "@/features/hero/components/BrandMark";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 
 export default function Page() {
   return (
     <>
-      {/* Minimal apply header — no customer nav */}
-      <header className="border-b border-[var(--color-oxblood)]/10 bg-white px-6 py-4">
-        <Link href="/chef/apply" className="font-brand text-xl text-[var(--color-oxblood)]">
-          ChefMate
-        </Link>
+      <header
+        className="sticky top-0 z-30 w-full border-b border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)]/95 px-4 py-3 backdrop-blur sm:px-6"
+        data-testid="site-header"
+      >
+        <div className="mx-auto flex max-w-[1200px] items-center">
+          <BrandMark onReset={() => window.location.assign("/chef/apply")} />
+        </div>
       </header>
       <ChefApplicationPage />
     </>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BrandMark } from "@/features/hero/components/BrandMark";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 
 export default function ApplyLandingPage() {
@@ -10,17 +11,10 @@ export default function ApplyLandingPage() {
   if (showForm) {
     return (
       <>
-        <header className="border-b border-[var(--color-oxblood)]/10 bg-white px-6 py-4">
-          <Link
-            href="/apply"
-            className="font-brand text-xl text-[var(--color-oxblood)]"
-            onClick={(e) => {
-              e.preventDefault();
-              setShowForm(false);
-            }}
-          >
-            ChefMate
-          </Link>
+        <header className="sticky top-0 z-30 w-full border-b border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)]/95 px-4 py-3 backdrop-blur sm:px-6">
+          <div className="mx-auto flex max-w-[1200px] items-center">
+            <BrandMark onReset={() => window.location.assign("/apply")} />
+          </div>
         </header>
         <ChefApplicationPage />
       </>
