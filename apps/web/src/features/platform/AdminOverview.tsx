@@ -1,9 +1,8 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { IconChevronRight } from "@/components/ui/icons";
 import { fetchAdminDashboard, type AdminDashboard } from "@/features/platform/api/platformClient";
 
@@ -12,10 +11,6 @@ function formatZar(cents: number): string {
     style: "currency",
     currency: "ZAR",
   }).format(cents / 100);
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(value));
 }
 
 export function AdminOverview() {
