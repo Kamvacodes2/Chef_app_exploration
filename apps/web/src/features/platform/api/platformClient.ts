@@ -605,3 +605,61 @@ function apiUrl(baseUrl: string, path: string): string {
   if (!trimmed) throw new Error("Chefmate API URL is not configured.");
   return trimmed + path;
 }
+
+// ── Policy acceptance ──────────────────────────────────────────────
+
+const policyAcceptanceSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  policyKey: z.string(),
+  version: z.string(),
+  acceptedAt: z.string(),
+});
+
+const policyStatusSchema = z.object({
+  policyKey: z.string(),
+  accepted: z.boolean(),
+  version: z.string().nullable(),
+  acceptedAt: z.string().nullable(),
+});
+
+export interface PolicyAcceptResult {
+  readonly id: string;
+  readonly userId: string;
+  readonly policyKey: string;
+  readonly version: string;
+  readonly acceptedAt: string;
+}
+
+export interface PolicyStatusItem {
+  readonly policyKey: string;
+  readonly accepted: boolean;
+  readonly version: string | null;
+  readonly acceptedAt: string | null;
+}
+
+export async function acceptPolicy(
+  policyKey: string,
+  version: string,
+  options: PlatformRequestOptions = {},
+): Promise<PolicyAcceptResult> {
+  return requestData({
+    path: "/api/v1/policies/accept",
+    method: "POST",
+    body: { policyKey, version },
+    schema: envelope(policyAcceptanceSchema),
+    options,
+  });
+}
+
+export async function fetchPolicyStatus(
+  options: PlatformRequestOptions = {},
+): Promise<PolicyStatusItem[]> {
+  return requestData({
+    path: "/api/v1/policies/status",
+    method: "GET",
+    schema: envelope(z.object({ items: z.array(policyStatusSchema) })),
+    options,
+    select: (data) => (data as { items: PolicyStatusItem[] }).items,
+  });
+}
