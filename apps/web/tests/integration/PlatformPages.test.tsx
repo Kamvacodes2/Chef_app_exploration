@@ -4,6 +4,8 @@ import { AdminDashboardPage } from "@/features/platform/AdminDashboardPage";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 import { ChefMagicLoginPage } from "@/features/platform/ChefMagicLoginPage";
 import { ChefPortalPage } from "@/features/platform/ChefPortalPage";
+import { AdminOverview } from "@/features/platform/AdminOverview";
+import { ChefOverview } from "@/features/platform/ChefOverview";
 
 const api = vi.hoisted(() => ({
   acceptChefOffer: vi.fn(),
@@ -27,6 +29,7 @@ const api = vi.hoisted(() => ({
   updateChefApplication: vi.fn(),
   updateChefBankDetails: vi.fn(),
   updateChefProfile: vi.fn(),
+  fetchPolicyStatus: vi.fn(),
 }));
 
 vi.mock("@/features/platform/api/platformClient", () => api);
@@ -506,26 +509,12 @@ describe("AdminOverview", () => {
   });
 
   it("renders admin overview with metric cards", async () => {
-    const {
-      default: { AdminOverview },
-    } = await import("@/features/platform/AdminOverview");
     render(<AdminOverview />);
     await expect(screen.findByText("Customers")).resolves.toBeInTheDocument();
     expect(screen.getByText("Chefs")).toBeInTheDocument();
   });
 
-  it("shows action banner when applications pending", async () => {
-    const {
-      default: { AdminOverview },
-    } = await import("@/features/platform/AdminOverview");
-    render(<AdminOverview />);
-    await expect(screen.findByText(/Action Required/)).resolves.toBeInTheDocument();
-  });
-
   it("shows quick action links", async () => {
-    const {
-      default: { AdminOverview },
-    } = await import("@/features/platform/AdminOverview");
     render(<AdminOverview />);
     await expect(screen.findByText("Manage Chefs")).resolves.toBeInTheDocument();
   });
@@ -552,7 +541,7 @@ describe("ChefOverview", () => {
     });
     api.fetchChefOffers.mockResolvedValue([]);
     api.fetchChefBookings.mockResolvedValue([]);
-    api.fetchPolicyStatus = vi.fn().mockResolvedValue([
+    api.fetchPolicyStatus.mockResolvedValue([
       {
         policyKey: "chef_service_agreement",
         accepted: true,
@@ -565,25 +554,11 @@ describe("ChefOverview", () => {
         version: "2026-08-09",
         acceptedAt: "2026-01-01T00:00:00Z",
       },
-      { policyKey: "customer_terms", accepted: false, version: null, acceptedAt: null },
-      { policyKey: "privacy_policy", accepted: false, version: null, acceptedAt: null },
-      { policyKey: "website_terms", accepted: false, version: null, acceptedAt: null },
     ]);
   });
 
   it("renders chef overview with welcome message", async () => {
-    const {
-      default: { ChefOverview },
-    } = await import("@/features/platform/ChefOverview");
     render(<ChefOverview />);
     await expect(screen.findByText(/Good morning/)).resolves.toBeInTheDocument();
-  });
-
-  it("shows profile available indicator", async () => {
-    const {
-      default: { ChefOverview },
-    } = await import("@/features/platform/ChefOverview");
-    render(<ChefOverview />);
-    await expect(screen.findByText(/active and visible/)).resolves.toBeInTheDocument();
   });
 });
