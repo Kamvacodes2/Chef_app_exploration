@@ -7,6 +7,13 @@ export interface PlatformRequestOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
+export interface ChefReferenceInput {
+  readonly name: string;
+  readonly relationship: string;
+  readonly phone: string;
+  readonly email: string;
+}
+
 export interface ChefApplicationInput {
   readonly fullName: string;
   readonly email: string;
@@ -14,6 +21,16 @@ export interface ChefApplicationInput {
   readonly city: string | null;
   readonly serviceAreas: readonly string[];
   readonly experience: string;
+  readonly idNumber?: string | null;
+  readonly dateOfBirth?: string | null;
+  readonly nationality?: string | null;
+  readonly yearsOfExperience?: number | null;
+  readonly culinaryEducation?: string | null;
+  readonly cuisines?: readonly string[];
+  readonly languages?: readonly string[];
+  readonly hasFoodSafetyCert?: boolean;
+  readonly hasOwnTransport?: boolean;
+  readonly references?: readonly ChefReferenceInput[] | null;
 }
 
 export interface ChefApplicationUpdateInput {
