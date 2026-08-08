@@ -1,11 +1,5 @@
-import { SiteHeader } from "@/components/SiteHeader";
-import { ChefPortalPage } from "@/features/platform/ChefPortalPage";
+import { ChefOverview } from "@/features/platform/ChefOverview";
 
-export default function Page() {
-  return (
-    <>
-      <SiteHeader />
-      <ChefPortalPage />
-    </>
-  );
+export default function ChefPortalPage() {
+  return <ChefOverview />;
 }

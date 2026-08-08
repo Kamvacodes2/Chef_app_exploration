@@ -1,11 +1,5 @@
-import { SiteHeader } from "@/components/SiteHeader";
-import { AdminDashboardPage } from "@/features/platform/AdminDashboardPage";
+import { AdminOverview } from "@/features/platform/AdminOverview";
 
-export default function Page() {
-  return (
-    <>
-      <SiteHeader />
-      <AdminDashboardPage />
-    </>
-  );
+export default function AdminPage() {
+  return <AdminOverview />;
 }
