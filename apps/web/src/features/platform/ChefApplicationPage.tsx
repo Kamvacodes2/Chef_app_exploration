@@ -192,12 +192,15 @@ export function ChefApplicationPage() {
   if (submitted) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--color-warm-cream)] px-4">
-        <div className="max-w-md rounded-3xl bg-white p-10 text-center shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
+        <div
+          className="max-w-md rounded-3xl bg-white p-10 text-center shadow-[0_20px_60px_rgba(70,33,24,0.08)]"
+          role="status"
+        >
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
             <span className="text-3xl">✓</span>
           </div>
           <h2 className="mt-6 text-2xl font-black text-[var(--color-oxblood)]">
-            Application submitted!
+            Application received
           </h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
             We&apos;ll review your application and get back to you within 48 hours.
