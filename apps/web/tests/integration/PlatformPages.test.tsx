@@ -486,3 +486,104 @@ describe("platform pages", () => {
     expect(screen.getByRole("heading", { name: "Chef applications pipeline" })).toBeInTheDocument();
   });
 });
+
+describe("AdminOverview", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.fetchAdminDashboard.mockResolvedValue({
+      customersCount: 12,
+      chefsCount: 5,
+      chefApplicationsCount: 3,
+      bookingsThisMonthCount: 45,
+      collectedThisMonthCents: 2500000,
+      chefPayableCents: 1625000,
+      platformRevenueCents: 875000,
+      communicationsQueuedCount: 8,
+      communicationsSentCount: 42,
+      chefApplicationStatusCounts: { APPLIED: 3 } as Record<string, number>,
+      whatsAppReady: false,
+    });
+  });
+
+  it("renders admin overview with metric cards", async () => {
+    const {
+      default: { AdminOverview },
+    } = await import("@/features/platform/AdminOverview");
+    render(<AdminOverview />);
+    await expect(screen.findByText("Customers")).resolves.toBeInTheDocument();
+    expect(screen.getByText("Chefs")).toBeInTheDocument();
+  });
+
+  it("shows action banner when applications pending", async () => {
+    const {
+      default: { AdminOverview },
+    } = await import("@/features/platform/AdminOverview");
+    render(<AdminOverview />);
+    await expect(screen.findByText(/Action Required/)).resolves.toBeInTheDocument();
+  });
+
+  it("shows quick action links", async () => {
+    const {
+      default: { AdminOverview },
+    } = await import("@/features/platform/AdminOverview");
+    render(<AdminOverview />);
+    await expect(screen.findByText("Manage Chefs")).resolves.toBeInTheDocument();
+  });
+});
+
+describe("ChefOverview", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.fetchChefProfile.mockResolvedValue({
+      userId: "chef-1",
+      displayName: "Test Chef",
+      email: "chef@test.com",
+      isAvailable: true,
+      serviceArea: null,
+      serviceAreas: [],
+      bio: null,
+      latitude: null,
+      longitude: null,
+      maxTravelKm: 30,
+      availability: null,
+      bankAccount: null,
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    });
+    api.fetchChefOffers.mockResolvedValue([]);
+    api.fetchChefBookings.mockResolvedValue([]);
+    api.fetchPolicyStatus = vi.fn().mockResolvedValue([
+      {
+        policyKey: "chef_service_agreement",
+        accepted: true,
+        version: "2026-08-09",
+        acceptedAt: "2026-01-01T00:00:00Z",
+      },
+      {
+        policyKey: "chef_code_of_conduct",
+        accepted: true,
+        version: "2026-08-09",
+        acceptedAt: "2026-01-01T00:00:00Z",
+      },
+      { policyKey: "customer_terms", accepted: false, version: null, acceptedAt: null },
+      { policyKey: "privacy_policy", accepted: false, version: null, acceptedAt: null },
+      { policyKey: "website_terms", accepted: false, version: null, acceptedAt: null },
+    ]);
+  });
+
+  it("renders chef overview with welcome message", async () => {
+    const {
+      default: { ChefOverview },
+    } = await import("@/features/platform/ChefOverview");
+    render(<ChefOverview />);
+    await expect(screen.findByText(/Good morning/)).resolves.toBeInTheDocument();
+  });
+
+  it("shows profile available indicator", async () => {
+    const {
+      default: { ChefOverview },
+    } = await import("@/features/platform/ChefOverview");
+    render(<ChefOverview />);
+    await expect(screen.findByText(/active and visible/)).resolves.toBeInTheDocument();
+  });
+});
