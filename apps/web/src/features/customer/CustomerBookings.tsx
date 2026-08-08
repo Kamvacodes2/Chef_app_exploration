@@ -1,6 +1,5 @@
 "use client";
 
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import Link from "next/link";
 
 export function CustomerBookings() {

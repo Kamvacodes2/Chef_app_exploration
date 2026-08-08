@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { acceptPolicy, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 
 interface PolicyAcceptanceModalProps {
