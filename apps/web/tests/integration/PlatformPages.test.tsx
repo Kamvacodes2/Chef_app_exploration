@@ -137,16 +137,29 @@ describe("platform pages", () => {
     api.submitChefApplication.mockResolvedValue(application);
     render(<ChefApplicationPage />);
 
+    // Step 1: Personal Details
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Nomsa Dlamini" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nomsa@example.test" } });
-    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+27821234567" } });
+    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+278****4567" } });
     fireEvent.change(screen.getByLabelText("City"), { target: { value: "Johannesburg" } });
-    fireEvent.change(screen.getByLabelText("Service areas"), {
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Step 2: Experience & Skills — all optional, skip through
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Step 3: Service Area
+    fireEvent.change(screen.getByLabelText("Service areas (comma-separated)"), {
       target: { value: "Fourways, Sandton" },
     });
     fireEvent.change(screen.getByLabelText("Cooking experience"), {
       target: { value: "Ten years of private chef and event cooking experience." },
     });
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Step 4: References — optional, skip through
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Step 5: Review & Submit
     fireEvent.click(screen.getByRole("button", { name: "Submit application" }));
 
     await expect(screen.findByRole("status")).resolves.toHaveTextContent("Application received");
