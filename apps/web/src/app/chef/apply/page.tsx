@@ -1,3 +1,5 @@
+"use client";
+
 import { BrandMark } from "@/features/hero/components/BrandMark";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 
