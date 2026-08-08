@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { IconLogOut, IconMenu, IconX } from "@/components/ui/icons";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export interface NavItem {
   readonly id: string;
@@ -182,13 +183,16 @@ export function DashboardLayout({
       ) : null}
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">
-        {title ? (
-          <div className="border-b border-[var(--color-oxblood)]/10 bg-white px-6 py-5 md:px-8">
-            <h1 className="text-2xl font-black text-[var(--color-oxblood)]">{title}</h1>
-          </div>
-        ) : null}
-        <div className="p-6 md:p-8">{children}</div>
+      <main className="flex flex-1 flex-col overflow-auto pt-14 md:pt-0">
+        <div className="flex-1">
+          {title ? (
+            <div className="border-b border-[var(--color-oxblood)]/10 bg-white px-6 py-5 md:px-8">
+              <h1 className="text-2xl font-black text-[var(--color-oxblood)]">{title}</h1>
+            </div>
+          ) : null}
+          <div className="p-6 md:p-8">{children}</div>
+        </div>
+        <SiteFooter />
       </main>
     </div>
   );

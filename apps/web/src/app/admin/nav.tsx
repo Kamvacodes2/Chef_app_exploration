@@ -6,6 +6,7 @@ import {
   IconCreditCard,
   IconLayoutDashboard,
   IconMail,
+  IconShield,
   IconSparkles,
   IconUserCheck,
   IconUsers,
@@ -41,6 +42,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     label: "Bookings",
     path: "/admin/bookings",
     icon: <IconCalendar width={18} height={18} />,
+  },
+  {
+    id: "enforcement",
+    label: "Enforcement",
+    path: "/admin/enforcement",
+    icon: <IconShield width={18} height={18} />,
   },
   {
     id: "comms",
