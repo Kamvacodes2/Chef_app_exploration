@@ -8,11 +8,6 @@ const inter = Inter({
   display: "swap",
 });
 
-// Brand wordmark font. Satoshi (the ideal match) and General Sans have no
-// local font files in this repo/Assets, so we fall back to Sora at weight
-// 800 — the closest freely-licensed geometric sans (circular "e", round "c",
-// large x-height, soft corners). Used ONLY for the "Chill Chef" wordmark,
-// never for headings/body copy.
 const sora = Sora({
   subsets: ["latin"],
   weight: ["800"],
@@ -29,6 +24,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+      <head>
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ? (
+          <script
+            defer
+            src="https://analytics.chefmate.co.za/script.js"
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+          />
+        ) : null}
+      </head>
       <body>{children}</body>
     </html>
   );
