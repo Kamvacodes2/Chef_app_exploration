@@ -35,9 +35,9 @@ export default function CustomerTermsPage() {
         <div>
           <h2 className="text-lg font-bold text-[var(--color-charcoal)]">3. Pricing and Payment</h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
-            ChefMate displays the full price before you confirm. Prices include the chef&apos;s
-            service fee and the platform fee. Prices will not change after a booking is confirmed
-            unless you and the chef mutually agree to changes.
+            ChefMate displays the full price before you confirm. Prices include the chef's service
+            fee and the platform fee. Prices will not change after a booking is confirmed unless you
+            and the chef mutually agree to changes.
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export default function CustomerTermsPage() {
           </h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
             To the extent permitted by law, ChefMate excludes liability for losses caused by
-            independent chef acts outside ChefMate&apos;s own fault, customer-supplied ingredients,
+            independent chef acts outside ChefMate's own fault, customer-supplied ingredients,
             household appliances or premises, and indirect or consequential losses. ChefMate does
             not exclude liability for its own fraud, gross negligence, or non-excludable consumer or
             privacy rights.

@@ -40,8 +40,8 @@ export default function ApplyLandingPage() {
               <span className="text-[var(--color-maize)]">Get paid weekly.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-white/80">
-              Join South Africa&apos;s marketplace for independent chefs. Set your own schedule,
-              cook in customers&apos; homes, and earn doing what you love.
+              Join South Africa's marketplace for independent chefs. Set your own schedule, cook in
+              customers' homes, and earn doing what you love.
             </p>
             <button
               onClick={() => setShowForm(true)}
@@ -62,7 +62,7 @@ export default function ApplyLandingPage() {
             <div className="mt-12 grid gap-8 sm:grid-cols-3">
               {[
                 {
-                  title: "You&apos;re the boss",
+                  title: "You're the boss",
                   desc: "Set your own availability. Accept the bookings that work for you. No minimum hours, no mandatory shifts.",
                 },
                 {
@@ -70,7 +70,7 @@ export default function ApplyLandingPage() {
                   desc: "See your payout before you accept. Weekly payments. Keep 100% of your tips. Transparent, no surprises.",
                 },
                 {
-                  title: "We&apos;ve got your back",
+                  title: "We've got your back",
                   desc: "Platform-level insurance cover. Safety-first policies. Support team when you need it. Vetted customers.",
                 },
               ].map((item) => (
@@ -109,7 +109,7 @@ export default function ApplyLandingPage() {
                 {
                   step: "3",
                   title: "Set your schedule",
-                  desc: "Tell us when and where you&apos;re available. You control your calendar.",
+                  desc: "Tell us when and where you're available. You control your calendar.",
                 },
                 {
                   step: "4",
@@ -140,7 +140,7 @@ export default function ApplyLandingPage() {
                 "Valid SA ID or passport",
                 "Food safety knowledge & certification",
                 "Cooking experience (professional or serious home cook)",
-                "Reliable transport to customers&apos; homes",
+                "Reliable transport to customers' homes",
                 "Smartphone with WhatsApp",
                 "Clean background check",
               ].map((req) => (

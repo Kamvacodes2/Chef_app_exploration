@@ -78,9 +78,9 @@ export default function CodeOfConductPage() {
             7. Photography and Social Media
           </h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
-            Do not take photos during a booking without the customer&apos;s explicit consent for
-            that specific booking. Photos must not show children or faces without separate consent,
-            or capture house numbers, security systems, or personal documents. Any marketing use
+            Do not take photos during a booking without the customer's explicit consent for that
+            specific booking. Photos must not show children or faces without separate consent, or
+            capture house numbers, security systems, or personal documents. Any marketing use
             requires separate permission.
           </p>
         </div>

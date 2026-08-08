@@ -41,9 +41,9 @@ export default function PrivacyPage() {
         <div>
           <h2 className="text-lg font-bold text-[var(--color-charcoal)]">3. Information Sharing</h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
-            Before a booking is confirmed, customers see a chef&apos;s first name, profile photo,
-            bio, and ratings. After a chef accepts and payment is confirmed, the chef receives the
-            customer&apos;s first name, service address, dietary/allergy/access information, and an
+            Before a booking is confirmed, customers see a chef's first name, profile photo, bio,
+            and ratings. After a chef accepts and payment is confirmed, the chef receives the
+            customer's first name, service address, dietary/allergy/access information, and an
             in-platform communication route. We minimise shared information to what is necessary for
             each booking.
           </p>
