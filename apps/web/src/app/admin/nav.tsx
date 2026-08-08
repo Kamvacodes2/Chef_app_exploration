@@ -1,9 +1,7 @@
 import type { NavItem } from "@/components/layout/DashboardLayout";
 import {
-  IconBarChart2,
   IconCalendar,
   IconClipboardList,
-  IconCreditCard,
   IconLayoutDashboard,
   IconMail,
   IconShield,
@@ -42,6 +40,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     label: "Bookings",
     path: "/admin/bookings",
     icon: <IconCalendar width={18} height={18} />,
+  },
+  {
+    id: "campaign",
+    label: "Campaign",
+    path: "/admin/campaign",
+    icon: <IconSparkles width={18} height={18} />,
   },
   {
     id: "enforcement",
