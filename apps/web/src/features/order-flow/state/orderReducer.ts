@@ -162,7 +162,15 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "SELECT_GOAL":
       return { ...INITIAL_ORDER_STATE, goalId: action.goalId, step: "meal" };
     case "START_MEAL_DISCOVERY":
-      return { ...INITIAL_ORDER_STATE, goalId: NEUTRAL_DISCOVERY_GOAL_ID, step: "meal" };
+      return {
+        ...INITIAL_ORDER_STATE,
+        goalId: NEUTRAL_DISCOVERY_GOAL_ID,
+        step: "meal",
+        // Preserve an auto-applied promo code so it survives hash-based entry
+        giftCodeInput: state.giftCodeInput,
+        appliedGift: state.appliedGift,
+        giftMessage: state.giftMessage,
+      };
     case "START_PLAN_SETUP":
       return {
         ...INITIAL_ORDER_STATE,
@@ -172,6 +180,10 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         // they're a normal order, not an ongoing subscription.
         goalId: isRecurringChefmatePlan(action.planId) ? null : NEUTRAL_DISCOVERY_GOAL_ID,
         step: isRecurringChefmatePlan(action.planId) ? "plan-days" : "meal",
+        // Preserve an auto-applied promo code so it survives hash-based entry
+        giftCodeInput: state.giftCodeInput,
+        appliedGift: state.appliedGift,
+        giftMessage: state.giftMessage,
       };
     case "TOGGLE_PREFERRED_DAY": {
       const preferredDays = state.preferredDays.includes(action.day)
