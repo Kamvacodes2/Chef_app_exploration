@@ -68,6 +68,7 @@ export default function PromoPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (step !== 2) return;
     setBusy(true);
     setError(null);
     try {
