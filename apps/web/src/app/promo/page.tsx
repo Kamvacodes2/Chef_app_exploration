@@ -189,11 +189,10 @@ export default function PromoPage() {
                   onChange={setAgeRange}
                   options={["", "18–24", "25–34", "35–44", "45–54", "55+", "Prefer not to say"]}
                 />
-                <InputField
+                <SearchableSuburbField
                   label="Area of residence"
                   value={suburb}
                   onChange={setSuburb}
-                  placeholder="Your suburb"
                 />
                 <SelectField
                   label="Household type"
@@ -530,5 +529,135 @@ function CheckboxChip({
       />
       {label}
     </label>
+  );
+}
+
+const SERVICE_AREAS = [
+  "Sandton Central",
+  "Sandown",
+  "Benmore Gardens",
+  "Morningside",
+  "Parkmore",
+  "Bryanston",
+  "Rivonia",
+  "Illovo",
+  "Hyde Park",
+  "Sandhurst",
+  "Atholl",
+  "Hurlingham",
+  "Gallo Manor",
+  "Wendywood",
+  "Woodmead",
+  "Fourways",
+  "Lonehill",
+  "Douglasdale",
+  "Beverley",
+  "Craigavon",
+  "Broadacres",
+  "Dainfern",
+  "Fourways Gardens",
+  "Cedar Lakes",
+  "Paulshof",
+  "Petervale",
+  "Magaliessig",
+  "Sunninghill",
+  "Rosebank",
+  "Parkhurst",
+  "Parktown North",
+  "Parkview",
+  "Parkwood",
+  "Greenside",
+  "Craighall Park",
+  "Craighall",
+  "Dunkeld",
+  "Melrose",
+  "Melrose Arch",
+  "Saxonwold",
+  "Houghton",
+  "Norwood",
+  "Killarney",
+  "Randburg",
+  "Ferndale",
+  "Blairgowrie",
+  "Linden",
+  "Robindale",
+  "Robin Hills",
+  "Northcliff",
+  "Fairland",
+  "Cresta",
+  "Blackheath",
+  "Randpark Ridge",
+  "Bromhof",
+  "Boskruin",
+  "North Riding",
+  "Olivedale",
+  "Midrand",
+  "Waterfall",
+  "Kyalami",
+  "Carlswald",
+  "Halfway Gardens",
+  "Vorna Valley",
+  "Noordwyk",
+  "Barbeque Downs",
+  "Crowthorne",
+  "Blue Hills",
+  "Kyalami Hills",
+];
+
+function SearchableSuburbField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(value);
+
+  const filtered = query
+    ? SERVICE_AREAS.filter((s) => s.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
+    : SERVICE_AREAS.slice(0, 8);
+
+  return (
+    <div className="relative">
+      <label className="block text-sm font-bold text-[var(--color-charcoal)]">{label}</label>
+      <input
+        type="text"
+        value={query}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange(e.target.value);
+        }}
+        placeholder="Type your suburb..."
+        className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 px-4 text-base outline-none focus:border-[var(--color-terracotta)]"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-[var(--color-oxblood)]/10 bg-white shadow-lg">
+          {filtered.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setQuery(s);
+                onChange(s);
+                setOpen(false);
+              }}
+              className={`w-full px-4 py-3 text-left text-sm transition hover:bg-[var(--color-oxblood)]/5 ${
+                s === value
+                  ? "bg-[var(--color-oxblood)]/10 font-semibold text-[var(--color-oxblood)]"
+                  : "text-[var(--color-charcoal)]/70"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
