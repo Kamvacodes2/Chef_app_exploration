@@ -65,6 +65,7 @@ export interface OrderController {
   readonly setContactField: (field: keyof ContactDetails, value: string) => void;
   readonly setGiftInput: (value: string) => void;
   readonly applyGift: () => void;
+  readonly applyPromoCode: (code: string) => void;
   readonly removeGift: () => void;
   readonly next: () => void;
   readonly back: () => void;
@@ -323,6 +324,7 @@ export function useOrderController(): OrderController {
     ),
     setGiftInput: useCallback((value) => dispatch({ type: "SET_GIFT_INPUT", value }), []),
     applyGift: useCallback(() => dispatch({ type: "APPLY_GIFT" }), []),
+    applyPromoCode: useCallback((code: string) => dispatch({ type: "APPLY_PROMO_CODE", code }), []),
     removeGift: useCallback(() => dispatch({ type: "REMOVE_GIFT" }), []),
     next: useCallback(() => dispatch({ type: "NEXT" }), []),
     back: useCallback(() => dispatch({ type: "BACK" }), []),

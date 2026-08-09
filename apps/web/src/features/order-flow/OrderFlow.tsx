@@ -98,6 +98,7 @@ export function OrderFlow(): ReactElement {
     pricingQuote,
     setGiftInput,
     applyGift,
+    applyPromoCode,
   } = controller;
   const reducedMotion = usePrefersReducedMotion();
 
@@ -114,11 +115,9 @@ export function OrderFlow(): ReactElement {
     const code = params.get("promo_code");
     if (code && code.length > 0) {
       autoAppliedRef.current = true;
-      setGiftInput(code);
-      // Defer applyGift so the state update from setGiftInput has flushed
-      setTimeout(() => applyGift(), 0);
+      applyPromoCode(code);
     }
-  }, [setGiftInput, applyGift]);
+  }, [applyPromoCode]);
   const isCustomRequest = state.main?.id === "custom-request";
   const isPlanRequest = state.planId ? isRecurringChefmatePlan(state.planId) : false;
   const showNav = !isGoal && !isConfirmed;

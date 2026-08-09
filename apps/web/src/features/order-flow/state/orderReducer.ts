@@ -95,6 +95,7 @@ export type OrderAction =
   | { type: "SET_CONTACT_FIELD"; field: keyof ContactDetails; value: string }
   | { type: "SET_GIFT_INPUT"; value: string }
   | { type: "APPLY_GIFT" }
+  | { type: "APPLY_PROMO_CODE"; code: string }
   | { type: "REMOVE_GIFT" }
   | { type: "NEXT" }
   | { type: "BACK" }
@@ -245,6 +246,21 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return { ...state, contact: { ...state.contact, [action.field]: action.value } };
     case "SET_GIFT_INPUT":
       return { ...state, giftCodeInput: action.value, giftMessage: "" };
+    case "APPLY_PROMO_CODE": {
+      const result = validateGiftCode(action.code);
+      if (result.valid) {
+        return {
+          ...state,
+          giftCodeInput: normalizeGiftCode(action.code),
+          appliedGift: {
+            code: normalizeGiftCode(action.code),
+            discountFraction: result.discountFraction,
+          },
+          giftMessage: result.message,
+        };
+      }
+      return state;
+    }
     case "APPLY_GIFT": {
       const result = validateGiftCode(state.giftCodeInput);
       if (result.valid) {
