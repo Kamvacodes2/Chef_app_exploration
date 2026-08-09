@@ -169,7 +169,7 @@ export default function PromoPage() {
           ))}
         </div>
 
-        <form className="rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-8">
+        <div className="rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-8">
           {step === 1 && (
             <div>
               <h2 className="text-lg font-black text-[var(--color-oxblood)]">
@@ -436,7 +436,7 @@ export default function PromoPage() {
               </button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </main>
   );
