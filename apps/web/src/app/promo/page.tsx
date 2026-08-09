@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 
 const PAIN_POINTS = [
   { value: "not_enough_time", label: "Not enough time or energy" },
@@ -66,9 +66,7 @@ export default function PromoPage() {
     set(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (step !== 2) return;
+  const handleSubmit = async () => {
     setBusy(true);
     setError(null);
     try {
@@ -171,10 +169,7 @@ export default function PromoPage() {
           ))}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-8"
-        >
+        <form className="rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-8">
           {step === 1 && (
             <div>
               <h2 className="text-lg font-black text-[var(--color-oxblood)]">
@@ -432,8 +427,9 @@ export default function PromoPage() {
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
                 disabled={busy}
+                onClick={handleSubmit}
                 className="min-h-12 rounded-2xl bg-[var(--color-oxblood)] px-8 text-sm font-bold text-white disabled:opacity-60"
               >
                 {busy ? "Submitting..." : "Unlock my offer"}
