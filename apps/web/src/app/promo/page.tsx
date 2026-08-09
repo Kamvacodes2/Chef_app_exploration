@@ -132,17 +132,18 @@ export default function PromoPage() {
           <p className="mt-3 text-xs text-[var(--color-charcoal)]/40">
             Valid for one use · Expires 30 days from now
           </p>
-          <a
-            href={`/#order-flow?plan=tonight`}
+          <button
+            type="button"
             onClick={() => {
               try {
                 sessionStorage.setItem("chefmate_promo_code", "CHEFMATE15");
               } catch {}
+              window.location.href = "/#order-flow?plan=tonight";
             }}
             className="mt-6 inline-block rounded-2xl bg-[var(--color-oxblood)] px-8 py-4 font-bold text-white transition-transform hover:scale-105"
           >
             Book your session →
-          </a>
+          </button>
         </div>
       </main>
     );
