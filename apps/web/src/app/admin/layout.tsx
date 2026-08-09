@@ -9,6 +9,8 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [userDisplayName, setUserDisplayName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -21,7 +23,11 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
         if (!roles.includes("ADMIN") && !roles.includes("SUPPORT")) {
           throw new Error("Not authorized");
         }
-        if (!cancelled) setAuthorized(true);
+        if (!cancelled) {
+          setAuthorized(true);
+          setUserDisplayName(data.data.user.displayName ?? "");
+          setUserEmail(data.data.user.email ?? "");
+        }
       } catch {
         if (!cancelled) router.replace("/login");
       } finally {
@@ -32,6 +38,13 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
       cancelled = true;
     };
   }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
+    router.replace("/login");
+  };
 
   if (checking) {
     return (
@@ -44,7 +57,13 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
   if (!authorized) return null;
 
   return (
-    <DashboardLayout navItems={ADMIN_NAV} title="Admin Dashboard">
+    <DashboardLayout
+      navItems={ADMIN_NAV}
+      title="Admin Dashboard"
+      userDisplayName={userDisplayName}
+      userEmail={userEmail}
+      onLogout={handleLogout}
+    >
       {children}
     </DashboardLayout>
   );
