@@ -108,11 +108,20 @@ export function OrderFlow(): ReactElement {
   const isReview = state.step === "review";
   const isConfirmed = state.step === "confirmed";
 
-  // Auto-apply promo code from URL (e.g. ?promo_code=CHEFMATE15)
+  // Auto-apply promo code from URL or sessionStorage
   useEffect(() => {
     if (autoAppliedRef.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("promo_code");
+    let code: string | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      code = params.get("promo_code");
+      if (!code) {
+        code = sessionStorage.getItem("chefmate_promo_code");
+        if (code) sessionStorage.removeItem("chefmate_promo_code");
+      }
+    } catch {
+      /* SSR guard */
+    }
     if (code && code.length > 0) {
       autoAppliedRef.current = true;
       applyPromoCode(code);
