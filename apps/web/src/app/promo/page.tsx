@@ -122,11 +122,18 @@ export default function PromoPage() {
             Your offer is unlocked!
           </h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You&apos;re ready to book your first ChefMate session with the Women&apos;s Month
-            discount applied.
+            Use this code for 15% off Chef Tonight:
+          </p>
+          <div className="mx-auto mt-4 w-fit rounded-2xl bg-[var(--color-oxblood)]/10 px-6 py-3">
+            <span className="text-2xl font-black tracking-[0.15em] text-[var(--color-oxblood)]">
+              CHEFMATE15
+            </span>
+          </div>
+          <p className="mt-3 text-xs text-[var(--color-charcoal)]/40">
+            Valid for one use · Expires 30 days from now
           </p>
           <a
-            href={`/?promo_token=${token}#order-flow?plan=tonight`}
+            href={`/?promo_code=CHEFMATE15#order-flow?plan=tonight`}
             className="mt-6 inline-block rounded-2xl bg-[var(--color-oxblood)] px-8 py-4 font-bold text-white transition-transform hover:scale-105"
           >
             Book your session →

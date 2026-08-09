@@ -79,6 +79,7 @@ function StepBody({ children }: { children: ReactNode }): ReactElement {
 export function OrderFlow(): ReactElement {
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasMountedRef = useRef(false);
+  const autoAppliedRef = useRef(false);
   const controller = useOrderController();
   const {
     state,
@@ -95,6 +96,8 @@ export function OrderFlow(): ReactElement {
     submissionError,
     isPricingLoading,
     pricingQuote,
+    setGiftInput,
+    applyGift,
   } = controller;
   const reducedMotion = usePrefersReducedMotion();
 
@@ -103,6 +106,19 @@ export function OrderFlow(): ReactElement {
   const isGoal = state.step === "goal";
   const isReview = state.step === "review";
   const isConfirmed = state.step === "confirmed";
+
+  // Auto-apply promo code from URL (e.g. ?promo_code=CHEFMATE15)
+  useEffect(() => {
+    if (autoAppliedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("promo_code");
+    if (code && code.length > 0) {
+      autoAppliedRef.current = true;
+      setGiftInput(code);
+      // Defer applyGift so the state update from setGiftInput has flushed
+      setTimeout(() => applyGift(), 0);
+    }
+  }, [setGiftInput, applyGift]);
   const isCustomRequest = state.main?.id === "custom-request";
   const isPlanRequest = state.planId ? isRecurringChefmatePlan(state.planId) : false;
   const showNav = !isGoal && !isConfirmed;
