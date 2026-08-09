@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { getCurrentUser, type AuthenticatedUser } from "@/features/auth/api/authClient";
 import { ChefmateApiError } from "@/lib/apiError";
+import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
 import {
   buildPricingQuotePayload,
   fetchPricingQuote,
@@ -118,7 +119,31 @@ function isStaleIdempotencyError(error: unknown): boolean {
 }
 
 export function useOrderController(): OrderController {
-  const [state, dispatch] = useReducer(orderReducer, INITIAL_ORDER_STATE);
+  const [state, dispatch] = useReducer(orderReducer, INITIAL_ORDER_STATE, (initial) => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      let code = params.get("promo_code");
+      if (!code) code = sessionStorage.getItem("chefmate_promo_code");
+      if (code) {
+        sessionStorage.removeItem("chefmate_promo_code");
+        const result = validateGiftCode(code);
+        if (result.valid) {
+          return {
+            ...initial,
+            giftCodeInput: normalizeGiftCode(code),
+            appliedGift: {
+              code: normalizeGiftCode(code),
+              discountFraction: result.discountFraction,
+            },
+            giftMessage: result.message,
+          };
+        }
+      }
+    } catch {
+      /* SSR guard */
+    }
+    return initial;
+  });
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
