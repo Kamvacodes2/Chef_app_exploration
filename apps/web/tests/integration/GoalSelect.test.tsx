@@ -36,6 +36,7 @@ function renderGoalSelect(): OrderController {
     setContactField: vi.fn(),
     setGiftInput: vi.fn(),
     applyGift: vi.fn(),
+    applyPromoCode: vi.fn(),
     removeGift: vi.fn(),
     next: vi.fn(),
     back: vi.fn(),

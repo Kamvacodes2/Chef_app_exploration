@@ -54,6 +54,7 @@ function Harness(): React.ReactElement {
     setContactField: () => {},
     setGiftInput: (value) => dispatch({ type: "SET_GIFT_INPUT", value }),
     applyGift: () => dispatch({ type: "APPLY_GIFT" }),
+    applyPromoCode: (code: string) => dispatch({ type: "APPLY_PROMO_CODE", code }),
     removeGift: () => dispatch({ type: "REMOVE_GIFT" }),
     next: () => {},
     back: () => {},
