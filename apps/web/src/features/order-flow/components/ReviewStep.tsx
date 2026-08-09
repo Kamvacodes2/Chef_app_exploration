@@ -107,9 +107,15 @@ export function ReviewStep(): ReactElement {
           priceCents: catalogPlan.priceCents,
         }
       : null);
-  const subtotalCents = pricingQuote?.subtotalCents ?? Math.round(subtotal * 100);
-  const discountCents = pricingQuote?.discountCents ?? Math.round(discount * 100);
-  const totalCents = pricingQuote?.totalCents ?? Math.round(total * 100);
+  const subtotalCents = state.appliedGift
+    ? Math.round(subtotal * 100)
+    : (pricingQuote?.subtotalCents ?? Math.round(subtotal * 100));
+  const discountCents = state.appliedGift
+    ? Math.round(discount * 100)
+    : (pricingQuote?.discountCents ?? Math.round(discount * 100));
+  const totalCents = state.appliedGift
+    ? Math.round(total * 100)
+    : (pricingQuote?.totalCents ?? Math.round(total * 100));
   const isCustomRequest = state.main?.id === "custom-request";
   const isPlanRequest = Boolean(plan?.recurring);
   const isEstimatedPricing = !isCustomRequest && !hasPricingQuote;
