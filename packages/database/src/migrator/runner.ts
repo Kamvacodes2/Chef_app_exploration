@@ -299,23 +299,35 @@ export async function migrate(options: MigratorOptions): Promise<MigrateResult> 
       const appliedNow: string[] = [];
       for (const file of current.pending) {
         const startedAt = Date.now();
-        await client.query("BEGIN");
-        try {
-          await client.query(file.sql);
-          const executionMs = Date.now() - startedAt;
-          await client.query(
-            `INSERT INTO ${BOOKKEEPING_QUALIFIED} (id, name, checksum, execution_ms)
-             VALUES ($1, $2, $3, $4)`,
-            [file.id, file.name, file.checksum, executionMs],
-          );
-          await client.query("COMMIT");
-          appliedNow.push(file.filename);
-          log(`applied ${file.filename} (${executionMs}ms)`);
-        } catch (error) {
-          await client.query("ROLLBACK");
-          throw new MigrationError(
-            `Migration ${file.filename} failed and was rolled back: ${(error as Error).message}`,
-          );
+        let retries = 0;
+        const maxRetries = 3;
+
+        while (retries < maxRetries) {
+          try {
+            await client.query("BEGIN");
+            await client.query(file.sql);
+            const executionMs = Date.now() - startedAt;
+            await client.query(
+              `INSERT INTO ${BOOKKEEPING_QUALIFIED} (id, name, checksum, execution_ms)
+               VALUES ($1, $2, $3, $4)`,
+              [file.id, file.name, file.checksum, executionMs],
+            );
+            await client.query("COMMIT");
+            appliedNow.push(file.filename);
+            log(`applied ${file.filename} (${executionMs}ms)`);
+            break;
+          } catch (error) {
+            await client.query("ROLLBACK").catch(() => undefined);
+            const msg = (error as Error).message;
+            if (msg.includes("tuple concurrently updated") && retries < maxRetries - 1) {
+              retries++;
+              await new Promise((r) => setTimeout(r, 100 * retries));
+              continue;
+            }
+            throw new MigrationError(
+              `Migration ${file.filename} failed and was rolled back: ${msg}`,
+            );
+          }
         }
       }
 
