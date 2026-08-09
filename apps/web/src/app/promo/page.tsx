@@ -138,7 +138,7 @@ export default function PromoPage() {
               try {
                 sessionStorage.setItem("chefmate_promo_code", "CHEFMATE15");
               } catch {}
-              window.location.href = "/#order-flow?plan=tonight";
+              window.location.href = "/?promo_code=CHEFMATE15#order-flow?plan=tonight";
             }}
             className="mt-6 inline-block rounded-2xl bg-[var(--color-oxblood)] px-8 py-4 font-bold text-white transition-transform hover:scale-105"
           >
