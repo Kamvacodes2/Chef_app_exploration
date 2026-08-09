@@ -119,31 +119,26 @@ function isStaleIdempotencyError(error: unknown): boolean {
 }
 
 export function useOrderController(): OrderController {
-  const [state, dispatch] = useReducer(orderReducer, INITIAL_ORDER_STATE, (initial) => {
+  const [state, dispatch] = useReducer(orderReducer, INITIAL_ORDER_STATE);
+  const promoApplied = useRef(false);
+
+  // Auto-apply promo code from URL after client hydration
+  useEffect(() => {
+    if (promoApplied.current) return;
     try {
       const params = new URLSearchParams(window.location.search);
       let code = params.get("promo_code");
       if (!code) code = sessionStorage.getItem("chefmate_promo_code");
       if (code) {
+        promoApplied.current = true;
         sessionStorage.removeItem("chefmate_promo_code");
-        const result = validateGiftCode(code);
-        if (result.valid) {
-          return {
-            ...initial,
-            giftCodeInput: normalizeGiftCode(code),
-            appliedGift: {
-              code: normalizeGiftCode(code),
-              discountFraction: result.discountFraction,
-            },
-            giftMessage: result.message,
-          };
-        }
+        dispatch({ type: "APPLY_PROMO_CODE", code });
       }
     } catch {
       /* SSR guard */
     }
-    return initial;
-  });
+  }, []);
+
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
