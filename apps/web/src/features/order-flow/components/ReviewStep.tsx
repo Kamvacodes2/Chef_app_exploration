@@ -152,8 +152,8 @@ export function ReviewStep(): ReactElement {
       : isPlanRequest
         ? "Send your plan request. Chefmate will confirm your recurring session schedule and email payment details before activating the plan."
         : plan
-          ? "Checkout securely with Paystack. Once payment is confirmed, we confirm your first session and keep these package preferences with your booking."
-          : "Checkout securely with Paystack. Once payment is confirmed, we match you with an available Chefmate.";
+          ? "Once payment is confirmed, we confirm your first session and keep these package preferences with your booking."
+          : "Once payment is confirmed, we match you with an available Chefmate.";
   // The favourite is a live-catalog slug, so its display name comes from the
   // item the plan step stored; `findItem` only still resolves legacy ids.
   const favourite = state.favoriteMealId
