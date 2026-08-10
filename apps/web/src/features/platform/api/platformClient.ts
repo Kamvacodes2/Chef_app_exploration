@@ -667,6 +667,79 @@ function apiUrl(baseUrl: string, path: string): string {
   return trimmed + path;
 }
 
+// ── Campaign leads ──────────────────────────────────────────────
+
+export interface CampaignLead {
+  readonly id: string;
+  readonly campaignCode: string;
+  readonly firstName: string | null;
+  readonly email: string | null;
+  readonly mobileNumber: string | null;
+  readonly ageRange: string | null;
+  readonly suburb: string | null;
+  readonly householdType: string | null;
+  readonly lifestyle: string | null;
+  readonly cookingFrequency: string | null;
+  readonly dinnerPainPoints: readonly string[];
+  readonly expectedUseCases: readonly string[];
+  readonly intendedBookingFreq: string | null;
+  readonly topPriorities: readonly string[];
+  readonly selfReportedSource: string | null;
+  readonly utmSource: string | null;
+  readonly utmMedium: string | null;
+  readonly utmCampaign: string | null;
+  readonly utmContent: string | null;
+  readonly status: string;
+  readonly marketingEmailOptIn: boolean;
+  readonly marketingWhatsappOptIn: boolean;
+  readonly marketingSmsOptIn: boolean;
+  readonly promotionExpiry: string | null;
+  readonly bookingId: string | null;
+  readonly createdAt: string;
+}
+
+const campaignLeadSchema = z.object({
+  id: z.string(),
+  campaignCode: z.string(),
+  firstName: z.string().nullable(),
+  email: z.string().nullable(),
+  mobileNumber: z.string().nullable(),
+  ageRange: z.string().nullable(),
+  suburb: z.string().nullable(),
+  householdType: z.string().nullable(),
+  lifestyle: z.string().nullable(),
+  cookingFrequency: z.string().nullable(),
+  dinnerPainPoints: z.array(z.string()),
+  expectedUseCases: z.array(z.string()),
+  intendedBookingFreq: z.string().nullable(),
+  topPriorities: z.array(z.string()),
+  selfReportedSource: z.string().nullable(),
+  utmSource: z.string().nullable(),
+  utmMedium: z.string().nullable(),
+  utmCampaign: z.string().nullable(),
+  utmContent: z.string().nullable(),
+  status: z.string(),
+  marketingEmailOptIn: z.boolean(),
+  marketingWhatsappOptIn: z.boolean(),
+  marketingSmsOptIn: z.boolean(),
+  promotionExpiry: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export async function fetchCampaignLeads(
+  campaignCode: string,
+  options: PlatformRequestOptions = {},
+): Promise<CampaignLead[]> {
+  return requestData({
+    path: `/api/v1/operations/campaign/leads?campaignCode=${encodeURIComponent(campaignCode)}`,
+    method: "GET",
+    schema: itemsEnvelope(campaignLeadSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
 // ── Policy acceptance ──────────────────────────────────────────────
 
 const policyAcceptanceSchema = z.object({

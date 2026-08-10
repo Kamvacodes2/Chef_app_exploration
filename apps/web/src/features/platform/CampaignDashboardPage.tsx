@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { StatCard } from "@/components/ui/StatCard";
+import { fetchCampaignLeads, type CampaignLead } from "@/features/platform/api/platformClient";
 
 interface CampaignDashboard {
   totalLeads: number;
@@ -17,21 +18,32 @@ interface CampaignDashboard {
   topPriorities: Record<string, number>;
 }
 
+const CAMPAIGN_CODE = "womens_month_2026";
+
+function formatLabel(key: string): string {
+  if (key === "unknown") return "Unknown";
+  return key.replace(/_/g, " ");
+}
+
 export function CampaignDashboardPage() {
   const [data, setData] = useState<CampaignDashboard | null>(null);
+  const [leads, setLeads] = useState<CampaignLead[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch(
-          "/api/v1/operations/campaign/dashboard?campaignCode=womens_month_2026",
-          { credentials: "include" },
-        );
-        if (!res.ok) throw new Error("Failed to load");
-        const json = await res.json();
+        const [dashRes, leadsRes] = await Promise.all([
+          fetch(`/api/v1/operations/campaign/dashboard?campaignCode=${CAMPAIGN_CODE}`, {
+            credentials: "include",
+          }),
+          fetchCampaignLeads(CAMPAIGN_CODE),
+        ]);
+        if (!dashRes.ok) throw new Error("Failed to load dashboard");
+        const json = await dashRes.json();
         setData(json.data);
+        setLeads(leadsRes);
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Load failed");
       } finally {
@@ -76,6 +88,109 @@ export function CampaignDashboardPage() {
         <BarSection title="Top Pain Points" data={data.topPainPoints} />
         <BarSection title="Top Priorities" data={data.topPriorities} />
       </div>
+
+      {/* Individual leads table */}
+      <section className="rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
+        <h3 className="text-lg font-black text-[var(--color-oxblood)]">
+          All Leads ({leads.length})
+        </h3>
+        {leads.length === 0 ? (
+          <p className="mt-4 text-sm text-[var(--color-charcoal)]/50">No leads yet.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto rounded-xl border border-[var(--color-oxblood)]/10">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)]/50 text-xs uppercase text-[var(--color-charcoal)]/50">
+                <tr>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Contact</th>
+                  <th className="px-3 py-2">Suburb</th>
+                  <th className="px-3 py-2">Age</th>
+                  <th className="px-3 py-2">Household</th>
+                  <th className="px-3 py-2">Source</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Opt-ins</th>
+                  <th className="px-3 py-2">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((lead) => (
+                  <tr
+                    key={lead.id}
+                    className="border-b border-[var(--color-oxblood)]/5 last:border-0 hover:bg-[var(--color-warm-cream)]/30"
+                  >
+                    <td className="px-3 py-2 font-semibold text-[var(--color-charcoal)]">
+                      {lead.firstName ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--color-charcoal)]/70">
+                      <div className="text-xs">
+                        {lead.email && <div>{lead.email}</div>}
+                        {lead.mobileNumber && <div>{lead.mobileNumber}</div>}
+                        {!lead.email && !lead.mobileNumber && "—"}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-[var(--color-charcoal)]/70">
+                      {lead.suburb ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--color-charcoal)]/70">
+                      {lead.ageRange ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--color-charcoal)]/70">
+                      {formatLabel(lead.householdType ?? "—")}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="rounded-full bg-[var(--color-oxblood)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--color-oxblood)]">
+                        {lead.utmSource ?? lead.selfReportedSource ?? "Unknown"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          lead.status === "OFFER_REDEEMED"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : lead.status === "TOKEN_ISSUED"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {formatLabel(lead.status)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex gap-1 text-[10px]">
+                        {lead.marketingEmailOptIn && (
+                          <span className="rounded bg-green-100 px-1 py-0.5 text-green-700">
+                            Email
+                          </span>
+                        )}
+                        {lead.marketingWhatsappOptIn && (
+                          <span className="rounded bg-green-100 px-1 py-0.5 text-green-700">
+                            WA
+                          </span>
+                        )}
+                        {lead.marketingSmsOptIn && (
+                          <span className="rounded bg-green-100 px-1 py-0.5 text-green-700">
+                            SMS
+                          </span>
+                        )}
+                        {!lead.marketingEmailOptIn &&
+                          !lead.marketingWhatsappOptIn &&
+                          !lead.marketingSmsOptIn &&
+                          "—"}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-xs text-[var(--color-charcoal)]/50">
+                      {new Date(lead.createdAt).toLocaleDateString("en-ZA", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -97,7 +212,7 @@ function BarSection({ title, data }: { title: string; data: Record<string, numbe
           entries.map(([key, value]) => (
             <div key={key} className="flex items-center gap-3">
               <span className="w-32 shrink-0 truncate text-xs text-[var(--color-charcoal)]/70">
-                {key === "unknown" ? "Unknown" : key.replace(/_/g, " ")}
+                {formatLabel(key)}
               </span>
               <div className="flex-1">
                 <div className="h-5 rounded-full bg-[var(--color-oxblood)]/20">
