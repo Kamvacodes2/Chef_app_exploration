@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchChefBookings, type ChefBooking } from "@/features/platform/api/platformClient";
+import {
+  fetchOperationsBookings,
+  type OperationsBooking,
+} from "@/features/platform/api/platformClient";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function Page() {
-  const [bookings, setBookings] = useState<ChefBooking[]>([]);
+  const [bookings, setBookings] = useState<OperationsBooking[]>([]);
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
     void (async () => {
       try {
-        const data = await fetchChefBookings();
+        const data = await fetchOperationsBookings();
         setBookings(data);
       } catch {
         // OK if no bookings exist
@@ -41,6 +44,7 @@ export default function Page() {
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Meal</th>
                 <th className="px-4 py-3">Contact</th>
+                <th className="px-4 py-3">Chef</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
@@ -60,6 +64,9 @@ export default function Page() {
                   <td className="px-4 py-3 text-[var(--color-charcoal)]/70">{b.mainName}</td>
                   <td className="px-4 py-3 text-[var(--color-charcoal)]/70">
                     {b.contactName ?? b.contactEmail ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--color-charcoal)]/70">
+                    {b.cook?.displayName ?? "Unassigned"}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={b.status} />

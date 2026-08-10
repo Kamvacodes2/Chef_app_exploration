@@ -437,6 +437,50 @@ export async function completeChefBooking(
   });
 }
 
+const operationsBookingSchema = z.object({
+  id: z.string().min(1),
+  reference: z.string().min(1),
+  status: bookingStatusSchema,
+  type: z.string().min(1),
+  customerId: z.string().nullable(),
+  mainMealSlug: z.string().min(1),
+  mainName: z.string().min(1),
+  customRequest: z.string().nullable(),
+  scheduledDate: z.string().min(1),
+  timeSlot: z.string().min(1),
+  estate: z.string().nullable(),
+  unit: z.string().nullable(),
+  street: z.string().min(1),
+  serviceArea: z.string().nullable(),
+  contactName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  contactPhone: z.string().nullable(),
+  goalId: z.string().nullable(),
+  createdAt: z.string(),
+  cook: z
+    .object({
+      id: z.string(),
+      email: z.string(),
+      displayName: z.string(),
+      roles: z.array(z.string()),
+    })
+    .nullable(),
+});
+
+export type OperationsBooking = z.infer<typeof operationsBookingSchema>;
+
+export async function fetchOperationsBookings(
+  options: PlatformRequestOptions = {},
+): Promise<OperationsBooking[]> {
+  return requestData({
+    path: "/api/v1/operations/booking-requests",
+    method: "GET",
+    schema: itemsEnvelope(operationsBookingSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
 export async function fetchAdminDashboard(
   options: PlatformRequestOptions = {},
 ): Promise<AdminDashboard> {
