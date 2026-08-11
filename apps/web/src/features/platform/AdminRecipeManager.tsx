@@ -114,7 +114,7 @@ function parsePositiveIntStrict(s: string): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-function buildPayload(form: FormState, imageFile: File): RecipeFormPayload {
+function buildPayload(form: FormState): RecipeFormPayload {
   const profiles: NutritionProfileInput[] = [
     {
       plateType: "STANDARD",
@@ -333,7 +333,7 @@ export function AdminRecipeManager() {
       return;
     }
 
-    const payload = buildPayload(form, imageFile);
+    const payload = buildPayload(form);
     const clientError = validatePayload(payload);
     if (clientError) {
       setFieldErrors({ _form: clientError });
@@ -354,7 +354,7 @@ export function AdminRecipeManager() {
           setFieldErrors({ _form: result.message });
         }
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);

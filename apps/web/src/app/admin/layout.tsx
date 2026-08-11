@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { getCurrentUser, logout, type AuthenticatedUser } from "@/features/auth/api/authClient";
+import { getCurrentUser, logout } from "@/features/auth/api/authClient";
 import { ADMIN_NAV } from "./nav";
 
 export default function AdminLayout({ children }: { readonly children: React.ReactNode }) {
@@ -12,7 +12,6 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
   const [checking, setChecking] = useState(true);
   const [userDisplayName, setUserDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +25,6 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
         }
         if (!cancelled) {
           setAuthorized(true);
-          setUser(currentUser);
           setUserDisplayName(currentUser.displayName ?? "");
           setUserEmail(currentUser.email ?? "");
         }
