@@ -296,6 +296,14 @@ export function useOrderController(): OrderController {
 
       setBookingConfirmation(confirmation);
       dispatch({ type: "CONFIRM" });
+
+      // Redirect to the standalone confirmation page for non-Paystack bookings.
+      // Paystack bookings redirect to the payment gateway first and come back
+      // to /confirmed via the Paystack callback handler.
+      if (confirmation.reference) {
+        window.location.href = `/confirmed?ref=${confirmation.reference}`;
+        return;
+      }
     } catch (error) {
       setSubmissionError(submissionMessage(error));
     } finally {

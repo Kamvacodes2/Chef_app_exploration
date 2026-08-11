@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import type { ReactElement, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, type ReactElement, type ReactNode } from "react";
 import { findChefmatePlan } from "@/features/plans/planCatalog";
 import { useOrder } from "../state/OrderContext";
 
@@ -41,6 +42,7 @@ function DetailRow({
 
 export function Confirmation(): ReactElement {
   const { state, bookingConfirmation, reset } = useOrder();
+  const router = useRouter();
   const payment = bookingConfirmation?.payment;
   const bankTransfer = payment?.method === "BANK_TRANSFER" ? payment.bankTransfer : null;
   const paystack = payment?.method === "PAYSTACK" ? payment.paystack : null;
@@ -54,6 +56,15 @@ export function Confirmation(): ReactElement {
       : isPaystackOrder
         ? ["Order received", "Secure checkout", "Chef matching", "Visit complete"]
         : ["Order received", "Payment review", "Chef matching", "Visit complete"];
+
+  // Redirect to standalone confirmation page when booking is confirmed.
+  // This fires for both bank-transfer bookings (immediate) and Paystack
+  // bookings (when the user returns from the payment gateway).
+  useEffect(() => {
+    if (bookingConfirmation?.reference && !isPaystackOrder) {
+      router.replace(`/confirmed?ref=${bookingConfirmation.reference}`);
+    }
+  }, [bookingConfirmation?.reference, isPaystackOrder, router]);
 
   return (
     <div className="flex w-full flex-col items-center gap-6 py-8 text-center">
