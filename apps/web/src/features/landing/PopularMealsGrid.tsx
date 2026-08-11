@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { fetchCatalogMeals } from "@/features/featured-meals/api/featuredMealsClient";
+import { resolveCatalogImageSource } from "@/features/meal-browser/mealPresentation";
 import { POPULAR_MEALS } from "./content";
 import { Container, Eyebrow, PrimaryLink } from "./primitives";
 
@@ -50,7 +51,7 @@ export function PopularMealsGrid(): ReactElement {
           featured.map((meal) => ({
             id: meal.slug,
             name: meal.name,
-            imageSrc: meal.image.src,
+            imageSrc: resolveCatalogImageSource(meal.image.src),
             imageAlt: meal.image.alt,
           })),
         );

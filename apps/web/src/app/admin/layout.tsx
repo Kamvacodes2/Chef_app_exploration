@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { getCurrentUser, logout, type AuthenticatedUser } from "@/features/auth/api/authClient";
 import { ADMIN_NAV } from "./nav";
 
 export default function AdminLayout({ children }: { readonly children: React.ReactNode }) {
@@ -11,22 +12,23 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
   const [checking, setChecking] = useState(true);
   const [userDisplayName, setUserDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/v1/auth/me", { credentials: "include" });
-        if (!res.ok) throw new Error("Not authenticated");
-        const data = await res.json();
-        const roles: string[] = data.data?.user?.roles ?? [];
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Not authenticated");
+        const roles: string[] = currentUser.roles;
         if (!roles.includes("ADMIN") && !roles.includes("SUPPORT")) {
           throw new Error("Not authorized");
         }
         if (!cancelled) {
           setAuthorized(true);
-          setUserDisplayName(data.data.user.displayName ?? "");
-          setUserEmail(data.data.user.email ?? "");
+          setUser(currentUser);
+          setUserDisplayName(currentUser.displayName ?? "");
+          setUserEmail(currentUser.email ?? "");
         }
       } catch {
         if (!cancelled) router.replace("/login");
@@ -41,7 +43,7 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+      await logout();
     } catch {}
     router.replace("/login");
   };

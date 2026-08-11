@@ -1,5 +1,6 @@
 import type { PaletteId } from "@/data/types/Palette";
 import type { BrowserMeal, MealNutritionProfile } from "./api/mealCatalogClient";
+import { getChefmateApiUrl } from "@/lib/env";
 
 const PALETTE_IDS: readonly PaletteId[] = [
   "vanilla",
@@ -54,10 +55,24 @@ export function servesLabel(meal: BrowserMeal): string {
   return /^serves/i.test(serves) ? serves : `Serves ${serves}`;
 }
 
+/**
+ * Resolves an image source, prepending the backend API origin for admin-uploaded
+ * catalog media paths. Leaves static /images/... paths and absolute URLs unchanged.
+ */
+export function resolveCatalogImageSource(src: string): string {
+  if (src.startsWith("/api/v1/catalog/media/")) {
+    return new URL(src, getChefmateApiUrl()).toString();
+  }
+  return src;
+}
+
 export function mealImage(meal: BrowserMeal): { src: string; alt: string } {
   const src = meal.image?.src?.trim();
   if (!src) return { src: FALLBACK_MEAL_IMAGE_SRC, alt: `${meal.name} — photo coming soon` };
-  return { src, alt: meal.image?.alt?.trim() ? meal.image.alt : meal.name };
+  return {
+    src: resolveCatalogImageSource(src),
+    alt: meal.image?.alt?.trim() ? meal.image.alt : meal.name,
+  };
 }
 
 /** Ingredients are stored as one string separated by `;` or newlines. */

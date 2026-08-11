@@ -42,6 +42,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconCalendar width={18} height={18} />,
   },
   {
+    id: "recipes",
+    label: "Recipes",
+    path: "/admin/recipes",
+    icon: <IconClipboardList width={18} height={18} />,
+  },
+  {
     id: "campaign",
     label: "Campaign",
     path: "/admin/campaign",
