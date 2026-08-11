@@ -101,7 +101,8 @@ function ConfirmedPageContent() {
     if (!booking) return;
 
     // Google Ads purchase conversion
-    const gtag = (window as any).gtag;
+    const win = window as unknown as Record<string, unknown>;
+    const gtag = win.gtag as ((...args: unknown[]) => void) | undefined;
     if (typeof gtag === "function") {
       gtag("event", "conversion", {
         send_to: "AW-XXXXXXXXX/XXXXXXXX",
@@ -112,7 +113,8 @@ function ConfirmedPageContent() {
     }
 
     // Umami purchase success event
-    const umami = (window as any).umami;
+    const umami = win.umami as
+      { track?: (event: string, data: Record<string, unknown>) => void } | undefined;
     if (typeof umami?.track === "function") {
       umami.track("purchase_success", {
         reference: booking.reference,
