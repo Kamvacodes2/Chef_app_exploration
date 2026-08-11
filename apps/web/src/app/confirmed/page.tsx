@@ -24,7 +24,31 @@ interface BookingDetail {
   };
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Payment state helpers ──────────────────────────────────────────────────
+
+/**
+ * Booking statuses that mean payment is still outstanding.
+ * REQUESTED / NEEDS_REVIEW = booking created but payment not verified.
+ */
+const PAYMENT_PENDING_STATUSES = new Set(["REQUESTED", "NEEDS_REVIEW"]);
+
+/**
+ * Booking statuses that mean payment has been verified.
+ * AWAITING_CHEF and beyond = payment confirmed, chef matching in progress.
+ */
+const PAYMENT_CONFIRMED_STATUSES = new Set([
+  "CONFIRMED",
+  "AWAITING_CHEF",
+  "CHEF_MATCHED",
+  "EN_ROUTE",
+  "COMPLETED",
+]);
+
+function isPaymentPending(status: string): boolean {
+  return PAYMENT_PENDING_STATUSES.has(status);
+}
+
+// ── Formatters ─────────────────────────────────────────────────────────────
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -50,6 +74,31 @@ function formatTime(slot: string): string {
 
 const WHATSAPP_NUMBER = "+27710000000";
 const CONTACT_MESSAGE = encodeURIComponent("Hi ChefMate, I have a question about my booking.");
+
+// ── Tracking helpers ───────────────────────────────────────────────────────
+
+function fireUmamiEvent(event: string, data: Record<string, unknown>) {
+  const umami = (window as unknown as Record<string, unknown>).umami as
+    { track?: (event: string, data: Record<string, unknown>) => void } | undefined;
+  if (typeof umami?.track === "function") {
+    umami.track(event, data);
+  }
+}
+
+function fireGoogleAdsConversion(booking: BookingDetail) {
+  const gtag = (window as unknown as Record<string, unknown>).gtag as
+    ((...args: unknown[]) => void) | undefined;
+  if (typeof gtag !== "function") return;
+
+  // Only fire Google Ads conversion when payment is actually verified.
+  // Replace AW-XXXXXXXXX/XXXXXXXX with the real ID/label from Google Ads.
+  gtag("event", "conversion", {
+    send_to: "AW-XXXXXXXXX/XXXXXXXX",
+    value: booking.pricing.totalCents / 100,
+    currency: "ZAR",
+    transaction_id: booking.reference,
+  });
+}
 
 // ── Page Content ───────────────────────────────────────────────────────────
 
@@ -96,34 +145,27 @@ function ConfirmedPageContent() {
     void fetchBooking();
   }, [fetchBooking]);
 
-  // Fire Google Ads conversion + Umami events once booking is loaded
+  // Fire tracking events once booking is loaded.
+  // Google Ads conversion ONLY fires when payment is confirmed.
+  // Umami fires booking_created for pending, purchase_success for confirmed.
   useEffect(() => {
     if (!booking) return;
 
-    // Google Ads purchase conversion
-    const win = window as unknown as Record<string, unknown>;
-    const gtag = win.gtag as ((...args: unknown[]) => void) | undefined;
-    if (typeof gtag === "function") {
-      gtag("event", "conversion", {
-        send_to: "AW-XXXXXXXXX/XXXXXXXX",
+    if (isPaymentPending(booking.status)) {
+      fireUmamiEvent("booking_created", {
+        reference: booking.reference,
         value: booking.pricing.totalCents / 100,
-        currency: "ZAR",
-        transaction_id: booking.reference,
       });
-    }
-
-    // Umami purchase success event
-    const umami = win.umami as
-      { track?: (event: string, data: Record<string, unknown>) => void } | undefined;
-    if (typeof umami?.track === "function") {
-      umami.track("purchase_success", {
+    } else {
+      fireGoogleAdsConversion(booking);
+      fireUmamiEvent("purchase_success", {
         reference: booking.reference,
         value: booking.pricing.totalCents / 100,
       });
     }
   }, [booking]);
 
-  // ── Loading state ─────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -132,7 +174,7 @@ function ConfirmedPageContent() {
     );
   }
 
-  // ── No booking found ──────────────────────────────────────────────
+  // ── No booking found (not authenticated or no matching ref) ────────
   if (!booking) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
@@ -153,16 +195,11 @@ function ConfirmedPageContent() {
     );
   }
 
-  // ── Booking confirmed ─────────────────────────────────────────────
-  const isBankTransfer = booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW";
-  const isConfirmed =
-    booking.status === "CONFIRMED" ||
-    booking.status === "AWAITING_CHEF" ||
-    booking.status === "CHEF_MATCHED";
+  const paymentPending = isPaymentPending(booking.status);
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center gap-8 px-4 py-12 text-center">
-      {/* Logo + heading */}
+      {/* ── Logo + heading ──────────────────────────────────────────── */}
       <div className="flex flex-col items-center gap-4">
         <div className="flex items-center justify-center rounded-3xl bg-[var(--color-oxblood)] px-6 py-4">
           <Image
@@ -174,17 +211,17 @@ function ConfirmedPageContent() {
           />
         </div>
         <h1 className="font-display text-3xl text-[var(--color-oxblood)] sm:text-4xl">
-          Dinner is handled. 🤎
+          {paymentPending ? "Your Chefmate booking has been received 🤎" : "Dinner is handled. 🤎"}
         </h1>
         <p className="max-w-md text-lg text-[var(--color-charcoal)]/70">
-          {isConfirmed
-            ? "Your Chefmate booking is confirmed."
-            : "Your Chefmate booking has been received."}
+          {paymentPending
+            ? "Complete your bank transfer to secure your booking."
+            : "Your payment has been received and your Chefmate booking is confirmed."}
         </p>
       </div>
 
-      {/* Booking details card */}
-      <div className="w-full max-w-md rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] text-left">
+      {/* ── Booking details card ────────────────────────────────────── */}
+      <div className="w-full max-w-md rounded-3xl border border-[var(--color-oxblood)]/10 bg-white p-6 text-left shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
         <h2 className="mb-4 font-display text-xl text-[var(--color-oxblood)]">Booking details</h2>
         <dl className="divide-y divide-[var(--color-oxblood)]/5">
           <DetailRow label="Booking">{booking.reference}</DetailRow>
@@ -195,32 +232,40 @@ function ConfirmedPageContent() {
           <DetailRow label="Status">
             <span
               className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                isConfirmed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                paymentPending ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
               }`}
             >
-              {booking.status.replace(/_/g, " ")}
+              {paymentPending ? "AWAITING PAYMENT" : booking.status.replace(/_/g, " ")}
             </span>
           </DetailRow>
         </dl>
       </div>
 
-      {/* What happens next */}
-      <div className="w-full max-w-md rounded-3xl bg-[var(--color-warm-cream)] p-6 text-left">
-        <h2 className="mb-2 font-display text-lg text-[var(--color-oxblood)]">What happens next</h2>
-        {isBankTransfer ? (
-          <p className="text-sm leading-relaxed text-[var(--color-charcoal)]/70">
-            We&apos;ll verify your bank transfer and match you with the best available cook in your
-            area. You&apos;ll receive an email once a cook is assigned — usually within a few hours.
+      {/* ── Bank transfer instructions (pending only) ───────────────── */}
+      {paymentPending ? (
+        <div className="w-full max-w-md rounded-3xl border-2 border-amber-200 bg-amber-50 p-6 text-left">
+          <h2 className="mb-3 font-display text-lg text-amber-800">Bank transfer required</h2>
+          <p className="mb-4 text-sm leading-relaxed text-amber-700">
+            Your booking is not yet confirmed. Please complete your bank transfer using the details
+            in your confirmation email, using the reference above. Once payment is received,
+            we&apos;ll confirm your cook and session.
           </p>
-        ) : (
+          <p className="text-sm font-semibold text-amber-800">Reference: {booking.reference}</p>
+        </div>
+      ) : (
+        /* ── What happens next (confirmed only) ──────────────────── */
+        <div className="w-full max-w-md rounded-3xl bg-[var(--color-warm-cream)] p-6 text-left">
+          <h2 className="mb-2 font-display text-lg text-[var(--color-oxblood)]">
+            What happens next
+          </h2>
           <p className="text-sm leading-relaxed text-[var(--color-charcoal)]/70">
             We&apos;ll send you your cook&apos;s details and everything you need before your
             session. Your cook will arrive with all the ingredients and leave your kitchen spotless.
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Action buttons */}
+      {/* ── Action buttons ──────────────────────────────────────────── */}
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           href="/customer/bookings"
@@ -266,7 +311,7 @@ function DetailRow({
   );
 }
 
-// ── Page export with Suspense boundary for useSearchParams ──────────────────
+// ── Page export with Suspense boundary ─────────────────────────────────────
 
 export default function ConfirmedPage() {
   return (
