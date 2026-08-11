@@ -112,15 +112,21 @@ export interface CreateRecipeError {
 // Client
 // ---------------------------------------------------------------------------
 
+export interface CreateRecipeOptions {
+  readonly fetchImpl?: typeof fetch;
+}
+
 export async function createRecipe(
   payload: RecipeFormPayload,
   imageFile: File,
+  options: CreateRecipeOptions = {},
 ): Promise<CreateRecipeResult | CreateRecipeError> {
+  const fetchImpl = options.fetchImpl ?? fetch;
   const formData = new FormData();
   formData.append("recipe", JSON.stringify(payload));
   formData.append("image", imageFile);
 
-  const response = await fetch(`${getChefmateApiUrl()}/api/v1/operations/catalog/meals`, {
+  const response = await fetchImpl(`${getChefmateApiUrl()}/api/v1/operations/catalog/meals`, {
     method: "POST",
     credentials: "include",
     body: formData,

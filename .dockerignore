@@ -1,0 +1,14 @@
+.git
+.claude
+.codex
+.agents
+node_modules
+**/node_modules
+**/.next
+coverage
+test-results
+playwright-report
+.env
+.env.*
+!.env.example
+*.log
