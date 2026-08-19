@@ -98,8 +98,13 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # No `--with-deps`: on GitHub-hosted `ubuntu-latest` the system packages
+      # Playwright needs are already baked into the image, and running
+      # `apt-get` here has repeatedly stalled the job with no output (observed
+      # twice on run 32229719312 after the browser cache expired). Browser
+      # binaries themselves are still downloaded and cached below.
       - name: Install Playwright browsers
-        run: pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit
+        run: pnpm --filter @chefmate/web exec playwright install chromium webkit
 
       - name: Cache Next.js build
         uses: actions/cache@v6
