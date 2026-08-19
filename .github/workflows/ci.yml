@@ -98,8 +98,34 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # `--with-deps` is required: the ubuntu-24.04 runner image does not ship
+      # the GTK4/gstreamer libraries Playwright's chromium/webkit need (e2e
+      # failed with "Host system is missing dependencies" without it, run
+      # 32234212807).
+      #
+      # Reliability: `azure.archive.ubuntu.com` has been unreachable from
+      # GitHub runners (observed 2026-08-19, runs 32229719312/32234749000),
+      # which makes apt-get hang until timeout and leaves an apt-get holding
+      # the dpkg lock, failing immediate retries. So: point apt at the primary
+      # Ubuntu mirror, kill any orphaned apt-get before retrying, cap each
+      # attempt, and retry. Remove the mirror override once Azure mirrors
+      # recover.
       - name: Install Playwright browsers
-        run: pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit
+        run: |
+          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' \
+            /etc/apt/sources.list \
+            /etc/apt/sources.list.d/ubuntu.sources \
+            /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          for attempt in 1 2 3; do
+            if timeout 300 pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit; then
+              exit 0
+            fi
+            sudo pkill -9 apt-get || true
+            sudo pkill -9 dpkg || true
+            sleep 5
+            echo "playwright install attempt ${attempt} failed; retrying"
+          done
+          exit 1
 
       - name: Cache Next.js build
         uses: actions/cache@v6

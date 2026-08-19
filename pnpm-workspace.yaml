@@ -32,4 +32,7 @@ overrides:
   brace-expansion@1: ^1.1.18
   brace-expansion@5: ^5.0.9
   js-yaml: ^4.3.1
-  nanoid: ^3.3.17
+  #   nanoid:  next → postcss reaches nanoid@3.3.17, vulnerable to
+  #            GHSA-2v37-7h3g-55p8 (high, unbounded loop when size is 0).
+  #            Patched in 3.3.18.
+  nanoid: ^3.3.18
