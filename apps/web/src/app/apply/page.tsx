@@ -177,6 +177,13 @@ export default function ApplyLandingPage() {
             Chef Agreement
           </Link>
           {" · "}
+          <Link
+            href="/legal/chef-terms-preview"
+            className="font-semibold text-amber-700 hover:underline"
+          >
+            Chef Terms Draft
+          </Link>
+          {" · "}
           <Link href="/legal/code-of-conduct" className="hover:underline">
             Code of Conduct
           </Link>

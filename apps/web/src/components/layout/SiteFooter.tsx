@@ -35,6 +35,12 @@ export function SiteFooter() {
                 Chef Agreement
               </Link>
               <Link
+                href="/legal/chef-terms-preview"
+                className="font-semibold text-amber-700 transition-colors hover:text-amber-900"
+              >
+                Chef Terms Draft
+              </Link>
+              <Link
                 href="/legal/code-of-conduct"
                 className="transition-colors hover:text-[var(--color-charcoal)]"
               >
