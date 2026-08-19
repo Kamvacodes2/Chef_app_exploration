@@ -17,28 +17,10 @@ export function SiteFooter() {
           <div className="flex items-center gap-6">
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[var(--color-charcoal)]/50">
               <Link
-                href="/legal/terms"
-                className="transition-colors hover:text-[var(--color-charcoal)]"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/legal/privacy"
-                className="transition-colors hover:text-[var(--color-charcoal)]"
-              >
-                Privacy
-              </Link>
-              <Link
                 href="/legal/chef-agreement"
                 className="transition-colors hover:text-[var(--color-charcoal)]"
               >
-                Chef Agreement
-              </Link>
-              <Link
-                href="/legal/chef-terms-preview"
-                className="font-semibold text-amber-700 transition-colors hover:text-amber-900"
-              >
-                Chef Terms Draft
+                Chef Terms
               </Link>
               <Link
                 href="/legal/code-of-conduct"
@@ -52,10 +34,40 @@ export function SiteFooter() {
               >
                 Customer Terms
               </Link>
+              <Link
+                href="/legal/platform-rules"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Platform Rules
+              </Link>
+              <Link
+                href="/legal/complaints-handling"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Complaints
+              </Link>
+              <Link
+                href="/legal/review-and-ratings"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Reviews and Ratings
+              </Link>
+              <Link
+                href="/legal/privacy"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Privacy
+              </Link>
+              <Link
+                href="/legal/terms"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Website Terms
+              </Link>
             </nav>
             <div className="flex items-center gap-3 border-l border-[var(--color-oxblood)]/10 pl-4">
               <a
-                href="https://www.instagram.com/chefmateza"
+                href="https://www.instagram.com/chefmateza?igsh=dndsblwkxaTg3bGo3"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="ChefMate on Instagram"
@@ -64,7 +76,7 @@ export function SiteFooter() {
                 <IconInstagram width={18} height={18} />
               </a>
               <a
-                href="https://www.tiktok.com/@chef.mate.za"
+                href="https://www.tiktok.com/@chef.mate.za?_r=1&_t=ZS-98iVM9J3ZVB"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="ChefMate on TikTok"

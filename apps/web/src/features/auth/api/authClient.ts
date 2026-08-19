@@ -8,7 +8,7 @@ const authUserSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(1),
   roles: z.array(platformRoleSchema),
-  status: z.enum(["ACTIVE", "SUSPENDED"]),
+  status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
   emailVerifiedAt: z.string().nullable(),
   createdAt: z.string(),
 });

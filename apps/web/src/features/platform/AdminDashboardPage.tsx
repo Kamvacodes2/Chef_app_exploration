@@ -1,6 +1,14 @@
 "use client";
 
-import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { getCurrentUser, type AuthenticatedUser } from "@/features/auth/api/authClient";
 import { FeaturedMealsPanel } from "./FeaturedMealsPanel";
 import {
   fetchAdminDashboard,
@@ -13,8 +21,12 @@ import {
   logWhatsAppPreview,
   markChefApplicationInterviewConducted,
   updateChefApplication,
+  updateChefApplicationVerification,
   type AdminDashboard,
   type ChefApplication,
+  type ChefApplicationVerificationInput,
+  type ChefVerificationOutcome,
+  type ChefVerificationStatus,
   type ChefSummary,
   type CommunicationLog,
   type PlatformUser,
@@ -34,6 +46,19 @@ type SectionId = (typeof SECTIONS)[number]["id"];
 
 const DEFAULT_SECTION: SectionId = "applications";
 
+const HURU_PORTAL_URL = "https://portal.huru.co.za/";
+const VERIFICATION_STATUSES: readonly ChefVerificationStatus[] = [
+  "CONSENTED",
+  "PENDING",
+  "REVIEW_REQUIRED",
+  "PASSED",
+  "NOT_CLEARED",
+  "ERROR",
+  "EXPIRED",
+  "CANCELLED",
+];
+const VERIFICATION_OUTCOMES: readonly ChefVerificationOutcome[] = ["CLEAR", "HIT", "INCONCLUSIVE"];
+
 export function AdminDashboardPage() {
   const [activeSection, setActiveSection] = useState<SectionId>(DEFAULT_SECTION);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
@@ -45,26 +70,37 @@ export function AdminDashboardPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const isAdmin = currentUser?.roles.includes("ADMIN") === true;
 
   const load = async (): Promise<void> => {
     setBusy("load");
     setError(null);
     try {
-      const [nextDashboard, nextApplications, nextCustomers, nextChefs, nextComms, nextMeals] =
-        await Promise.all([
-          fetchAdminDashboard(),
-          fetchChefApplications(),
-          fetchCustomers(),
-          fetchChefs(),
-          fetchCommunicationLogs(),
-          fetchPopularMeals(),
-        ]);
+      const [
+        nextDashboard,
+        nextApplications,
+        nextCustomers,
+        nextChefs,
+        nextComms,
+        nextMeals,
+        user,
+      ] = await Promise.all([
+        fetchAdminDashboard(),
+        fetchChefApplications(),
+        fetchCustomers(),
+        fetchChefs(),
+        fetchCommunicationLogs(),
+        fetchPopularMeals(),
+        getCurrentUser(),
+      ]);
       setDashboard(nextDashboard);
       setApplications(nextApplications);
       setCustomers(nextCustomers);
       setChefs(nextChefs);
       setCommunications(nextComms);
       setPopularMeals(nextMeals);
+      setCurrentUser(user);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not load the admin dashboard.");
     } finally {
@@ -97,7 +133,25 @@ export function AdminDashboardPage() {
     });
   };
 
+  const recordVerification = (
+    application: ChefApplication,
+    input: ChefApplicationVerificationInput,
+  ): void => {
+    if (!isAdmin || !application.verification) return;
+    void run("verification-" + application.id, async () => {
+      const updated = await updateChefApplicationVerification(application.id, input);
+      setApplications((current) => replaceApplication(current, updated));
+      setNotice(`${application.fullName}'s HURU verification summary was recorded.`);
+    });
+  };
+
   const approve = (application: ChefApplication): void => {
+    if (
+      application.status !== "INTERVIEW_CONDUCTED" ||
+      !hasCurrentPassedVerification(application)
+    ) {
+      return;
+    }
     void run("approve-" + application.id, async () => {
       const updated = await updateChefApplication(application.id, { status: "APPROVED" });
       setApplications((current) => replaceApplication(current, updated));
@@ -106,6 +160,7 @@ export function AdminDashboardPage() {
   };
 
   const invite = (application: ChefApplication): void => {
+    if (!hasCurrentPassedVerification(application)) return;
     if (application.status !== "APPROVED") return;
     void run("invite-" + application.id, async () => {
       const result = await inviteChefApplication(application.id);
@@ -196,6 +251,9 @@ export function AdminDashboardPage() {
                           ? ` · conducted ${formatDateTime(application.interviewConductedAt)}`
                           : ""}
                       </p>
+                      <p className="mt-2 text-sm font-semibold text-[var(--color-charcoal)]/70">
+                        {verificationGateMessage(application)}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -208,8 +266,10 @@ export function AdminDashboardPage() {
                       <Button
                         disabled={
                           application.status !== "INTERVIEW_CONDUCTED" ||
+                          !hasCurrentPassedVerification(application) ||
                           busy === "approve-" + application.id
                         }
+                        title={approvalDisabledReason(application) || undefined}
                         kind="secondary"
                         onClick={() => approve(application)}
                       >
@@ -217,14 +277,64 @@ export function AdminDashboardPage() {
                       </Button>
                       <Button
                         disabled={
-                          application.status !== "APPROVED" || busy === "invite-" + application.id
+                          application.status !== "APPROVED" ||
+                          !hasCurrentPassedVerification(application) ||
+                          busy === "invite-" + application.id
                         }
+                        title={inviteDisabledReason(application) || undefined}
                         onClick={() => invite(application)}
                       >
                         Send portal access
                       </Button>
                     </div>
                   </div>
+                  <div className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm">
+                    <p className="font-black text-[var(--color-charcoal)]">
+                      HURU verification: {formatVerificationStatus(application)}
+                    </p>
+                    {application.verification ? (
+                      <>
+                        <p className="mt-1 text-[var(--color-charcoal)]/70">
+                          Provider reference:{" "}
+                          {application.verification.providerReference || "Not recorded"}
+                          {application.verification.providerOutcome
+                            ? ` · outcome ${application.verification.providerOutcome.replaceAll("_", " ")}`
+                            : ""}
+                        </p>
+                        {application.verification.expiresAt ? (
+                          <p className="mt-1 text-[var(--color-charcoal)]/70">
+                            Expires {formatDateTime(application.verification.expiresAt)}
+                          </p>
+                        ) : null}
+                        {isAdmin ? (
+                          <a
+                            className="mt-2 inline-block font-bold text-[var(--color-oxblood)] underline"
+                            href={HURU_PORTAL_URL}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            Open HURU portal (opens in new tab)
+                          </a>
+                        ) : (
+                          <p className="mt-2 font-semibold text-[var(--color-charcoal)]/70">
+                            Verification details are read-only for your account.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 font-semibold text-amber-950">
+                        HURU workflow unavailable: no background-check consent is recorded for this
+                        application. Do not open HURU or request a check.
+                      </p>
+                    )}
+                  </div>
+                  {application.verification && isAdmin ? (
+                    <VerificationControls
+                      application={application}
+                      busy={busy === "verification-" + application.id}
+                      onSave={(input) => recordVerification(application, input)}
+                    />
+                  ) : null}
                 </article>
               ))}
             </Panel>
@@ -432,11 +542,13 @@ function Button({
   disabled = false,
   kind = "primary",
   onClick,
+  title,
 }: {
   readonly children: ReactNode;
   readonly disabled?: boolean;
   readonly kind?: "primary" | "secondary";
   readonly onClick: () => void;
+  readonly title?: string;
 }) {
   const className =
     kind === "primary"
@@ -447,6 +559,7 @@ function Button({
       className={`mt-3 min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-50 ${className}`}
       disabled={disabled}
       onClick={onClick}
+      title={title}
       type="button"
     >
       {children}
@@ -474,6 +587,189 @@ function Status({
       {children}
     </p>
   );
+}
+
+function VerificationControls({
+  application,
+  busy,
+  onSave,
+}: {
+  readonly application: ChefApplication;
+  readonly busy: boolean;
+  readonly onSave: (input: ChefApplicationVerificationInput) => void;
+}) {
+  const [status, setStatus] = useState<ChefVerificationStatus>(
+    application.verification?.status ?? "PENDING",
+  );
+  const [providerReference, setProviderReference] = useState(
+    application.verification?.providerReference ?? "",
+  );
+  const [providerOutcome, setProviderOutcome] = useState<ChefVerificationOutcome | "">(
+    application.verification?.providerOutcome ?? "",
+  );
+  const [expiresAt, setExpiresAt] = useState(
+    application.verification?.expiresAt?.slice(0, 10) ?? "",
+  );
+
+  useEffect(() => {
+    setStatus(application.verification?.status ?? "PENDING");
+    setProviderReference(application.verification?.providerReference ?? "");
+    setProviderOutcome(application.verification?.providerOutcome ?? "");
+    setExpiresAt(application.verification?.expiresAt?.slice(0, 10) ?? "");
+  }, [
+    application.verification?.expiresAt,
+    application.verification?.providerOutcome,
+    application.verification?.providerReference,
+    application.verification?.status,
+  ]);
+
+  const passedOutcomeIsValid = providerOutcome === "CLEAR" || providerOutcome === "HIT";
+  const canSavePassed = providerReference.trim().length > 0 && passedOutcomeIsValid;
+  const canSave = status !== "PASSED" || canSavePassed;
+
+  const submit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    if (!canSave) return;
+    onSave({
+      status,
+      providerReference: providerReference.trim() || null,
+      providerOutcome: providerOutcome || null,
+      expiresAt: expiresAt ? `${expiresAt}T23:59:59.999Z` : null,
+    });
+  };
+
+  const requirementsId = `verification-requirements-${application.id}`;
+
+  return (
+    <form
+      className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-4"
+      onSubmit={submit}
+    >
+      <h4 className="font-black text-[var(--color-charcoal)]">Record HURU portal result</h4>
+      <p className="mt-1 text-xs text-[var(--color-charcoal)]/65">
+        Record only the minimal portal summary. Do not enter report text, offence details, identity
+        copies, or PDF content. HIT and INCONCLUSIVE require human review and never reject an
+        applicant automatically; provider errors are neutral.
+      </p>
+      <p className="mt-1 text-xs font-semibold text-[var(--color-charcoal)]/70" id={requirementsId}>
+        PASSED requires a provider reference and a CLEAR or HIT outcome. Leave an optional field
+        blank to clear its stored value.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold text-[var(--color-charcoal)]/70">
+          Status
+          <select
+            className="mt-1 min-h-10 w-full rounded-xl border border-[var(--color-oxblood)]/15 bg-white px-3 text-sm text-[var(--color-charcoal)]"
+            onChange={(event) => setStatus(event.target.value as ChefVerificationStatus)}
+            value={status}
+          >
+            {VERIFICATION_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {value.replaceAll("_", " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-bold text-[var(--color-charcoal)]/70">
+          Provider reference
+          <input
+            aria-describedby={requirementsId}
+            className="mt-1 min-h-10 w-full rounded-xl border border-[var(--color-oxblood)]/15 px-3 text-sm"
+            onChange={(event) => setProviderReference(event.target.value)}
+            placeholder="HURU reference"
+            required={status === "PASSED"}
+            type="text"
+            value={providerReference}
+          />
+        </label>
+        <label className="text-xs font-bold text-[var(--color-charcoal)]/70">
+          Provider outcome
+          <select
+            aria-describedby={requirementsId}
+            className="mt-1 min-h-10 w-full rounded-xl border border-[var(--color-oxblood)]/15 bg-white px-3 text-sm text-[var(--color-charcoal)]"
+            onChange={(event) =>
+              setProviderOutcome(event.target.value as ChefVerificationOutcome | "")
+            }
+            required={status === "PASSED"}
+            value={providerOutcome}
+          >
+            <option value="">Not supplied</option>
+            {VERIFICATION_OUTCOMES.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-bold text-[var(--color-charcoal)]/70">
+          Expiry date (optional)
+          <input
+            className="mt-1 min-h-10 w-full rounded-xl border border-[var(--color-oxblood)]/15 px-3 text-sm"
+            onChange={(event) => setExpiresAt(event.target.value)}
+            type="date"
+            value={expiresAt}
+          />
+        </label>
+      </div>
+      <button
+        className="mt-3 min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
+        disabled={busy || !canSave}
+        type="submit"
+      >
+        {busy ? "Saving HURU result..." : "Save HURU result"}
+      </button>
+    </form>
+  );
+}
+
+function hasCurrentPassedVerification(application: ChefApplication): boolean {
+  const verification = application.verification;
+  if (verification?.status !== "PASSED") return false;
+  if (!verification.providerReference?.trim()) return false;
+  if (verification.providerOutcome !== "CLEAR" && verification.providerOutcome !== "HIT") {
+    return false;
+  }
+  if (!verification.expiresAt) return true;
+  const expiresAt = Date.parse(verification.expiresAt);
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+function formatVerificationStatus(application: ChefApplication): string {
+  if (!application.verification) return "Not recorded";
+  return `${application.verification.provider} · ${application.verification.status.replaceAll("_", " ")}`;
+}
+
+function verificationGateMessage(application: ChefApplication): string {
+  if (hasCurrentPassedVerification(application)) {
+    return "Current PASSED HURU verification recorded. Human approval remains required.";
+  }
+  if (application.verification?.status === "PASSED") {
+    if (
+      !application.verification.providerReference?.trim() ||
+      (application.verification.providerOutcome !== "CLEAR" &&
+        application.verification.providerOutcome !== "HIT")
+    ) {
+      return "Approval and portal access are blocked because the PASSED HURU verification is missing its provider reference or CLEAR/HIT outcome.";
+    }
+    return "Approval and portal access are blocked because the PASSED HURU verification has expired.";
+  }
+  return `Approval and portal access require a current PASSED HURU verification; current status is ${
+    application.verification?.status.replaceAll("_", " ") ?? "not recorded"
+  }.`;
+}
+
+function approvalDisabledReason(application: ChefApplication): string | null {
+  if (application.status !== "INTERVIEW_CONDUCTED") {
+    return "Mark the interview conducted before approval.";
+  }
+  return hasCurrentPassedVerification(application) ? null : verificationGateMessage(application);
+}
+
+function inviteDisabledReason(application: ChefApplication): string | null {
+  if (application.status !== "APPROVED") {
+    return "Approve the application before sending portal access.";
+  }
+  return hasCurrentPassedVerification(application) ? null : verificationGateMessage(application);
 }
 
 function replaceApplication(

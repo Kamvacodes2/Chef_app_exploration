@@ -1,338 +1,320 @@
 "use client";
 
-import { useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { acceptPolicy, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 
 interface PolicyAcceptanceModalProps {
   readonly policies: readonly PolicyStatusItem[];
-  readonly onComplete: () => void;
+  readonly mode?: "required" | "optional";
+  readonly onComplete: () => void | Promise<void>;
   readonly onClose?: () => void;
+  readonly onLeave?: () => void | Promise<void>;
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function PolicyAcceptanceModal({
+  mode = "required",
   policies,
   onComplete,
   onClose,
+  onLeave,
 }: PolicyAcceptanceModalProps) {
-  const unaccepted = policies.filter((p) => !p.accepted);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+  const titleId = useId();
+  const descriptionId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const busyRef = useRef(false);
+  const [acceptedLocally, setAcceptedLocally] = useState<ReadonlySet<string>>(() => new Set());
+  const [acknowledged, setAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (unaccepted.length === 0) {
-    onComplete();
-    return null;
-  }
+  const pendingPolicies = useMemo(
+    () =>
+      policies.filter(
+        (policy) =>
+          !policy.accepted && !acceptedLocally.has(`${policy.policyKey}:${policy.requiredVersion}`),
+      ),
+    [acceptedLocally, policies],
+  );
+  const current = pendingPolicies[0];
+  const currentIdentity = current
+    ? `${current.policyKey}:${current.requiredVersion}`
+    : "confirmation";
+  const processedCount = policies.filter(
+    (policy) =>
+      !policy.accepted && acceptedLocally.has(`${policy.policyKey}:${policy.requiredVersion}`),
+  ).length;
+  const totalCount = processedCount + pendingPolicies.length;
+  const dismissible = mode === "optional" && onClose !== undefined;
 
-  const current = unaccepted[currentIndex];
-  if (!current) {
-    onComplete();
-    return null;
-  }
+  useEffect(() => {
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    titleRef.current?.focus();
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target.scrollHeight - target.scrollTop - target.clientHeight < 30) {
-      setScrolledToBottom(true);
-    }
-  };
+    return () => {
+      previouslyFocusedRef.current?.focus();
+    };
+  }, []);
 
-  const handleAccept = async () => {
+  useEffect(() => {
+    setAcknowledged(false);
+    setError(null);
+    titleRef.current?.focus();
+  }, [currentIdentity]);
+
+  const completeAndConfirm = async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
+    setConfirming(true);
     setError(null);
     try {
-      await acceptPolicy(current.policyKey, "2026-08-09");
-      if (currentIndex + 1 >= unaccepted.length) {
-        onComplete();
-      } else {
-        setCurrentIndex(currentIndex + 1);
-        setScrolledToBottom(false);
-      }
+      await onComplete();
+      setConfirming(false);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to accept policy");
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Your acceptance was saved, but its status could not be confirmed.",
+      );
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
 
-  const policyLabel = policyLabels[current.policyKey] ?? current.policyKey;
+  const handleAccept = async () => {
+    if (!current || !acknowledged || busyRef.current) return;
+
+    busyRef.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      await acceptPolicy(current.policyKey, current.requiredVersion);
+      const acceptedIdentity = `${current.policyKey}:${current.requiredVersion}`;
+      setAcceptedLocally((previous) => new Set(previous).add(acceptedIdentity));
+      setAcknowledged(false);
+
+      if (pendingPolicies.length === 1) {
+        setConfirming(true);
+        await onComplete();
+        setConfirming(false);
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to accept this policy.");
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (dismissible && !busy) onClose?.();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    if (focusable.length === 0) {
+      event.preventDefault();
+      dialog.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    const activeIndex =
+      document.activeElement instanceof HTMLElement
+        ? focusable.indexOf(document.activeElement)
+        : -1;
+    if (event.shiftKey && activeIndex <= 0) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (activeIndex === -1 || document.activeElement === last)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const handleBackdrop = (event: MouseEvent<HTMLDivElement>) => {
+    if (dismissible && !busy && event.target === event.currentTarget) onClose?.();
+  };
+
+  const heading = current?.title ?? "Confirming policy status";
+  const description = current
+    ? `Policy ${Math.min(processedCount + 1, totalCount)} of ${totalCount}. Review the published document and acknowledge it to continue.`
+    : "Your acceptance has been saved. ChefMate must confirm your current policy status before continuing.";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-3xl bg-white shadow-2xl">
-        {/* Header */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onMouseDown={handleBackdrop}
+    >
+      <div
+        ref={dialogRef}
+        aria-busy={busy}
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-3xl bg-white shadow-2xl"
+        onKeyDown={handleKeyDown}
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="shrink-0 border-b border-[var(--color-oxblood)]/10 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-[var(--color-oxblood)]">{policyLabel}</h2>
-            {onClose ? (
+          <div className="flex items-start justify-between gap-4">
+            <h2
+              ref={titleRef}
+              className="text-lg font-black text-[var(--color-oxblood)] outline-none"
+              id={titleId}
+              tabIndex={-1}
+            >
+              {heading}
+            </h2>
+            {dismissible ? (
               <button
+                aria-label="Close policy review"
+                className="rounded-lg p-1 text-[var(--color-charcoal)]/50 hover:text-[var(--color-charcoal)] disabled:opacity-50"
+                disabled={busy}
                 onClick={onClose}
-                className="rounded-lg p-1 text-[var(--color-charcoal)]/40 hover:text-[var(--color-charcoal)]"
                 type="button"
               >
-                ✕
+                <span aria-hidden="true">&#10005;</span>
               </button>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-[var(--color-charcoal)]/50">
-            Please review and accept to continue · {currentIndex + 1} of {unaccepted.length}
+          <p className="mt-1 text-xs text-[var(--color-charcoal)]/60" id={descriptionId}>
+            {description}
           </p>
         </div>
 
-        {/* Content */}
-        <div
-          className="flex-1 overflow-y-auto px-6 py-4 text-sm leading-relaxed text-[var(--color-charcoal)]/70"
-          onScroll={handleScroll}
-        >
-          <PolicyContent policyKey={current.policyKey} />
+        {current ? (
+          <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-[var(--color-charcoal)]/75">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-2xl bg-[var(--color-warm-cream)] p-4">
+              <dt className="font-semibold text-[var(--color-charcoal)]">Version</dt>
+              <dd>{current.requiredVersion}</dd>
+              <dt className="font-semibold text-[var(--color-charcoal)]">Effective</dt>
+              <dd>{formatPolicyDate(current.effectiveAt)}</dd>
+            </dl>
+
+            {current.stale ? (
+              <div className="mt-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4 text-amber-950">
+                <p className="font-semibold">This policy has been updated.</p>
+                <p className="mt-1 text-xs">
+                  {current.acceptedVersion
+                    ? `Your previous acceptance was for version ${current.acceptedVersion}.`
+                    : "You have not accepted the current version."}{" "}
+                  {current.acceptedAt
+                    ? `That acceptance was recorded on ${formatPolicyDate(current.acceptedAt)}.`
+                    : null}
+                </p>
+              </div>
+            ) : null}
+
+            <a
+              className="mt-5 inline-flex rounded-xl border border-[var(--color-oxblood)] px-4 py-2.5 font-bold text-[var(--color-oxblood)] transition-colors hover:bg-[var(--color-oxblood)] hover:text-white"
+              href={current.documentPath}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Open {current.title}
+              <span className="sr-only"> in a new tab</span>
+            </a>
+
+            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-oxblood)]/15 p-4">
+              <input
+                checked={acknowledged}
+                className="mt-0.5 h-4 w-4 accent-[var(--color-oxblood)]"
+                disabled={busy}
+                onChange={(event) => setAcknowledged(event.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                I acknowledge that I have reviewed and accept {current.title} version{" "}
+                {current.requiredVersion}.
+              </span>
+            </label>
+          </div>
+        ) : (
+          <div className="flex-1 px-6 py-8 text-sm text-[var(--color-charcoal)]/75">
+            Your policy acceptance must be checked against the current server version before access
+            is restored.
+          </div>
+        )}
+
+        <div aria-atomic="true" aria-live="polite" className="min-h-0">
+          {busy ? (
+            <p className="bg-blue-50 px-6 py-2 text-xs font-semibold text-blue-900" role="status">
+              {confirming ? "Confirming current policy status..." : "Saving your acceptance..."}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="bg-red-50 px-6 py-2 text-xs font-semibold text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
 
-        {/* Error */}
-        {error ? (
-          <p className="shrink-0 bg-red-50 px-6 py-2 text-xs font-semibold text-red-800">{error}</p>
-        ) : null}
-
-        {/* Footer */}
-        <div className="shrink-0 border-t border-[var(--color-oxblood)]/10 px-6 py-4">
-          <p className="mb-3 text-xs text-[var(--color-charcoal)]/50">
-            {scrolledToBottom
-              ? "You have reviewed this document."
-              : "Please scroll to the bottom to review the full document."}
-          </p>
-          <button
-            className="w-full rounded-xl bg-[var(--color-oxblood)] py-3 text-sm font-bold text-white transition-opacity disabled:opacity-50"
-            disabled={!scrolledToBottom || busy}
-            onClick={handleAccept}
-            type="button"
-          >
-            {busy ? "Accepting..." : "I Accept"}
-          </button>
+        <div className="shrink-0 space-y-3 border-t border-[var(--color-oxblood)]/10 px-6 py-4">
+          {current ? (
+            <button
+              className="w-full rounded-xl bg-[var(--color-oxblood)] py-3 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!acknowledged || busy}
+              onClick={() => void handleAccept()}
+              type="button"
+            >
+              {busy ? "Please wait..." : `Accept version ${current.requiredVersion}`}
+            </button>
+          ) : (
+            <button
+              className="w-full rounded-xl bg-[var(--color-oxblood)] py-3 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={busy}
+              onClick={() => void completeAndConfirm()}
+              type="button"
+            >
+              {busy ? "Confirming..." : "Retry status confirmation"}
+            </button>
+          )}
+          {onLeave ? (
+            <button
+              className="w-full rounded-xl py-2 text-sm font-semibold text-[var(--color-charcoal)]/70 underline-offset-4 hover:underline disabled:opacity-50"
+              disabled={busy}
+              onClick={() => void onLeave()}
+              type="button"
+            >
+              Log out and leave the Chef Portal
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
 
-const policyLabels: Record<string, string> = {
-  chef_service_agreement: "Chef Service Provider Agreement",
-  chef_code_of_conduct: "Chef Code of Conduct",
-  customer_terms: "Customer Terms & Conditions",
-  privacy_policy: "Privacy Policy",
-  website_terms: "Website Terms of Use",
-};
-
-function PolicyContent({ policyKey }: { readonly policyKey: string }) {
-  // Inline summaries — the full legal text is at /legal/*
-  switch (policyKey) {
-    case "chef_service_agreement":
-      return (
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">
-              1. Independent Contractor Status
-            </h3>
-            <p>
-              You operate as an independent contractor, not an employee. You are responsible for
-              your own tax and compliance obligations. ChefMate does not deduct PAYE, UIF, or SDL.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">2. Booking Process</h3>
-            <p>
-              You may accept or decline bookings at your discretion. Once accepted, you are expected
-              to perform. Avoidable cancellations after acceptance are tracked — 2 in 30 days
-              triggers a warning, 3 triggers an account review.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">3. Pricing & Payment</h3>
-            <p>
-              ChefMate sets session prices. Your net payout is shown before you accept. Platform fee
-              deducted. Payouts processed weekly. Tips are 100% yours.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">4. Service Standards</h3>
-            <p>
-              Punctuality, respectful conduct, safe food handling, following the confirmed menu,
-              protecting customer property/privacy, and leaving the kitchen clean.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">5. Non-Circumvention</h3>
-            <p>
-              No off-platform payment for ChefMate-originated bookings. No direct solicitation of
-              ChefMate-introduced customers for 12 months after last booking.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">6. Enforcement</h3>
-            <p>
-              Minor issues → warning/retraining. Repeated issues → suspension. Violence, fraud,
-              discrimination, intoxication, or serious safety breaches → permanent removal. You may
-              request review of any decision.
-            </p>
-          </section>
-          <p className="text-xs text-[var(--color-charcoal)]/40">
-            Full agreement:{" "}
-            <a href="/legal/chef-agreement" className="underline" target="_blank" rel="noopener">
-              /legal/chef-agreement
-            </a>
-          </p>
-        </div>
-      );
-    case "chef_code_of_conduct":
-      return (
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">1. Brand Promise</h3>
-            <p>
-              Arrive prepared, cook safely, respect the home, clean up, leave without creating extra
-              work. &ldquo;Dinner is handled.&rdquo;
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">2. Hygiene & Food Safety</h3>
-            <p>
-              Wash hands, clean clothing, hair restraint. Do not attend if ill. Separate raw/cooked
-              foods. Control allergens. Report incidents immediately.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">3. In the Home</h3>
-            <p>
-              Use only necessary areas. No unapproved guests. No smoking, vaping, alcohol, or drugs.
-              Wash cookware, wipe surfaces, leave kitchen clean. Report breakages.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">4. Photography</h3>
-            <p>
-              No photos without explicit customer consent. No children/faces without separate
-              consent. No house numbers, security systems, or personal documents.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">5. Prohibited Conduct</h3>
-            <p>
-              Violence, harassment, theft, fraud, serious discrimination, intoxication, identity
-              sharing, deliberate property damage, or grave food-safety breaches → immediate access
-              restriction.
-            </p>
-          </section>
-          <p className="text-xs text-[var(--color-charcoal)]/40">
-            Full code:{" "}
-            <a href="/legal/code-of-conduct" className="underline" target="_blank" rel="noopener">
-              /legal/code-of-conduct
-            </a>
-          </p>
-        </div>
-      );
-    case "customer_terms":
-      return (
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">1. Platform Role</h3>
-            <p>
-              ChefMate connects you with independent chefs. We are not the chef, employer, or
-              catering provider.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">2. Cancellation</h3>
-            <p>
-              Full refund &gt;24h before. 50% charge 6-24h before. 100% charge within 6h or no-show.
-              Full refund if we cancel with no replacement.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">3. Your Obligations</h3>
-            <p>
-              Safe kitchen, working appliances, accurate allergy/dietary disclosures. An adult must
-              be reachable during the session.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">4. Allergies</h3>
-            <p>
-              Disclose all allergies/intolerances before booking. The chef works in your kitchen
-              with your ingredients — we cannot guarantee an allergen-free environment.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">5. Liability</h3>
-            <p>
-              ChefMate excludes liability for independent chef acts, customer
-              ingredients/appliances, and indirect losses, to the extent permitted by law. Consumer
-              and privacy rights are preserved.
-            </p>
-          </section>
-          <p className="text-xs text-[var(--color-charcoal)]/40">
-            Full terms:{" "}
-            <a href="/legal/customer-terms" className="underline" target="_blank" rel="noopener">
-              /legal/customer-terms
-            </a>
-          </p>
-        </div>
-      );
-    case "privacy_policy":
-      return (
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">1. What We Collect</h3>
-            <p>
-              Identity, contact, address, payment, dietary/allergy info, booking history, and device
-              data. For chefs: also qualifications, certifications, background check, and banking
-              details.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">2. How We Use It</h3>
-            <p>
-              Account management, matching/bookings, payments, safety/fraud prevention, support,
-              legal compliance. Not for unrelated purposes without consent.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">3. Sharing</h3>
-            <p>
-              Minimal sharing necessary for bookings. Customers see chef first name, photo, bio,
-              ratings. Chefs see customer first name, address, dietary/access info after acceptance.
-            </p>
-          </section>
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">4. Your Rights (POPIA)</h3>
-            <p>
-              Access, correct, delete, or object to processing of your data. Contact
-              privacy@chefmate.co.za.
-            </p>
-          </section>
-          <p className="text-xs text-[var(--color-charcoal)]/40">
-            Full policy:{" "}
-            <a href="/legal/privacy" className="underline" target="_blank" rel="noopener">
-              /legal/privacy
-            </a>
-          </p>
-        </div>
-      );
-    default:
-      return (
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-bold text-[var(--color-charcoal)]">Website Terms</h3>
-            <p>
-              By using ChefMate, you agree to our platform terms including acceptable use,
-              intellectual property, and limitation of liability provisions.
-            </p>
-          </section>
-          <p className="text-xs text-[var(--color-charcoal)]/40">
-            Full terms:{" "}
-            <a href="/legal/terms" className="underline" target="_blank" rel="noopener">
-              /legal/terms
-            </a>
-          </p>
-        </div>
-      );
-  }
+function formatPolicyDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(date);
 }

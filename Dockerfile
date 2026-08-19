@@ -15,6 +15,8 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--max-old-space-size=2048
+ENV UV_THREADPOOL_SIZE=2
 ARG NEXT_PUBLIC_CHEFMATE_API_URL=https://api.chefmate.co.za
 ARG NEXT_PUBLIC_MEALS_API_URL=https://api.chefmate.co.za
 ARG NEXT_PUBLIC_MEALS_DATA_SOURCE=http

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   acceptChefOffer,
+  acceptPolicy,
   completeChefBooking,
   consumeChefMagicLink,
   declineChefOffer,
@@ -13,6 +14,7 @@ import {
   fetchCommunicationLogs,
   fetchCustomers,
   fetchPopularMeals,
+  fetchPolicyStatus,
   inviteChefApplication,
   logWhatsAppPreview,
   markChefApplicationInterviewConducted,
@@ -20,6 +22,7 @@ import {
   platformRoleSchema,
   submitChefApplication,
   updateChefApplication,
+  updateChefApplicationVerification,
   updateChefBankDetails,
   updateChefProfile,
 } from "@/features/platform/api/platformClient";
@@ -51,6 +54,7 @@ const application = {
   rejectedAt: null,
   appliedAt: "2026-07-30T08:00:00.000Z",
   updatedAt: "2026-07-30T08:00:00.000Z",
+  verification: null,
 };
 
 const user = {
@@ -163,6 +167,7 @@ describe("platformClient", () => {
           city: application.city,
           serviceAreas: application.serviceAreas,
           experience: application.experience,
+          backgroundCheckConsent: true,
         },
         { baseUrl: "http://api.test", fetchImpl },
       ),
@@ -491,6 +496,98 @@ describe("platformClient", () => {
     );
   });
 
+  it("preserves explicit verification clears in the HURU portal update request", async () => {
+    const fetchImpl = mockFetch({
+      data: {
+        ...application,
+        verification: {
+          provider: "HURU",
+          status: "REVIEW_REQUIRED",
+          providerReference: null,
+          providerOutcome: null,
+          consentVersion: "2026-08-18",
+          consentedAt: "2026-08-12T10:00:00.000Z",
+          reviewedAt: "2026-08-19T12:00:00.000Z",
+          expiresAt: null,
+        },
+      },
+    });
+
+    await updateChefApplicationVerification(
+      "application/with space",
+      {
+        status: "REVIEW_REQUIRED",
+        providerReference: null,
+        providerOutcome: null,
+        expiresAt: null,
+      },
+      { baseUrl: "http://api.test", fetchImpl },
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = vi.mocked(fetchImpl).mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      "http://api.test/api/v1/operations/chef-applications/application%2Fwith%20space/verification",
+    );
+    expect(JSON.parse(init.body as string)).toEqual({
+      status: "REVIEW_REQUIRED",
+      providerReference: null,
+      providerOutcome: null,
+      expiresAt: null,
+    });
+  });
+
+  it("parses the server-owned rich policy status contract without losing reacceptance metadata", async () => {
+    const policyStatus = {
+      policyKey: "CHEF_TERMS",
+      title: "Chef Terms",
+      documentPath: "/legal/chef-agreement",
+      requiredVersion: "2026-08-18",
+      effectiveAt: "2026-08-18T00:00:00.000Z",
+      required: true,
+      accepted: false,
+      stale: true,
+      acceptedVersion: "2026-08-09",
+      acceptedAt: "2026-08-10T09:30:00.000Z",
+    };
+    const fetchImpl = mockFetch({ data: { items: [policyStatus] } });
+
+    await expect(fetchPolicyStatus({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual([
+      policyStatus,
+    ]);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/policies/status",
+      expect.objectContaining({ method: "GET", credentials: "include" }),
+    );
+  });
+
+  it("accepts only the policy key and server-required expected version", async () => {
+    const fetchImpl = mockFetch({
+      data: {
+        id: "acceptance-1",
+        userId: "chef-1",
+        policyKey: "CHEF_TERMS",
+        version: "2026-08-18",
+        acceptedAt: "2026-08-19T12:00:00.000Z",
+      },
+    });
+
+    await expect(
+      acceptPolicy("CHEF_TERMS", "2026-08-18", {
+        baseUrl: "http://api.test",
+        fetchImpl,
+      }),
+    ).resolves.toMatchObject({ policyKey: "CHEF_TERMS", version: "2026-08-18" });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [, init] = vi.mocked(fetchImpl).mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({
+      policyKey: "CHEF_TERMS",
+      expectedVersion: "2026-08-18",
+    });
+  });
+
   it("preserves API error messages and rejects empty API URLs", async () => {
     const failedDataRequest = vi.fn().mockResolvedValue({
       ok: false,
@@ -512,6 +609,7 @@ describe("platformClient", () => {
           city: application.city,
           serviceAreas: application.serviceAreas,
           experience: application.experience,
+          backgroundCheckConsent: true,
         },
         { baseUrl: "http://api.test", fetchImpl: failedDataRequest },
       ),

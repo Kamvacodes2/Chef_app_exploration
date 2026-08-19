@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
+import Link from "next/link";
 import {
   submitChefApplication,
   type ChefApplication,
@@ -32,6 +33,7 @@ interface FormState {
   ref2Relationship: string;
   ref2Phone: string;
   ref2Email: string;
+  backgroundCheckConsent: boolean;
 }
 
 const initialForm: FormState = {
@@ -58,6 +60,7 @@ const initialForm: FormState = {
   ref2Relationship: "",
   ref2Phone: "",
   ref2Email: "",
+  backgroundCheckConsent: false,
 };
 
 const NATIONALITIES = [
@@ -159,6 +162,10 @@ export function ChefApplicationPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form.backgroundCheckConsent) {
+      setError("You must affirm the HURU background-check consent before submitting.");
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
     try {
@@ -179,6 +186,7 @@ export function ChefApplicationPage() {
         hasOwnTransport: form.hasOwnTransport,
         experience: form.experience,
         references: buildRefs(),
+        backgroundCheckConsent: true,
       });
       setSubmitted(app);
       setForm(initialForm);
@@ -517,12 +525,107 @@ export function ChefApplicationPage() {
                 <ReviewRow label="Reference 1" value={form.ref1Name || "—"} />
                 <ReviewRow label="Reference 2" value={form.ref2Name || "—"} />
               </div>
+              <div className="mt-6 space-y-3 rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-4 text-sm text-[var(--color-charcoal)]/70">
+                <h3 className="font-black text-[var(--color-charcoal)]">Policies and screening</h3>
+                <p>
+                  Please review the current{" "}
+                  <Link
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="/legal/chef-agreement"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Chef Terms (opens in new tab)
+                  </Link>
+                  ,{" "}
+                  <Link
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="/legal/code-of-conduct"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Chef Code of Conduct (opens in new tab)
+                  </Link>
+                  ,{" "}
+                  <Link
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="/legal/privacy"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Privacy Policy (opens in new tab)
+                  </Link>
+                  , and{" "}
+                  <Link
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="/legal/platform-rules"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Platform Rules (opens in new tab)
+                  </Link>
+                  . Submitting this application does not accept those binding policies. If approved,
+                  you must accept the current versions at your first authenticated Chef portal
+                  entry.
+                </p>
+                <p id="huru-consent-notice">
+                  Chef Mate uses HURU, provided by HURU/Afiswitch, to conduct a criminal background
+                  check for platform safety and to assess your suitability to provide Chef services.
+                  HURU/Afiswitch may process your identity information, fingerprints and other
+                  biometric information, and criminal-record information through SAPS/HANIS, and may
+                  share the result with Chef Mate.
+                </p>
+                <p>
+                  A Chef Mate person reviews the result and any relevant context you provide. A HIT
+                  or INCONCLUSIVE result does not automatically reject your application, provider
+                  errors are neutral, and no adverse decision is made solely by automation. Giving
+                  consent or completing the check does not guarantee eligibility.
+                </p>
+                <p>
+                  Read the{" "}
+                  <Link
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="/legal/privacy"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Privacy Policy (opens in new tab)
+                  </Link>
+                  . Before the check request is submitted, you may withdraw consent; you may also
+                  object to further processing or ask for correction or human review by contacting{" "}
+                  <a
+                    className="font-semibold text-[var(--color-oxblood)] underline"
+                    href="mailto:privacy@chefmate.co.za"
+                  >
+                    privacy@chefmate.co.za
+                  </a>
+                  . Withdrawal may mean Chef Mate cannot complete your application.
+                </p>
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-oxblood)]/15 bg-white p-4 font-bold text-[var(--color-charcoal)]">
+                  <input
+                    aria-describedby="huru-consent-notice"
+                    checked={form.backgroundCheckConsent}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded accent-[var(--color-oxblood)]"
+                    onChange={(event) => update("backgroundCheckConsent", event.target.checked)}
+                    required
+                    type="checkbox"
+                  />
+                  <span>
+                    I affirmatively consent to Chef Mate requesting the HURU/Afiswitch background
+                    check and to the criminal-record and biometric processing and result sharing
+                    described above.
+                  </span>
+                </label>
+              </div>
             </div>
           )}
 
           {/* Error */}
           {error && (
-            <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900">
+            <p
+              className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900"
+              role="alert"
+            >
               {error}
             </p>
           )}
@@ -544,7 +647,7 @@ export function ChefApplicationPage() {
             {step === "review" ? (
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !form.backgroundCheckConsent}
                 className="min-h-12 rounded-2xl bg-[var(--color-oxblood)] px-8 text-sm font-bold text-white disabled:opacity-60"
               >
                 {isSubmitting ? "Submitting..." : "Submit application"}

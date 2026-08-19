@@ -13,13 +13,10 @@ import {
   declineChefOffer,
   markChefEnRoute,
   completeChefBooking,
-  fetchPolicyStatus,
   type ChefProfile,
   type ChefOffer,
   type ChefBooking,
-  type PolicyStatusItem,
 } from "@/features/platform/api/platformClient";
-import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -39,23 +36,19 @@ export function ChefOverview() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
-  const [showPolicyModal, setShowPolicyModal] = useState(false);
 
   const load = async () => {
     setBusy("load");
     setError(null);
     try {
-      const [p, o, b, pol] = await Promise.all([
+      const [p, o, b] = await Promise.all([
         fetchChefProfile(),
         fetchChefOffers(),
         fetchChefBookings(),
-        fetchPolicyStatus(),
       ]);
       setProfile(p);
       setOffers(o);
       setBookings(b);
-      setPolicyStatus(pol);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Load failed");
     } finally {
@@ -141,41 +134,6 @@ export function ChefOverview() {
       ) : null}
       {error ? (
         <p className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900">{error}</p>
-      ) : null}
-
-      {/* Policy acceptance */}
-      {policyStatus && policyStatus.some((p) => !p.accepted) ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">
-              Action Required
-            </p>
-            <p className="font-semibold text-[var(--color-charcoal)]">
-              You have pending policy documents to accept.
-            </p>
-            <p className="text-sm text-[var(--color-charcoal)]/70">
-              Accept the required agreements to keep your account in good standing.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowPolicyModal(true)}
-            className="whitespace-nowrap rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90"
-            type="button"
-          >
-            Review Now
-          </button>
-        </div>
-      ) : null}
-
-      {showPolicyModal && policyStatus ? (
-        <PolicyAcceptanceModal
-          policies={policyStatus}
-          onComplete={() => {
-            setShowPolicyModal(false);
-            void load();
-          }}
-          onClose={() => setShowPolicyModal(false)}
-        />
       ) : null}
 
       {/* Incoming offers alert */}

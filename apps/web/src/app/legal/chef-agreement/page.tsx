@@ -1,109 +1,1107 @@
-"use client";
-
+import type { ReactNode } from "react";
 import Link from "next/link";
+
+const TERMS_VERSION = "2026-08-18";
+
+const contents = [
+  ["introduction", "Introduction"],
+  ["consumer-protection-notice", "Consumer Protection Notice"],
+  ["definitions", "Definitions and Interpretation"],
+  ["relationship", "Nature of the Relationship"],
+  ["platform-access", "Platform Access"],
+  ["booking-process", "Booking Process"],
+  ["pricing-model", "Pricing Model"],
+  ["payment", "Payment"],
+  ["cancellations", "Cancellations and Refunds"],
+  ["professional-standards", "Professional Standards"],
+  ["ratings", "Ratings and Review"],
+  ["data-protection", "Data Protection"],
+  ["insurance", "Insurance"],
+  ["liability", "Limitation of Liability"],
+  ["indemnities", "Indemnities"],
+  ["non-circumvention", "Non-Circumvention"],
+  ["suspension", "Suspension and Termination"],
+  ["complaints", "Complaints Handling"],
+  ["taxes", "Taxes"],
+  ["general", "General"],
+] as const;
+
+interface TermsSectionProps {
+  readonly id: string;
+  readonly number: number;
+  readonly title: string;
+  readonly children: ReactNode;
+  readonly risk?: boolean;
+}
+
+function TermsSection({ id, number, title, children, risk = false }: TermsSectionProps) {
+  return (
+    <section id={id} className="scroll-mt-8">
+      <h2
+        className={`text-xl font-black ${risk ? "text-red-900" : "text-[var(--color-charcoal)]"}`}
+      >
+        {number}. {title}
+      </h2>
+      <div className="mt-4 space-y-4 text-[var(--color-charcoal)]/75">{children}</div>
+    </section>
+  );
+}
+
+function Clause({ number, children }: { readonly number: string; readonly children: ReactNode }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[3rem_1fr] sm:gap-3">
+      <span className="font-semibold text-[var(--color-charcoal)]/45">{number}</span>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function Definition({ term, children }: { readonly term: string; readonly children: ReactNode }) {
+  return (
+    <div className="grid gap-1 border-b border-[var(--color-oxblood)]/8 pb-3 last:border-0">
+      <dt className="font-bold text-[var(--color-charcoal)]">{term}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+const alphaListClass = "list-[lower-alpha] space-y-2 pl-6";
 
 export default function ChefAgreementPage() {
   return (
-    <article className="rounded-3xl bg-white p-8 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
+    <article
+      id="top"
+      className="rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-10"
+    >
       <Link href="/" className="mb-6 inline-block font-brand text-xl text-[var(--color-oxblood)]">
         ChefMate
       </Link>
-      <h1 className="text-3xl font-black text-[var(--color-oxblood)]">
-        Chef Service Provider Agreement
-      </h1>
-      <p className="mt-2 text-sm text-[var(--color-charcoal)]/50">Version 2026-08-09</p>
 
-      <section className="mt-8 space-y-6 text-sm leading-relaxed">
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">
-            1. Independent Contractor Status
-          </h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You operate as an independent contractor, not an employee of ChefMate. You are not
-            entitled to employee benefits such as leave, pension, or medical aid. You are
-            responsible for your own tax registration, filings, and compliance obligations. ChefMate
-            does not deduct PAYE, UIF, or SDL from your earnings.
-          </p>
-        </div>
+      <header className="rounded-2xl border border-[var(--color-oxblood)]/15 bg-[var(--color-warm-cream)] p-5">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-oxblood)]/70">
+          Binding terms
+        </p>
+        <h1 className="mt-2 text-3xl font-black text-[var(--color-oxblood)] sm:text-4xl">
+          Terms and Conditions for Chefs
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-charcoal)]/70">
+          Version {TERMS_VERSION} · Effective 18 August 2026
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-charcoal)]/70">
+          These binding Terms govern every Chef&apos;s access to and use of the Chef Mate platform.
+          The service currently supports once-off Bookings. Clauses concerning a Subscription
+          Package apply only if Chef Mate later expressly offers a package and a Customer activates
+          it.
+        </p>
+      </header>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">2. Platform Access</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            Completing onboarding does not create an unconditional right to use the platform. Access
-            is subject to eligibility, documentation, and safety requirements. ChefMate retains
-            discretion to approve, reject, or wait-list applicants based on objective criteria
-            including verification, geographic demand, and safety.
-          </p>
-        </div>
+      <nav
+        aria-label="Terms contents"
+        className="mt-10 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
+      >
+        <h2 className="text-lg font-black text-[var(--color-charcoal)]">Contents</h2>
+        <ol className="mt-4 grid list-decimal gap-x-8 gap-y-2 pl-6 text-sm sm:grid-cols-2">
+          {contents.map(([id, title]) => (
+            <li key={id}>
+              <a
+                className="text-[var(--color-oxblood)] underline-offset-2 hover:underline"
+                href={`#${id}`}
+              >
+                {title}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">3. Booking Process</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You may accept or decline booking opportunities at your discretion. Once you accept a
-            booking, you are expected to perform it. Patterns of accepting and then cancelling may
-            trigger account review. You are not penalised for declining before acceptance.
-          </p>
-        </div>
+      <div className="mt-12 space-y-12 text-sm leading-relaxed">
+        <TermsSection id="introduction" number={1} title="Introduction">
+          <Clause number="1.1">
+            <p>
+              These Terms and Conditions for Chefs (the Terms) are a binding legal agreement that
+              govern the relationship between:
+            </p>
+            <ol className={alphaListClass}>
+              <li>
+                Chef Mate Proprietary Limited, a company registered in accordance with the laws of
+                South Africa under registration number 2026/593342/07 (Chef Mate, we, us, or our);
+                and
+              </li>
+              <li>
+                any natural person who uses Chef Mate&apos;s website, application, or other
+                platforms to independently offer personal chef services to the public (Chef, you, or
+                your),
+              </li>
+            </ol>
+            <p>each a Party and collectively the Parties.</p>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">4. Pricing and Payment</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            ChefMate sets standard session prices. Your net payout is displayed before you accept
-            any booking. ChefMate deducts a platform fee. Payouts are processed weekly after
-            completed sessions. Tips are 100% yours. Chargeback losses are borne by ChefMate unless
-            caused by your fraud, non-performance, or breach.
-          </p>
-        </div>
+        <TermsSection
+          id="consumer-protection-notice"
+          number={2}
+          title="Consumer Protection Notice"
+          risk
+        >
+          <Clause number="2.1">
+            <p className="font-bold text-red-950">These Terms contain clauses which:</p>
+            <ol className={`${alphaListClass} font-bold text-red-950`}>
+              <li>limit or exclude our risk or liability;</li>
+              <li>limit or exclude your rights and remedies against us;</li>
+              <li>place various risks and liabilities on you; or</li>
+              <li>
+                require you to acknowledge and voluntarily agree with certain statements of fact.
+              </li>
+            </ol>
+          </Clause>
+          <Clause number="2.2">
+            <p className="font-bold text-red-950">
+              You must pay special attention to all the clauses in these Terms, especially those in
+              bold, as they may result in you giving up rights to bring claims against us and other
+              parties for certain losses, liabilities, or damages. We may also have claims against
+              you and hold you responsible to repay us further amounts, including costs or damages
+              that we may otherwise have to pay.
+            </p>
+          </Clause>
+          <Clause number="2.3">
+            <p>
+              To the extent that the relationship between you and Chef Mate is governed by
+              Applicable Laws, including the CPA, no provision of these Terms is intended to breach
+              those laws. All provisions must therefore be treated as limited to the extent
+              necessary to comply with Applicable Laws.
+            </p>
+          </Clause>
+          <Clause number="2.4">
+            <p>
+              These Terms must be read together with the other documents governing the CM Platform:
+            </p>
+            <ul className="list-disc space-y-2 pl-6">
+              <li>
+                <Link className="underline" href="/legal/customer-terms">
+                  Terms and Conditions for Customers
+                </Link>
+                ;
+              </li>
+              <li>
+                <Link className="underline" href="/legal/privacy">
+                  Privacy Policy
+                </Link>
+                ;
+              </li>
+              <li>
+                <Link className="underline" href="/legal/code-of-conduct">
+                  Chef Code of Conduct
+                </Link>
+                ;
+              </li>
+              <li>
+                <Link className="underline" href="/legal/platform-rules">
+                  Platform Rules
+                </Link>
+                ;
+              </li>
+              <li>
+                <Link className="underline" href="/legal/complaints-handling">
+                  Complaints Handling Process
+                </Link>
+                ; and
+              </li>
+              <li>
+                <Link className="underline" href="/legal/review-and-ratings">
+                  Review and Ratings Policy
+                </Link>
+                ,
+              </li>
+            </ul>
+            <p>collectively, the CM Policies.</p>
+          </Clause>
+          <Clause number="2.5">
+            <p>
+              The CM Policies, to the extent applicable, collectively constitute the contract
+              regulating the relationship between you and Chef Mate.
+            </p>
+          </Clause>
+          <Clause number="2.6">
+            <p>
+              Before first operational use of the authenticated Chef portal, you must expressly
+              accept the then-current applicable CM Policies, including these Terms. Registering or
+              submitting an application alone does not constitute that acceptance.
+            </p>
+          </Clause>
+          <Clause number="2.7">
+            <p>
+              To the extent of any inconsistency between these Terms and Applicable Laws, the
+              Applicable Laws prevail.
+            </p>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">5. Service Standards</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You agree to maintain professional standards: punctuality, respectful conduct, safe and
-            hygienic food handling, following the confirmed menu and dietary requirements,
-            reasonable communication, protecting customer property and privacy, and leaving the
-            kitchen clean at session end.
-          </p>
-        </div>
+        <TermsSection id="definitions" number={3} title="Definitions and Interpretation">
+          <Clause number="3.1">
+            <p>
+              In these Terms, the following words and phrases have the meanings assigned to them
+              unless the context requires otherwise:
+            </p>
+            <dl className="mt-4 space-y-3">
+              <Definition term="Applicable Fees">
+                any fees, charges, or costs payable by you under these Terms or any CM Policies,
+                including the Commission, transaction fees, and administrative charges, as
+                determined and published by us from time to time;
+              </Definition>
+              <Definition term="Applicable Laws">
+                any national legislation, statutes, ordinances, laws, regulations, by-laws, common
+                law, binding judgments, directives, codes, orders, or other requirements of a
+                legally constituted public authority in force at any time in South Africa;
+              </Definition>
+              <Definition term="Authority">
+                any government, regulatory, or statutory body or authority, whether national,
+                provincial, or local, having jurisdiction over the subject matter of these Terms;
+              </Definition>
+              <Definition term="Booking">
+                a confirmed engagement between a Chef and a Customer for Services at a specified
+                date, time, and location, whether once-off or a session forming part of a
+                Subscription Package;
+              </Definition>
+              <Definition term="Business Day">
+                any day other than a Saturday, Sunday, or official public holiday in South Africa;
+              </Definition>
+              <Definition term="Chef Fee">
+                65% of the Total Price payable to the Chef for a Fulfilled Booking, less any other
+                Applicable Fees expressly disclosed and lawfully due under these Terms;
+              </Definition>
+              <Definition term="CM Account">
+                the registered account created by you to offer and manage the Services;
+              </Definition>
+              <Definition term="CM Platform">
+                the website at{" "}
+                <a className="underline" href="https://chefmate.co.za">
+                  chefmate.co.za
+                </a>
+                , application, or any other platform offered and operated by Chef Mate that enables
+                Chefs to offer Services;
+              </Definition>
+              <Definition term="CM Policies">
+                these Terms, the Terms and Conditions for Customers, Privacy Policy, Platform Rules,
+                Complaints Handling Process, Review and Ratings Policy, and other standards, codes,
+                and rules governing your use of the CM Platform or relationship with us, as amended
+                from time to time;
+              </Definition>
+              <Definition term="Commission">
+                35% of the Total Price payable to Chef Mate for each Fulfilled Booking. The
+                corresponding Chef Fee is 65% of the Total Price;
+              </Definition>
+              <Definition term="CPA">
+                the Consumer Protection Act 68 of 2008 and its regulations;
+              </Definition>
+              <Definition term="Customer">
+                a natural person registered on the CM Platform who engages, or seeks to engage, a
+                Chef for Services;
+              </Definition>
+              <Definition term="Customer Personal Information">
+                Personal Information relating to Customers;
+              </Definition>
+              <Definition term="Customer Premises">
+                the location specified for performance of the Services, including facilities,
+                equipment, utensils, and other property made available to the Chef there;
+              </Definition>
+              <Definition term="Foodstuffs Act">
+                the Foodstuffs, Cosmetics and Disinfectants Act 54 of 1972 and its regulations;
+              </Definition>
+              <Definition term="Force Majeure">
+                an event or circumstance beyond a Party&apos;s reasonable control, including natural
+                disasters, epidemics, pandemics, civil unrest, war, terrorism, government action,
+                power failures, internet or telecommunications failures, or another event that could
+                not reasonably have been foreseen or prevented;
+              </Definition>
+              <Definition term="Fulfilled Booking">
+                a Booking for which the Chef completed the Services in accordance with these Terms;
+              </Definition>
+              <Definition term="Hygiene Regulations">
+                the Regulations Governing General Hygiene Requirements for Food Premises, the
+                Transport of Food and Related Matters, 2018, published under the Foodstuffs Act;
+              </Definition>
+              <Definition term="Payout">
+                payment of the Chef Fee to you following a Fulfilled Booking, less deductions
+                authorised under these Terms;
+              </Definition>
+              <Definition term="Personal Information">the meaning given in POPIA;</Definition>
+              <Definition term="Platform Rules">
+                rules governing conduct on the CM Platform, published and amended by Chef Mate from
+                time to time;
+              </Definition>
+              <Definition term="POPIA">
+                the Protection of Personal Information Act 4 of 2013 and its regulations;
+              </Definition>
+              <Definition term="Primary Chef">
+                if a Subscription Package is expressly offered and activated, the Chef selected by
+                the Customer for that package, subject to the Customer&apos;s right to approve or
+                refuse any proposed replacement;
+              </Definition>
+              <Definition term="Privacy Policy">
+                Chef Mate&apos;s privacy policy, as amended from time to time, available at{" "}
+                <Link className="underline" href="/legal/privacy">
+                  /legal/privacy
+                </Link>
+                ;
+              </Definition>
+              <Definition term="Restricted Period">
+                12 months from the date on which you last provided Services to a Customer through
+                the CM Platform;
+              </Definition>
+              <Definition term="Services">
+                personal chef services offered through the CM Platform, including meal planning,
+                meal preparation, cooking, and related services described in the relevant Booking;
+              </Definition>
+              <Definition term="Subscription Package">
+                a multi-Booking package that applies only if Chef Mate expressly offers it and a
+                Customer activates it. Chef Mate does not currently offer Subscription Packages;
+              </Definition>
+              <Definition term="Substitute Chef">
+                a Chef proposed to perform a Booking in place of the originally assigned Chef, who
+                may be appointed only after the Customer has expressly accepted that substitute;
+              </Definition>
+              <Definition term="Total Price">
+                the total amount payable by a Customer for a Booking, inclusive of VAT where
+                applicable, as determined and published by Chef Mate;
+              </Definition>
+              <Definition term="VAT">value-added tax levied under the VAT Act;</Definition>
+              <Definition term="VAT Act">
+                the Value-Added Tax Act 89 of 1991 and its regulations.
+              </Definition>
+            </dl>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">6. Cancellation Policy</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            Avoidable cancellations after acceptance are tracked. After 2 cancellations in a rolling
-            30-day period, you receive a warning. After 3, your account may be temporarily paused
-            for review. Genuine emergencies (illness, death, family emergency) are excluded.
-          </p>
-        </div>
+        <TermsSection id="relationship" number={4} title="Nature of the Relationship">
+          <Clause number="4.1">
+            <p>
+              As a Chef using the CM Platform, you are not an employee, agent, joint venturer, or
+              partner of Chef Mate.
+            </p>
+          </Clause>
+          <Clause number="4.2">
+            <p>
+              You are an independent service provider entering into direct contractual relationships
+              with Customers and are entirely responsible for the quality, legality, and execution
+              of the Services.
+            </p>
+          </Clause>
+          <Clause number="4.3">
+            <p>
+              Chef Mate is not a party to the contract between Chefs and Customers for Services.
+              Chef Mate operates and administers the CM Platform, including facilitating
+              introductions, managing Bookings, establishing and administering pricing, processing
+              payments, providing communication tools, and administering complaints. Pricing
+              administration is a marketplace-governance function and does not constitute
+              operational control over or supervision of how you perform the Services.
+            </p>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">7. Food Safety</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You are responsible for safe food handling, cooking, and contamination control during
-            the session. You must report any food safety incident immediately. ChefMate may
-            temporarily pause your access while a serious safety concern is investigated.
-          </p>
-        </div>
+        <TermsSection id="platform-access" number={5} title="Platform Access">
+          <Clause number="5.1">
+            <p>
+              Access to the CM Platform is subject to our application, identity-verification, and
+              background-screening process and to continued compliance with these Terms.
+            </p>
+          </Clause>
+          <Clause number="5.2">
+            <p>To access the CM Platform, you must:</p>
+            <ol className={alphaListClass}>
+              <li>be at least 18 years old;</li>
+              <li>
+                hold a culinary qualification from a registered institution or possess sufficient
+                verifiable cooking experience, as reasonably determined by us;
+              </li>
+              <li>
+                be adequately trained in food-safety and hygiene principles and keep that training
+                current; and
+              </li>
+              <li>complete the required HURU/Afiswitch criminal background check.</li>
+            </ol>
+          </Clause>
+          <Clause number="5.3">
+            <p>
+              We request a HURU/Afiswitch criminal background check only after obtaining your
+              affirmative, purpose-specific consent. The check may involve fingerprints, biometric
+              information, criminal-record information, and verification against SAPS and HANIS
+              records. These are special personal information and are processed as described in the
+              Privacy Policy. We do not conduct these checks on minors.
+            </p>
+          </Clause>
+          <Clause number="5.4">
+            <p>
+              A trained person reviews a returned result in context before any adverse access
+              decision. No rejection, suspension, or termination is made solely by automated
+              processing. You may provide relevant context, challenge inaccurate information, or
+              exercise an applicable objection or withdrawal right before a final decision, subject
+              to lawful processing already completed and our ability to require a check as a
+              proportionate safety condition for platform access.
+            </p>
+          </Clause>
+          <Clause number="5.5">
+            <p>
+              You must cooperate with reasonable initial and ongoing verification requests, provide
+              accurate identity, qualification, certification, and background information, keep your
+              CM Account details current, and promptly disclose a material change that affects
+              eligibility or safety. Any re-check will require the consent and human-review
+              safeguards described above.
+            </p>
+          </Clause>
+          <Clause number="5.6">
+            <p>
+              Meeting eligibility criteria does not create an unconditional right of access. After
+              human review, we may approve, reject, restrict, suspend, or terminate access for a
+              lawful, reasonable ground, including materially false information, failure to meet a
+              safety or verification requirement, unsafe or unlawful conduct, a credible complaint
+              or investigation, or a direction from an Authority. We will provide reasons and a fair
+              opportunity to respond where reasonably possible, unless urgent safety or legal
+              circumstances prevent prior engagement.
+            </p>
+          </Clause>
+          <Clause number="5.7">
+            <p>
+              All application and verification information is processed under our{" "}
+              <Link className="underline" href="/legal/privacy">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">8. Non-Circumvention</h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            You agree not to accept off-platform payment for a ChefMate-originated booking or to
-            directly solicit a customer introduced through ChefMate for 12 months after the last
-            ChefMate booking. Pre-existing customer relationships are excluded.
-          </p>
-        </div>
+        <TermsSection id="booking-process" number={6} title="Booking Process">
+          <Clause number="6.1">
+            <p>
+              When a Customer requests a Booking, you have 15 minutes from the issue of an offer to
+              accept or decline it. An offer may cease to be available earlier if another eligible
+              Chef accepts first.
+            </p>
+          </Clause>
+          <Clause number="6.2">
+            <p>
+              You have complete discretion whether to accept or decline a Booking. We do not impose
+              mandatory minimum Bookings, and you will not be penalised for declining before
+              acceptance.
+            </p>
+          </Clause>
+          <Clause number="6.3">
+            <p>
+              You may pause your profile at any time, during which you will not receive new Booking
+              requests. We may deactivate or remove profiles inactive for a continuous period of
+              three months after giving reasonable prior notice.
+            </p>
+          </Clause>
+          <Clause number="6.4">
+            <p>
+              A Booking is confirmed when you accept the Booking and the Customer has made payment
+              for it.
+            </p>
+          </Clause>
+          <Clause number="6.5">
+            <p>
+              Once confirmed, you and the Customer are bound to the Booking. You must fulfil it or
+              cancel under clause 9.
+            </p>
+          </Clause>
+        </TermsSection>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">
-            9. Suspension and Termination
-          </h2>
-          <p className="mt-2 text-[var(--color-charcoal)]/70">
-            Minor or isolated issues result in warnings or retraining. Repeated issues, expired
-            documents, or unresolved complaints may result in temporary suspension. Violence,
-            harassment, theft, fraud, intoxication, identity sharing, serious discrimination, or
-            grave food-safety breaches may result in permanent removal.
-          </p>
-        </div>
-      </section>
+        <TermsSection id="pricing-model" number={7} title="Pricing Model">
+          <Clause number="7.1">
+            <p>
+              The CM Platform is a structured marketplace. To promote Customer confidence,
+              transparency, consistency, and ease of booking, we determine and display the Total
+              Price and Chef Fee applicable to each Booking.
+            </p>
+          </Clause>
+          <Clause number="7.2">
+            <p>
+              Your Chef Fee for a Fulfilled Booking is 65% of its Total Price. Chef Mate&apos;s
+              Commission is the remaining 35%. Any other fee or deduction must be disclosed and
+              lawfully due under these Terms.
+            </p>
+          </Clause>
+          <Clause number="7.3">
+            <p>
+              Pricing may vary based on Service duration, Booking location, complexity, promotions,
+              seasonal demand, and other reasonable factors. By accepting a Booking, you agree to
+              perform the Services for the Chef Fee displayed with that offer. If you do not agree,
+              you may decline it.
+            </p>
+          </Clause>
+          <Clause number="7.4">
+            <p>
+              The current service is once-off. Subscription pricing or Primary Chef arrangements
+              apply only if Chef Mate later expressly offers a Subscription Package and a Customer
+              activates it. The package terms and all prices must be disclosed before activation.
+            </p>
+          </Clause>
+          <Clause number="7.5">
+            <p>
+              Nothing guarantees a minimum number or frequency of Bookings, revenue, or Payouts.
+            </p>
+          </Clause>
+          <Clause number="7.6">
+            <p>
+              We may change pricing for future offers after reasonable notice, but may not change
+              the Chef Fee for a confirmed Booking without your agreement.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="payment" number={8} title="Payment">
+          <Clause number="8.1">
+            <p>
+              You appoint Chef Mate as your limited payment-collection agent to accept and process
+              Customer funds for Bookings. Customer payment through the CM Platform is treated as
+              payment to you for the relevant Services.
+            </p>
+          </Clause>
+          <Clause number="8.2">
+            <p>
+              For a Fulfilled Booking, the Chef Fee is 65% of the Total Price and the Commission is
+              35%, subject only to another Applicable Fee expressly disclosed and lawfully due.
+            </p>
+          </Clause>
+          <Clause number="8.3">
+            <p>
+              We process Payouts each Monday for eligible Bookings completed by Sunday at 23:59:59
+              South African Standard Time (SAST). A Booking completed on Monday enters the following
+              Monday&apos;s processing cycle. Processing is the instruction or release of funds by
+              Chef Mate; receipt in your bank account may occur later because bank processing times
+              are outside our control.
+            </p>
+          </Clause>
+          <Clause number="8.4">
+            <p>
+              Eligibility for a Payout requires completion of the Booking, successful receipt of
+              Customer funds, accurate validated bank details, and no lawful hold or adjustment.
+              Provide current bank and compliance information when reasonably requested.
+            </p>
+          </Clause>
+          <Clause number="8.5">
+            <p>
+              We may place a reasonable temporary hold on a Payout while a person investigates
+              suspected fraud, a material complaint, a refund, a legal requirement, or a payment
+              failure. We will communicate the reason and review the hold manually where lawful and
+              reasonably possible.
+            </p>
+          </Clause>
+          <Clause number="8.6">
+            <p>
+              You authorise us to recover an amount lawfully due under the CM Policies from future
+              Payouts, including an agreed or finally determined refund or adjustment. We will not
+              treat a disputed amount as finally due without considering your response through the
+              complaints process.
+            </p>
+          </Clause>
+          <Clause number="8.7">
+            <p>
+              Banking details and Payout information are processed under our{" "}
+              <Link className="underline" href="/legal/privacy">
+                Privacy Policy
+              </Link>
+              . You are responsible for loss caused by banking details that you supplied incorrectly
+              where Chef Mate acted with reasonable care.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="cancellations" number={9} title="Cancellations and Refunds">
+          <Clause number="9.1">
+            <p>
+              Notify Chef Mate of a cancellation as soon as reasonably possible through an available
+              support or platform channel. Cancellation decisions and charges are reviewed by a
+              person and are not represented as automatic.
+            </p>
+          </Clause>
+          <Clause number="9.2">
+            <p>
+              Customer cancellation bands are maximum starting charges: more than 24 hours before
+              the session carries no cancellation charge and a full refund; between 6 and 24 hours
+              may carry up to 50% of the Total Price; and less than 6 hours, or a Customer no-show,
+              may carry up to 100%.
+            </p>
+          </Clause>
+          <Clause number="9.3">
+            <p>
+              Every charge under clause 9.2 must be individually assessed and reasonable under
+              section 17 of the CPA, considering the nature of the Services, the notice given, the
+              reasonable potential to find another Customer through diligent efforts, losses and
+              costs avoided because of cancellation, and relevant industry practice. The band is a
+              ceiling, not an automatic fee. No cancellation fee is charged where the booked
+              beneficiary has died or is hospitalised.
+            </p>
+          </Clause>
+          <Clause number="9.4">
+            <p>
+              If you cannot perform a confirmed Booking, the Customer remains entitled to the full
+              statutory monetary remedy, including prescribed interest where applicable. The
+              Customer may instead choose a reschedule, credit, or comparable substitute, but a
+              Substitute Chef may be appointed only after the Customer expressly accepts that
+              person. There is no silent replacement.
+            </p>
+          </Clause>
+          <Clause number="9.5">
+            <p>
+              Where a monetary refund is due, Chef Mate will initiate it within five Business Days
+              after the entitlement and amount are confirmed. Initiation means sending the refund
+              instruction; it does not promise when a bank or payment provider will post the funds.
+            </p>
+          </Clause>
+          <Clause number="9.6">
+            <p>
+              The current service is once-off. Clauses 9.7 to 9.9 apply only if Chef Mate later
+              expressly offers a Subscription Package and the Customer activates it.
+            </p>
+          </Clause>
+          <Clause number="9.7">
+            <p>
+              An activated fixed-term Subscription Package has the term expressly disclosed at
+              activation and, unless the Customer expressly agrees otherwise where lawful, a maximum
+              term of 24 months. The Customer may cancel it on 20 Business Days&apos; notice,
+              subject only to a reasonable CPA-compliant cancellation charge assessed on the
+              remaining package, value already supplied, avoided costs, and ability to reallocate
+              capacity.
+            </p>
+          </Clause>
+          <Clause number="9.8">
+            <p>
+              Between 80 and 40 Business Days before an activated fixed term expires, Chef Mate will
+              notify the Customer of the expiry and material continuation terms. It continues
+              month-to-month only as permitted by the CPA and the disclosed notice, and the Customer
+              may terminate that continuation on the applicable notice.
+            </p>
+          </Clause>
+          <Clause number="9.9">
+            <p>
+              Each scheduled subscription session remains subject to the individualized section 17
+              rules in clauses 9.2 and 9.3. If a Primary Chef cannot perform, the Customer chooses
+              between a comparable accepted Substitute Chef, rescheduling, credit, or refund. No
+              substitute or new Primary Chef is appointed without the Customer&apos;s express
+              acceptance.
+            </p>
+          </Clause>
+          <Clause number="9.10">
+            <p>
+              A cancellation may affect the Chef Fee or Payout only to the extent permitted by the
+              Customer Terms, the CPA, and a fair determination through the complaints process.
+              Nothing in this clause limits any statutory right or remedy.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="professional-standards" number={10} title="Professional Standards">
+          <Clause number="10.1">
+            <p>
+              You must perform Services with the professionalism, skill, and care reasonably
+              expected of a competent culinary professional, having regard to the Booking and
+              reasonable Customer expectations.
+            </p>
+          </Clause>
+          <Clause number="10.2">
+            <p>
+              You must perform Services personally and may not delegate or subcontract them. If you
+              cannot fulfil a confirmed Booking, notify us immediately. Chef Mate may propose a
+              comparable Substitute Chef, reschedule, credit, or refund, but only the Customer may
+              choose the remedy and expressly accept a Substitute Chef. A failure to perform or give
+              timely notice may lead to a Payout adjustment or action under clause 17 only after
+              proportionate human review.
+            </p>
+          </Clause>
+          <Clause number="10.3">
+            <p>
+              You are responsible for compliance with food-safety and hygiene requirements under
+              Applicable Laws, including the Foodstuffs Act and Hygiene Regulations.
+            </p>
+          </Clause>
+          <Clause number="10.4">
+            <p>
+              You must comply with dietary restrictions and allergies provided by the Customer. If
+              unable to do so, inform the Customer and decline the request. Failure to comply during
+              performance is a material breach and may result in immediate suspension under clause
+              17.
+            </p>
+          </Clause>
+          <Clause number="10.5">
+            <p>
+              You must respect the Customer Premises and may be held responsible by the Customer for
+              damage caused by your actions while providing Services.
+            </p>
+          </Clause>
+          <Clause number="10.6">
+            <p>
+              You may not engage in offensive or illegal behaviour. Unsafe, discriminatory conduct
+              or violations of Customer privacy or property may result in immediate suspension under
+              clause 17.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="ratings" number={11} title="Ratings and Review">
+          <Clause number="11.1">
+            <p>
+              A Customer or Chef may submit a rating or review only for a Booking that Chef Mate can
+              verify through platform records, and only under the{" "}
+              <Link className="underline" href="/legal/review-and-ratings">
+                Review and Ratings Policy
+              </Link>
+              .
+            </p>
+          </Clause>
+          <Clause number="11.2">
+            <p>
+              Reviews may be moderated or removed after human assessment for illegality, abuse,
+              irrelevant personal information, fraud, manipulation, or another ground in that
+              policy. Moderation and account consequences are not automatic.
+            </p>
+          </Clause>
+          <Clause number="11.3">
+            <p>
+              You may report a review, supply context, and request a human appeal. Review history
+              may inform a proportionate manual account decision, but a single low rating does not
+              automatically suspend or terminate access.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="data-protection" number={12} title="Data Protection">
+          <Clause number="12.1">
+            <p>
+              During use of the CM Platform and fulfilment of Bookings, you may access Customer
+              Personal Information, including names, addresses, contact details, dietary
+              requirements, and allergy information. You are bound by POPIA and other Applicable
+              Laws and must process this information under POPIA and the Privacy Policy.
+            </p>
+          </Clause>
+          <Clause number="12.2">
+            <p>
+              You may use Customer Personal Information only to accept and fulfil the relevant
+              Booking. You may not retain, copy, share, sell, or otherwise process it beyond what is
+              strictly necessary unless Applicable Laws require this.
+            </p>
+          </Clause>
+          <Clause number="12.3">
+            <p>
+              You must maintain reasonable technical and organisational safeguards against
+              unauthorised access, loss, destruction, or damage. Notify Chef Mate immediately of any
+              actual or suspected breach and cooperate with investigation and remediation.
+            </p>
+          </Clause>
+          <Clause number="12.4">
+            <p>
+              You must cooperate with data-subject requests under POPIA. On termination, immediately
+              delete or return Customer Personal Information in your possession unless retention is
+              legally required.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="insurance" number={13} title="Insurance">
+          <Clause number="13.1">
+            <p>
+              You are responsible for considering and maintaining insurance reasonably appropriate
+              to the risks of your independent Services and for complying with any insurance
+              requirement expressly disclosed as a condition of a particular Booking.
+            </p>
+          </Clause>
+          <Clause number="13.2">
+            <p>
+              Chef Mate does not provide insurance coverage to Chefs. If we request proof of
+              insurance, a person will assess it and communicate any access consequence; no
+              insurance decision is represented as automatic.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="liability" number={14} title="Limitation of Liability" risk>
+          <Clause number="14.1">
+            <p className="font-bold text-red-950">
+              The CM Platform is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo;
+              basis. Chef Mate does not warrant that it will be uninterrupted, secure, or
+              error-free; that any number or frequency of Bookings will be available; that Customers
+              will fulfil their obligations; or that the CM Platform will meet your specific
+              requirements or expectations.
+            </p>
+          </Clause>
+          <Clause number="14.2">
+            <p className="font-bold text-red-950">
+              Chef Mate is not liable for indirect, incidental, special, consequential, or punitive
+              damages, including loss of profits, revenue, business, opportunity, or data, however
+              arising.
+            </p>
+          </Clause>
+          <Clause number="14.3">
+            <p>
+              Nothing excludes or limits liability that cannot be excluded or limited under
+              Applicable Laws, including the CPA.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="indemnities" number={15} title="Indemnities" risk>
+          <Clause number="15.1">
+            <p className="font-bold text-red-950">
+              You indemnify and hold harmless Chef Mate, its directors, officers, employees, agents,
+              and affiliates against claims, demands, losses, damages, liabilities, costs, and
+              expenses, including reasonable attorney-and-own-client legal costs, arising from:
+            </p>
+            <ol className={`${alphaListClass} font-bold text-red-950`}>
+              <li>your performance or failure to perform Services;</li>
+              <li>your breach of these Terms or another CM Policy;</li>
+              <li>your breach of Applicable Laws, including food-safety and hygiene laws;</li>
+              <li>
+                Customer or third-party claims arising from your acts or omissions, including
+                personal injury, illness, property damage, allergic reactions, or food
+                contamination;
+              </li>
+              <li>misrepresentation of qualifications, experience, or certifications;</li>
+              <li>infringement of intellectual-property rights by content you upload; and</li>
+              <li>
+                tax, penalties, or interest imposed on Chef Mate because you failed to comply with
+                tax obligations.
+              </li>
+            </ol>
+          </Clause>
+          <Clause number="15.2">
+            <p className="font-bold text-red-950">
+              This indemnity survives termination and applies regardless of whether Chef Mate was
+              negligent or contributed to the loss, to the fullest extent permitted by Applicable
+              Laws.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="non-circumvention" number={16} title="Non-Circumvention">
+          <Clause number="16.1">
+            <p>
+              You acknowledge that the CM Platform introduces Chefs and Customers and that Chef Mate
+              invests in acquiring Customers and maintaining the marketplace. During these Terms and
+              the Restricted Period, you must not directly or indirectly:
+            </p>
+            <ol className={alphaListClass}>
+              <li>
+                solicit or approach a Customer for personal-chef, meal-preparation, or substantially
+                similar services outside the CM Platform;
+              </li>
+              <li>accept such an engagement outside the CM Platform;</li>
+              <li>encourage or help a Customer book outside the CM Platform;</li>
+              <li>provide personal contact details for arranging outside services; or</li>
+              <li>assist a third party to circumvent the CM Platform in respect of a Customer.</li>
+            </ol>
+          </Clause>
+          <Clause number="16.2">
+            <p>
+              For this clause, Customer means any person registered as a Customer at any time while
+              you were registered as a Chef, whether or not you provided Services to them.
+            </p>
+          </Clause>
+          <Clause number="16.3">
+            <p>
+              If you breach this clause, you are liable to pay Chef Mate, as a reasonable
+              pre-estimate of damages and not a penalty, the Commission that would have been payable
+              if the relevant Booking had used the CM Platform, without prejudice to other rights or
+              remedies.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="suspension" number={17} title="Suspension and Termination">
+          <Clause number="17.1">
+            <p>
+              After proportionate human review, we may restrict or suspend access where we
+              reasonably believe you materially breached a CM Policy, acted unlawfully or unsafely,
+              failed a continuing eligibility requirement, created a material safety or integrity
+              risk, or where an Authority or Applicable Law requires action.
+            </p>
+          </Clause>
+          <Clause number="17.2">
+            <p>
+              We will use reasonable efforts to give the reason, relevant information, and an
+              opportunity to respond before a decision. We may act first only where urgent safety,
+              evidence-preservation, fraud-prevention, or legal needs reasonably require it, and
+              will then review the restriction promptly.
+            </p>
+          </Clause>
+          <Clause number="17.3">
+            <p>
+              We may terminate access for a serious ground incapable of remedy or for a material
+              breach not remedied within a reasonable period after notice. Otherwise, we may
+              terminate on 10 Business Days&apos; written notice. No adverse access decision is made
+              solely by automated processing.
+            </p>
+          </Clause>
+          <Clause number="17.4">
+            <p>
+              You may terminate by requesting deactivation of your CM Account, but outstanding
+              Booking, Payout, refund, non-circumvention, data-protection, and other surviving
+              obligations remain enforceable.
+            </p>
+          </Clause>
+          <Clause number="17.5">
+            <p>
+              You may use the Complaints Handling Process to provide evidence and seek review of a
+              restriction, suspension, or termination. That process does not waive any statutory or
+              court remedy.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="complaints" number={18} title="Complaints Handling">
+          <Clause number="18.1">
+            <p>
+              Chef Mate administers a manual complaints process under the{" "}
+              <Link className="underline" href="/legal/complaints-handling">
+                Complaints Handling Process
+              </Link>
+              . You must cooperate with reasonable evidence requests and may provide your account of
+              events, supporting material, and a response to material adverse information.
+            </p>
+          </Clause>
+          <Clause number="18.2">
+            <p>
+              Chef Mate facilitates resolution and is not a court or statutory adjudicator. A person
+              may determine platform remedies, Payout adjustments, or account access under the CM
+              Policies after considering available evidence. Using the process does not waive any
+              statutory, regulatory, ombud, or court remedy.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="taxes" number={19} title="Taxes">
+          <Clause number="19.1">
+            <p>
+              You are solely responsible for registering, filing, and paying taxes arising from use
+              of the CM Platform and receipt of Payouts. Chef Mate does not determine, withhold, or
+              remit taxes unless Applicable Laws require it.
+            </p>
+          </Clause>
+          <Clause number="19.2">
+            <p>
+              If you are or become a VAT vendor, notify us immediately and provide your VAT number.
+              Your Chef Fee is consideration for a taxable supply; you must account for VAT and
+              issue required tax invoices; and Chef Mate is not liable for VAT you fail to account
+              for.
+            </p>
+          </Clause>
+          <Clause number="19.3">
+            <p>
+              If you are not VAT-registered, you warrant that turnover does not exceed the
+              compulsory-registration threshold and will notify us immediately if it does.
+            </p>
+          </Clause>
+          <Clause number="19.4">
+            <p>
+              You indemnify Chef Mate against tax, penalty, interest, or liability imposed by an
+              Authority because you failed to comply with tax obligations.
+            </p>
+          </Clause>
+        </TermsSection>
+
+        <TermsSection id="general" number={20} title="General">
+          <Clause number="20.1">
+            <p>
+              <strong>Intellectual Property:</strong> All rights in the CM Platform, including
+              software, design, trademarks, logos, trade names, content, and documentation, remain
+              Chef Mate&apos;s exclusive property. You receive no right, title, or interest in them.
+              You grant Chef Mate a non-exclusive, royalty-free, worldwide licence to use,
+              reproduce, and display content you upload for operating and promoting the CM Platform.
+              You retain ownership of original content, while ratings, reviews, and feedback may be
+              used under the CM Policies.
+            </p>
+          </Clause>
+          <Clause number="20.2">
+            <p>
+              <strong>Force Majeure:</strong> Neither Party is liable for failure or delay caused by
+              Force Majeure. The affected Party must notify the other as soon as practicable and
+              reasonably mitigate the effects. If the event continues for more than 30 Business
+              Days, either Party may terminate by written notice.
+            </p>
+          </Clause>
+          <Clause number="20.3">
+            <p>
+              <strong>Dispute Resolution:</strong> The Parties will try in good faith for at least
+              30 Business Days to resolve a dispute arising from these Terms. If unresolved, either
+              may refer it to mediation administered by the Arbitration Foundation of Southern
+              Africa under its mediation rules. If mediation fails within 14 Business Days after
+              referral, either may institute proceedings in a competent court.
+            </p>
+          </Clause>
+          <Clause number="20.4">
+            <p>
+              <strong>Governing Law and Jurisdiction:</strong> South African law governs these
+              Terms. The Parties consent to the non-exclusive jurisdiction of the High Court of
+              South Africa, Gauteng Division, Johannesburg.
+            </p>
+          </Clause>
+          <Clause number="20.5">
+            <p>
+              <strong>Contact:</strong> Notices must be written and delivered to the registered
+              email address on file and are deemed received on the Business Day after transmission.
+              Contact Chef Mate at{" "}
+              <a className="underline" href="mailto:support@chefmate.co.za">
+                support@chefmate.co.za
+              </a>
+              .
+            </p>
+          </Clause>
+          <Clause number="20.6">
+            <p>
+              <strong>Whole Agreement:</strong> These Terms and the other CM Policies are the entire
+              agreement regarding your use of the CM Platform as a Chef and supersede prior
+              negotiations, representations, warranties, and understandings on the subject.
+            </p>
+          </Clause>
+          <Clause number="20.7">
+            <p>
+              <strong>Survival:</strong> Provisions intended to survive termination do so, including
+              indemnity, data protection, non-circumvention, intellectual property, limitation of
+              liability, tax, and dispute resolution.
+            </p>
+          </Clause>
+          <Clause number="20.8">
+            <p>
+              <strong>Waiver:</strong> A failure or delay in exercising a right is not a waiver. A
+              single or partial exercise does not prevent later exercise of that or another right.
+            </p>
+          </Clause>
+          <Clause number="20.9">
+            <p>
+              <strong>Severability:</strong> If a competent court finds a provision invalid,
+              unlawful, or unenforceable, it is severed and the rest continues. The Parties will
+              negotiate a replacement that most closely achieves its commercial intention.
+            </p>
+          </Clause>
+          <Clause number="20.10">
+            <p>
+              <strong>Cession and Assignment:</strong> You may not cede, assign, or transfer rights
+              or obligations without prior written consent. Chef Mate may transfer its rights and
+              obligations to an affiliate or successor without consent if this does not materially
+              diminish your rights.
+            </p>
+          </Clause>
+          <Clause number="20.11">
+            <p>
+              <strong>Amendment:</strong> Chef Mate may amend these Terms for future use. We will
+              notify you of a material change and require acceptance of the current version before
+              further operational use of the Chef platform. A prior version remains evidence of the
+              terms accepted at that time but does not constitute acceptance of a newer version.
+            </p>
+          </Clause>
+        </TermsSection>
+      </div>
+
+      <footer className="mt-12 border-t border-[var(--color-oxblood)]/10 pt-6 text-sm text-[var(--color-charcoal)]/55">
+        <p>
+          <strong>Version:</strong> {TERMS_VERSION} · <strong>Effective:</strong> 18 August 2026
+        </p>
+        <a
+          className="mt-4 inline-block font-bold text-[var(--color-oxblood)] underline"
+          href="#top"
+        >
+          Back to top
+        </a>
+      </footer>
     </article>
   );
 }

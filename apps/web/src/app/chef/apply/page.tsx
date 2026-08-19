@@ -2,6 +2,7 @@
 
 import { BrandMark } from "@/features/hero/components/BrandMark";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export default function Page() {
   return (
@@ -15,6 +16,7 @@ export default function Page() {
         </div>
       </header>
       <ChefApplicationPage />
+      <SiteFooter />
     </>
   );
 }

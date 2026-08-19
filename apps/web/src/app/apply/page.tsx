@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { BrandMark } from "@/features/hero/components/BrandMark";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 
@@ -17,6 +17,7 @@ export default function ApplyLandingPage() {
           </div>
         </header>
         <ChefApplicationPage />
+        <SiteFooter />
       </>
     );
   }
@@ -71,7 +72,7 @@ export default function ApplyLandingPage() {
                 },
                 {
                   title: "We've got your back",
-                  desc: "Platform-level insurance cover. Safety-first policies. Support team when you need it. Vetted customers.",
+                  desc: "Clear safety policies. Human-reviewed screening. Support when you need it.",
                 },
               ].map((item) => (
                 <div
@@ -142,7 +143,7 @@ export default function ApplyLandingPage() {
                 "Cooking experience (professional or serious home cook)",
                 "Reliable transport to customers' homes",
                 "Smartphone with WhatsApp",
-                "Clean background check",
+                "Background screening with human review",
               ].map((req) => (
                 <div
                   key={req}
@@ -170,34 +171,8 @@ export default function ApplyLandingPage() {
             Apply Now
           </button>
         </section>
-
-        {/* Footer links */}
-        <footer className="border-t border-[var(--color-oxblood)]/10 bg-white px-6 py-6 text-center text-xs text-[var(--color-charcoal)]/40">
-          <Link href="/legal/chef-agreement" className="hover:underline">
-            Chef Agreement
-          </Link>
-          {" · "}
-          <Link
-            href="/legal/chef-terms-preview"
-            className="font-semibold text-amber-700 hover:underline"
-          >
-            Chef Terms Draft
-          </Link>
-          {" · "}
-          <Link href="/legal/code-of-conduct" className="hover:underline">
-            Code of Conduct
-          </Link>
-          {" · "}
-          <Link href="/legal/privacy" className="hover:underline">
-            Privacy
-          </Link>
-          {" · "}
-          <Link href="/legal/terms" className="hover:underline">
-            Terms
-          </Link>
-          {" · "}© {new Date().getFullYear()} ChefMate
-        </footer>
       </main>
+      <SiteFooter />
     </>
   );
 }

@@ -31,6 +31,7 @@ export interface ChefApplicationInput {
   readonly hasFoodSafetyCert?: boolean;
   readonly hasOwnTransport?: boolean;
   readonly references?: readonly ChefReferenceInput[] | null;
+  readonly backgroundCheckConsent: true;
 }
 
 export interface ChefApplicationUpdateInput {
@@ -39,6 +40,13 @@ export interface ChefApplicationUpdateInput {
   readonly interviewConductedAt?: string | null;
   readonly interviewConducted?: boolean;
   readonly adminNotes?: string | null;
+}
+
+export interface ChefApplicationVerificationInput {
+  readonly status: ChefVerificationStatus;
+  readonly providerReference?: string | null;
+  readonly providerOutcome?: ChefVerificationOutcome | null;
+  readonly expiresAt?: string | null;
 }
 
 export interface ChefProfileInput {
@@ -76,6 +84,30 @@ const chefApplicationStatusSchema = z.enum([
   "INVITED",
   "REJECTED",
 ]);
+
+const chefVerificationStatusSchema = z.enum([
+  "CONSENTED",
+  "PENDING",
+  "REVIEW_REQUIRED",
+  "PASSED",
+  "NOT_CLEARED",
+  "ERROR",
+  "EXPIRED",
+  "CANCELLED",
+]);
+
+const chefVerificationOutcomeSchema = z.enum(["CLEAR", "HIT", "INCONCLUSIVE"]);
+
+const chefVerificationSchema = z.object({
+  provider: z.literal("HURU"),
+  status: chefVerificationStatusSchema,
+  providerReference: z.string().nullable(),
+  providerOutcome: chefVerificationOutcomeSchema.nullable(),
+  consentVersion: z.string(),
+  consentedAt: z.string(),
+  reviewedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+});
 
 const communicationChannelSchema = z.enum(["EMAIL", "WHATSAPP"]);
 const communicationStatusSchema = z.enum(["QUEUED", "SENT", "SKIPPED", "FAILED"]);
@@ -115,6 +147,7 @@ const chefApplicationSchema = z.object({
   rejectedAt: z.string().nullable(),
   appliedAt: z.string(),
   updatedAt: z.string(),
+  verification: chefVerificationSchema.nullable(),
 });
 
 const chefProfileSchema = z.object({
@@ -269,7 +302,7 @@ export const platformRoleSchema = z.preprocess(
 );
 
 const authUserSchema = platformUserSchema.extend({
-  status: z.enum(["ACTIVE", "SUSPENDED"]),
+  status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
   roles: z.array(platformRoleSchema),
   emailVerifiedAt: z.string().nullable(),
 });
@@ -280,6 +313,9 @@ const itemsEnvelope = <Schema extends z.ZodTypeAny>(schema: Schema) =>
 
 export type ChefApplicationStatus = z.infer<typeof chefApplicationStatusSchema>;
 export type ChefApplication = z.infer<typeof chefApplicationSchema>;
+export type ChefVerificationStatus = z.infer<typeof chefVerificationStatusSchema>;
+export type ChefVerificationOutcome = z.infer<typeof chefVerificationOutcomeSchema>;
+export type ChefVerification = z.infer<typeof chefVerificationSchema>;
 export type ChefProfile = z.infer<typeof chefProfileSchema>;
 export type BankAccountPreview = z.infer<typeof bankAccountPreviewSchema>;
 export type ChefOffer = z.infer<typeof chefOfferSchema>;
@@ -512,6 +548,20 @@ export async function updateChefApplication(
   return requestData({
     path: `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}`,
     method: "PATCH",
+    body: input,
+    schema: envelope(chefApplicationSchema),
+    options,
+  });
+}
+
+export async function updateChefApplicationVerification(
+  applicationId: string,
+  input: ChefApplicationVerificationInput,
+  options: PlatformRequestOptions = {},
+): Promise<ChefApplication> {
+  return requestData({
+    path: `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/verification`,
+    method: "PUT",
     body: input,
     schema: envelope(chefApplicationSchema),
     options,
@@ -752,8 +802,14 @@ const policyAcceptanceSchema = z.object({
 
 const policyStatusSchema = z.object({
   policyKey: z.string(),
+  title: z.string(),
+  documentPath: z.string(),
+  requiredVersion: z.string(),
+  effectiveAt: z.string(),
+  required: z.boolean(),
   accepted: z.boolean(),
-  version: z.string().nullable(),
+  stale: z.boolean(),
+  acceptedVersion: z.string().nullable(),
   acceptedAt: z.string().nullable(),
 });
 
@@ -767,20 +823,26 @@ export interface PolicyAcceptResult {
 
 export interface PolicyStatusItem {
   readonly policyKey: string;
+  readonly title: string;
+  readonly documentPath: string;
+  readonly requiredVersion: string;
+  readonly effectiveAt: string;
+  readonly required: boolean;
   readonly accepted: boolean;
-  readonly version: string | null;
+  readonly stale: boolean;
+  readonly acceptedVersion: string | null;
   readonly acceptedAt: string | null;
 }
 
 export async function acceptPolicy(
   policyKey: string,
-  version: string,
+  expectedVersion: string,
   options: PlatformRequestOptions = {},
 ): Promise<PolicyAcceptResult> {
   return requestData({
     path: "/api/v1/policies/accept",
     method: "POST",
-    body: { policyKey, version },
+    body: { policyKey, expectedVersion },
     schema: envelope(policyAcceptanceSchema),
     options,
   });
@@ -794,6 +856,6 @@ export async function fetchPolicyStatus(
     method: "GET",
     schema: envelope(z.object({ items: z.array(policyStatusSchema) })),
     options,
-    select: (data) => (data as { items: PolicyStatusItem[] }).items,
+    select: (data) => data.items,
   });
 }

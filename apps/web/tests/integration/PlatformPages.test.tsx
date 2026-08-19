@@ -27,12 +27,18 @@ const api = vi.hoisted(() => ({
   markChefEnRoute: vi.fn(),
   submitChefApplication: vi.fn(),
   updateChefApplication: vi.fn(),
+  updateChefApplicationVerification: vi.fn(),
   updateChefBankDetails: vi.fn(),
   updateChefProfile: vi.fn(),
   fetchPolicyStatus: vi.fn(),
 }));
 
+const authApi = vi.hoisted(() => ({
+  getCurrentUser: vi.fn(),
+}));
+
 vi.mock("@/features/platform/api/platformClient", () => api);
+vi.mock("@/features/auth/api/authClient", () => authApi);
 
 const featuredMealsApi = vi.hoisted(() => ({
   FEATURED_MEAL_COUNT: 6,
@@ -61,6 +67,28 @@ const application = {
   rejectedAt: null,
   appliedAt: "2026-07-30T08:00:00.000Z",
   updatedAt: "2026-07-30T08:00:00.000Z",
+  verification: null,
+};
+
+const currentPassedVerification = {
+  provider: "HURU",
+  status: "PASSED",
+  providerReference: "HURU-2026-0001",
+  providerOutcome: "CLEAR",
+  consentVersion: "2026-08-18",
+  consentedAt: "2026-07-30T08:30:00.000Z",
+  reviewedAt: "2026-07-30T09:30:00.000Z",
+  expiresAt: "2099-08-18T23:59:59.999Z",
+};
+
+const adminUser = {
+  id: "admin-1",
+  email: "admin@example.test",
+  displayName: "Admin User",
+  roles: ["ADMIN"],
+  status: "ACTIVE",
+  emailVerifiedAt: "2026-07-30T08:00:00.000Z",
+  createdAt: "2026-07-30T08:00:00.000Z",
 };
 
 const chefProfile = {
@@ -131,26 +159,23 @@ const booking = {
 
 describe("platform pages", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    authApi.getCurrentUser.mockResolvedValue(adminUser);
     featuredMealsApi.fetchCatalogMeals.mockResolvedValue([]);
     window.history.replaceState(null, "", "/");
   });
 
-  it("submits chef applications into the backend pipeline", async () => {
+  it("requires affirmative HURU consent and submits the exact consented application", async () => {
     api.submitChefApplication.mockResolvedValue(application);
     render(<ChefApplicationPage />);
 
-    // Step 1: Personal Details
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Nomsa Dlamini" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nomsa@example.test" } });
     fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+278****4567" } });
     fireEvent.change(screen.getByLabelText("City"), { target: { value: "Johannesburg" } });
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
-    // Step 2: Experience & Skills — all optional, skip through
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
-
-    // Step 3: Service Area
     fireEvent.change(screen.getByLabelText("Service areas (comma-separated)"), {
       target: { value: "Fourways, Sandton" },
     });
@@ -158,17 +183,57 @@ describe("platform pages", () => {
       target: { value: "Ten years of private chef and event cooking experience." },
     });
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
-
-    // Step 4: References — optional, skip through
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
-    // Step 5: Review & Submit
-    fireEvent.click(screen.getByRole("button", { name: "Submit application" }));
+    const legalLinks = screen.getAllByRole("link", { name: /opens in new tab/ });
+    expect(legalLinks.map((link) => link.getAttribute("href"))).toEqual([
+      "/legal/chef-agreement",
+      "/legal/code-of-conduct",
+      "/legal/privacy",
+      "/legal/platform-rules",
+      "/legal/privacy",
+    ]);
+    legalLinks.forEach((link) => {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+    fireEvent.click(legalLinks[0] as HTMLElement);
+    expect(screen.getByRole("heading", { name: "Review your application" })).toBeInTheDocument();
+    expect(screen.getByText("Fourways, Sandton")).toBeInTheDocument();
+
+    const consent = screen.getByRole("checkbox", {
+      name: /I affirmatively consent to Chef Mate requesting the HURU\/Afiswitch background check/,
+    });
+    const submit = screen.getByRole("button", { name: "Submit application" });
+    expect(consent).not.toBeChecked();
+    expect(submit).toBeDisabled();
+    fireEvent.click(submit);
+    expect(api.submitChefApplication).not.toHaveBeenCalled();
+
+    fireEvent.click(consent);
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
 
     await expect(screen.findByRole("status")).resolves.toHaveTextContent("Application received");
-    expect(api.submitChefApplication).toHaveBeenCalledWith(
-      expect.objectContaining({ serviceAreas: ["Fourways", "Sandton"] }),
-    );
+    expect(api.submitChefApplication).toHaveBeenCalledWith({
+      fullName: "Nomsa Dlamini",
+      email: "nomsa@example.test",
+      phone: "+278****4567",
+      city: "Johannesburg",
+      idNumber: null,
+      dateOfBirth: null,
+      nationality: "South African",
+      yearsOfExperience: null,
+      culinaryEducation: null,
+      cuisines: [],
+      languages: ["English"],
+      serviceAreas: ["Fourways", "Sandton"],
+      hasFoodSafetyCert: false,
+      hasOwnTransport: false,
+      experience: "Ten years of private chef and event cooking experience.",
+      references: null,
+      backgroundCheckConsent: true,
+    });
   });
 
   it("consumes chef magic links and sends chefs into the portal", async () => {
@@ -269,7 +334,11 @@ describe("platform pages", () => {
       communicationsSentCount: 1,
       whatsAppReady: false,
     });
-    const approvedApplication = { ...application, status: "APPROVED" as const };
+    const approvedApplication = {
+      ...application,
+      status: "APPROVED" as const,
+      verification: currentPassedVerification,
+    };
     api.fetchChefApplications.mockResolvedValue([approvedApplication]);
     api.fetchCustomers.mockResolvedValue([
       {
@@ -355,6 +424,7 @@ describe("platform pages", () => {
       ...application,
       status: "INTERVIEW_CONDUCTED" as const,
       interviewConductedAt: "2026-07-30T09:00:00.000Z",
+      verification: currentPassedVerification,
     };
     api.fetchChefApplications.mockResolvedValue([interviewedApplication]);
     api.fetchCustomers.mockResolvedValue([]);

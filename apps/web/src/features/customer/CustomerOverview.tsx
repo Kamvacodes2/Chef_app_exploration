@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
@@ -16,6 +16,7 @@ function formatZar(cents: number): string {
 export function CustomerOverview() {
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const dashboardHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     void fetchPolicyStatus()
@@ -32,7 +33,9 @@ export function CustomerOverview() {
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/70">
           Customer Dashboard
         </p>
-        <h2 className="mt-3 text-3xl font-black">Welcome back! 👋</h2>
+        <h2 ref={dashboardHeadingRef} className="mt-3 text-3xl font-black" tabIndex={-1}>
+          Welcome back! 👋
+        </h2>
         <p className="mt-3 max-w-3xl text-white/75">Your next dinner is handled with ChefMate.</p>
       </div>
 
@@ -41,10 +44,10 @@ export function CustomerOverview() {
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">
-              Action Required
+              Policy Updates Available
             </p>
             <p className="font-semibold text-[var(--color-charcoal)]">
-              Please review and accept our updated policies.
+              Review our current policies when you are ready.
             </p>
             <p className="text-sm text-[var(--color-charcoal)]/70">
               {unacceptedCount} document{unacceptedCount > 1 ? "s" : ""} pending acceptance.
@@ -63,8 +66,14 @@ export function CustomerOverview() {
       {/* Policy modal */}
       {showPolicyModal && policyStatus ? (
         <PolicyAcceptanceModal
+          mode="optional"
           policies={policyStatus}
-          onComplete={() => setShowPolicyModal(false)}
+          onComplete={async () => {
+            const nextStatus = await fetchPolicyStatus();
+            setPolicyStatus(nextStatus);
+            setShowPolicyModal(false);
+            requestAnimationFrame(() => dashboardHeadingRef.current?.focus());
+          }}
           onClose={() => setShowPolicyModal(false)}
         />
       ) : null}
