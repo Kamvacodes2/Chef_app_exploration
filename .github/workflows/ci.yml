@@ -98,13 +98,22 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      # No `--with-deps`: on GitHub-hosted `ubuntu-latest` the system packages
-      # Playwright needs are already baked into the image, and running
-      # `apt-get` here has repeatedly stalled the job with no output (observed
-      # twice on run 32229719312 after the browser cache expired). Browser
-      # binaries themselves are still downloaded and cached below.
+      # `--with-deps` is required: the ubuntu-24.04 runner image does not ship
+      # the GTK4/gstreamer libraries Playwright's chromium/webkit need (e2e
+      # failed with "Host system is missing dependencies" without it, run
+      # 32234212807). Its `apt-get` step can stall with zero output on a busy
+      # runner, so each attempt is capped at 4 minutes and retried up to 3
+      # times; a successful run is idempotent. Browser binaries are cached
+      # separately above.
       - name: Install Playwright browsers
-        run: pnpm --filter @chefmate/web exec playwright install chromium webkit
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 240 pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit; then
+              exit 0
+            fi
+            echo "playwright install attempt ${attempt} failed; retrying"
+          done
+          exit 1
 
       - name: Cache Next.js build
         uses: actions/cache@v6
