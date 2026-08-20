@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import Home from "@/app/page";
 import { LandingPage } from "@/features/landing/LandingPage";
 
 /**
@@ -75,6 +76,17 @@ vi.mock("@/features/featured-meals/api/featuredMealsClient", () => ({
   FeaturedMealsError: class extends Error {},
 }));
 
+const FOOTER_POLICY_LINKS = [
+  ["Chef Terms", "/legal/chef-agreement"],
+  ["Code of Conduct", "/legal/code-of-conduct"],
+  ["Customer Terms", "/legal/customer-terms"],
+  ["Platform Rules", "/legal/platform-rules"],
+  ["Complaints", "/legal/complaints-handling"],
+  ["Reviews and Ratings", "/legal/review-and-ratings"],
+  ["Privacy", "/legal/privacy"],
+  ["Website Terms", "/legal/terms"],
+] as const;
+
 describe("LandingPage", () => {
   beforeEach(() => {
     Object.defineProperty(Element.prototype, "scrollIntoView", {
@@ -82,6 +94,28 @@ describe("LandingPage", () => {
       value: vi.fn(),
     });
     window.history.replaceState(null, "", "/");
+  });
+
+  it("renders the complete canonical policy and HURU disclosure footer on the homepage", () => {
+    render(<Home />);
+
+    const footer = screen.getByRole("contentinfo");
+    const policyNav = within(footer).getByRole("navigation");
+    expect(
+      within(policyNav)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual(FOOTER_POLICY_LINKS);
+
+    const verification = within(footer).getByRole("region", { name: "Chef verification" });
+    expect(
+      within(verification).getByText(
+        "Chef applicants complete required background checks directly on HURU/Afiswitch's platform. ChefMate keeps only a minimal verification record — status, provider reference, outcome, review date and expiry — for onboarding and audit. We do not store HURU reports or offence details.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(verification).getByRole("link", { name: "How we handle verification data" }),
+    ).toHaveAttribute("href", "/legal/privacy");
   });
 
   it("keeps the kitchen trust chef image in a stable landscape frame before large layouts", () => {
