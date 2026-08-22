@@ -14,8 +14,8 @@ export function SiteFooter() {
               &copy; {new Date().getFullYear()}
             </span>
           </div>
-          <div className="flex items-center gap-6">
-            <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[var(--color-charcoal)]/50">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <nav className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-[var(--color-charcoal)]/50 md:grid-cols-4 lg:flex lg:flex-wrap lg:gap-x-6">
               <Link
                 href="/legal/chef-agreement"
                 className="transition-colors hover:text-[var(--color-charcoal)]"
