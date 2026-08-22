@@ -1,12 +1,41 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type ChangeEvent, type FormEvent, useState } from "react";
 import Link from "next/link";
 import {
   submitChefApplication,
+  uploadApplicationDocument,
+  type ApplicationDocument,
   type ChefApplication,
   type ChefReferenceInput,
+  type UploadedApplicationDocument,
 } from "./api/platformClient";
+// ── Document upload ────────────────────────────────────────────
+type DocType = ApplicationDocument["docType"];
+
+const DOC_TYPES: readonly DocType[] = [
+  "ID_DOC",
+  "CV",
+  "PORTFOLIO",
+  "CERTIFICATE",
+  "FOOD_SAFETY",
+  "FIRST_AID",
+  "BACKGROUND_CHECK",
+  "OTHER",
+];
+
+const DOC_TYPE_LABELS: Record<DocType, string> = {
+  ID_DOC: "ID document",
+  CV: "CV / Résumé",
+  PORTFOLIO: "Portfolio",
+  CERTIFICATE: "Certificate",
+  FOOD_SAFETY: "Food safety",
+  FIRST_AID: "First aid",
+  BACKGROUND_CHECK: "Background check",
+  OTHER: "Other",
+};
+
+const ACCEPTED_DOC_EXTENSIONS: readonly string[] = ["pdf", "jpg", "jpeg", "png", "webp"];
 
 // ── Types ──────────────────────────────────────────────────────
 interface FormState {
@@ -34,6 +63,7 @@ interface FormState {
   ref2Phone: string;
   ref2Email: string;
   backgroundCheckConsent: boolean;
+  documents: Partial<Record<DocType, UploadedApplicationDocument>>;
 }
 
 const initialForm: FormState = {
@@ -61,6 +91,7 @@ const initialForm: FormState = {
   ref2Phone: "",
   ref2Email: "",
   backgroundCheckConsent: false,
+  documents: {},
 };
 
 const NATIONALITIES = [
@@ -92,10 +123,11 @@ const CUISINE_SUGGESTIONS = [
 
 const STEPS = [
   { id: "personal", label: "Personal", num: 1 },
-  { id: "skills", label: "Skills", num: 2 },
-  { id: "service", label: "Service", num: 3 },
-  { id: "references", label: "References", num: 4 },
-  { id: "review", label: "Review", num: 5 },
+  { id: "documents", label: "Documents", num: 2 },
+  { id: "skills", label: "Skills", num: 3 },
+  { id: "service", label: "Service", num: 4 },
+  { id: "references", label: "References", num: 5 },
+  { id: "review", label: "Review", num: 6 },
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
@@ -107,8 +139,16 @@ export function ChefApplicationPage() {
   const [submitted, setSubmitted] = useState<ChefApplication | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [docType, setDocType] = useState<DocType>("ID_DOC");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === step);
+  const documentsList: UploadedApplicationDocument[] = DOC_TYPES.flatMap((t) => {
+    const doc = form.documents[t];
+    return doc ? [doc] : [];
+  });
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -121,6 +161,48 @@ export function ChefApplicationPage() {
     const prevStep = STEPS[currentIndex - 1];
     if (prevStep) setStep(prevStep.id);
   };
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ACCEPTED_DOC_EXTENSIONS.includes(extension)) {
+      setSelectedFile(null);
+      setUploadError("Only PDF, JPEG, PNG and WebP files are accepted.");
+      e.target.value = "";
+      return;
+    }
+    setUploadError(null);
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setUploadError("Choose a file to upload first.");
+      return;
+    }
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const uploaded = await uploadApplicationDocument(docType, selectedFile);
+      setForm((f) => ({ ...f, documents: { ...f.documents, [docType]: uploaded } }));
+      setSelectedFile(null);
+    } catch (caught) {
+      setUploadError(caught instanceof Error ? caught.message : "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeDocument = (type: DocType) => {
+    setForm((f) => {
+      const next = { ...f.documents };
+      delete next[type];
+      return { ...f, documents: next };
+    });
+  };
 
   const canProgress = (): boolean => {
     switch (step) {
@@ -130,6 +212,8 @@ export function ChefApplicationPage() {
           form.email.includes("@") &&
           form.phone.trim().length >= 6
         );
+      case "documents":
+        return true; // optional
       case "skills":
         return true; // all optional
       case "service":
@@ -187,6 +271,7 @@ export function ChefApplicationPage() {
         experience: form.experience,
         references: buildRefs(),
         backgroundCheckConsent: true,
+        documents: documentsList,
       });
       setSubmitted(app);
       setForm(initialForm);
@@ -334,8 +419,92 @@ export function ChefApplicationPage() {
               </div>
             </div>
           )}
+          {/* Step 2: Documents */}
+          {step === "documents" && (
+            <div>
+              <h2 className="text-xl font-black text-[var(--color-oxblood)]">Documents</h2>
+              <p className="mb-5 mt-1 text-sm text-[var(--color-charcoal)]/50">
+                Upload supporting documents (optional). PDF, JPEG, PNG and WebP files only.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm font-bold text-[var(--color-charcoal)]">
+                  Document type
+                  <select
+                    value={docType}
+                    onChange={(e) => setDocType(e.target.value as DocType)}
+                    className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 bg-white px-4 text-base outline-none focus:border-[var(--color-terracotta)]"
+                  >
+                    {DOC_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {DOC_TYPE_LABELS[t]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-bold text-[var(--color-charcoal)]">
+                  File
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={handleFileChange}
+                    className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 bg-white px-4 text-base outline-none file:mr-3 file:rounded-xl file:border-0 file:bg-[var(--color-oxblood)]/10 file:px-4 file:py-2 file:text-sm file:font-bold file:text-[var(--color-oxblood)]"
+                  />
+                </label>
+              </div>
+              {selectedFile ? (
+                <p className="mt-3 text-sm text-[var(--color-charcoal)]/70">
+                  Selected: {selectedFile.name} ({formatBytes(selectedFile.size)})
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void handleUpload()}
+                disabled={uploading || !selectedFile}
+                className="mt-4 min-h-12 rounded-2xl bg-[var(--color-oxblood)] px-6 text-sm font-bold text-white disabled:opacity-40"
+              >
+                {uploading ? "Uploading..." : "Upload document"}
+              </button>
+              {uploadError ? (
+                <p
+                  className="mt-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900"
+                  role="alert"
+                >
+                  {uploadError}
+                </p>
+              ) : null}
+              {documentsList.length > 0 && (
+                <div className="mt-5 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-charcoal)]/50">
+                    Uploaded documents
+                  </p>
+                  {documentsList.map((doc) => (
+                    <div
+                      key={doc.docType}
+                      className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--color-warm-cream)] p-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-bold text-[var(--color-charcoal)]">
+                          {DOC_TYPE_LABELS[doc.docType]}
+                        </p>
+                        <p className="text-[var(--color-charcoal)]/60">
+                          {doc.originalName} ({formatBytes(doc.sizeBytes)})
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(doc.docType)}
+                        className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm font-bold text-[var(--color-oxblood)]"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Step 2: Skills */}
+          {/* Step 3: Skills */}
           {step === "skills" && (
             <div>
               <h2 className="text-xl font-black text-[var(--color-oxblood)]">
@@ -381,7 +550,7 @@ export function ChefApplicationPage() {
             </div>
           )}
 
-          {/* Step 3: Service */}
+          {/* Step 4: Service */}
           {step === "service" && (
             <div>
               <h2 className="text-xl font-black text-[var(--color-oxblood)]">Service Area</h2>
@@ -421,7 +590,7 @@ export function ChefApplicationPage() {
             </div>
           )}
 
-          {/* Step 4: References */}
+          {/* Step 5: References */}
           {step === "references" && (
             <div>
               <h2 className="text-xl font-black text-[var(--color-oxblood)]">References</h2>
@@ -489,7 +658,7 @@ export function ChefApplicationPage() {
             </div>
           )}
 
-          {/* Step 5: Review */}
+          {/* Step 6: Review */}
           {step === "review" && (
             <div>
               <h2 className="text-xl font-black text-[var(--color-oxblood)]">
@@ -524,6 +693,19 @@ export function ChefApplicationPage() {
                 <hr className="border-[var(--color-oxblood)]/10" />
                 <ReviewRow label="Reference 1" value={form.ref1Name || "—"} />
                 <ReviewRow label="Reference 2" value={form.ref2Name || "—"} />
+                <hr className="border-[var(--color-oxblood)]/10" />
+                <p className="font-bold text-[var(--color-charcoal)]/50">Documents</p>
+                {documentsList.length === 0 ? (
+                  <p className="text-right text-[var(--color-charcoal)]">None uploaded</p>
+                ) : (
+                  documentsList.map((doc) => (
+                    <ReviewRow
+                      key={doc.docType}
+                      label={DOC_TYPE_LABELS[doc.docType]}
+                      value={`${doc.originalName} (${formatBytes(doc.sizeBytes)})`}
+                    />
+                  ))
+                )}
               </div>
               <div className="mt-6 space-y-3 rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-4 text-sm text-[var(--color-charcoal)]/70">
                 <h3 className="font-black text-[var(--color-charcoal)]">Policies and screening</h3>
@@ -748,4 +930,17 @@ function splitCsv(v: string): string[] {
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes;
+  let unit = "KB";
+  for (const candidate of units) {
+    if (value < 1024) break;
+    value /= 1024;
+    unit = candidate;
+  }
+  return `${value.toFixed(1).replace(/\.0$/, "")} ${unit}`;
 }

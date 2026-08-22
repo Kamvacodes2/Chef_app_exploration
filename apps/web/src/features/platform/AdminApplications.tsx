@@ -4,11 +4,14 @@ import { type FormEvent, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { getCurrentUser, type AuthenticatedUser } from "@/features/auth/api/authClient";
 import {
+  applicationDocumentDownloadUrl,
   fetchChefApplications,
   inviteChefApplication,
+  listApplicationDocuments,
   markChefApplicationInterviewConducted,
   updateChefApplication,
   updateChefApplicationVerification,
+  type ApplicationDocument,
   type ChefApplication,
   type ChefApplicationVerificationInput,
   type ChefVerificationOutcome,
@@ -34,6 +37,29 @@ const VERIFICATION_STATUSES: readonly ChefVerificationStatus[] = [
   "CANCELLED",
 ];
 const VERIFICATION_OUTCOMES: readonly ChefVerificationOutcome[] = ["CLEAR", "HIT", "INCONCLUSIVE"];
+const DOC_TYPE_LABELS: Record<ApplicationDocument["docType"], string> = {
+  ID_DOC: "ID document",
+  CV: "CV / Résumé",
+  PORTFOLIO: "Portfolio",
+  CERTIFICATE: "Certificate",
+  FOOD_SAFETY: "Food safety",
+  FIRST_AID: "First aid",
+  BACKGROUND_CHECK: "Background check",
+  OTHER: "Other",
+};
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes;
+  let unit = "KB";
+  for (const candidate of units) {
+    if (value < 1024) break;
+    value /= 1024;
+    unit = candidate;
+  }
+  return `${value.toFixed(1).replace(/\.0$/, "")} ${unit}`;
+}
 
 export function AdminApplications() {
   const [applications, setApplications] = useState<ChefApplication[]>([]);
@@ -260,6 +286,7 @@ export function AdminApplications() {
                 </p>
               )}
             </div>
+            <DocumentsSection app={app} />
             {app.verification && isAdmin ? (
               <VerificationControls
                 app={app}
@@ -448,4 +475,69 @@ function approvalDisabledReason(app: ChefApplication): string | null {
 function inviteDisabledReason(app: ChefApplication): string | null {
   if (app.status !== "APPROVED") return "Approve the application before sending portal access.";
   return hasCurrentPassedVerification(app) ? null : verificationGateMessage(app);
+}
+
+function DocumentsSection({ app }: { readonly app: ChefApplication }) {
+  const [documents, setDocuments] = useState<readonly ApplicationDocument[]>(app.documents ?? []);
+  const [loading, setLoading] = useState(documents.length === 0);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    listApplicationDocuments(app.id)
+      .then((docs) => {
+        if (!cancelled) setDocuments(docs);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError("Couldn't load documents.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [app.id]);
+
+  return (
+    <div className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm">
+      <p className="font-black text-[var(--color-charcoal)]">Documents</p>
+      {loading && documents.length === 0 ? (
+        <p className="mt-1 text-[var(--color-charcoal)]/70">Loading documents...</p>
+      ) : documents.length === 0 ? (
+        <p className="mt-1 text-[var(--color-charcoal)]/70">No documents uploaded.</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {documents.map((doc) => (
+            <li
+              key={doc.id}
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1"
+            >
+              <span className="font-bold text-[var(--color-charcoal)]">
+                {DOC_TYPE_LABELS[doc.docType]}
+              </span>
+              <span className="text-[var(--color-charcoal)]/70">
+                {doc.originalName} · {formatBytes(doc.sizeBytes)}
+              </span>
+              <a
+                className="font-bold text-[var(--color-oxblood)] underline"
+                href={applicationDocumentDownloadUrl(app.id, doc.id)}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Download
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {loadError ? (
+        <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 font-semibold text-amber-950">
+          {loadError}
+        </p>
+      ) : null}
+    </div>
+  );
 }

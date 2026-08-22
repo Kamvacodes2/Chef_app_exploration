@@ -6,6 +6,7 @@ import type { ChefVerification } from "@/features/platform/api/platformClient";
 const api = vi.hoisted(() => ({
   fetchChefApplications: vi.fn(),
   inviteChefApplication: vi.fn(),
+  listApplicationDocuments: vi.fn(),
   markChefApplicationInterviewConducted: vi.fn(),
   updateChefApplication: vi.fn(),
   updateChefApplicationVerification: vi.fn(),
@@ -62,6 +63,7 @@ describe("HURU application operations", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     authApi.getCurrentUser.mockResolvedValue(adminUser);
+    api.listApplicationDocuments.mockResolvedValue([]);
   });
 
   it("enables approval and portal invitation only for the correct application stage with a current PASSED check", async () => {

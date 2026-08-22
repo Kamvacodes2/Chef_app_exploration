@@ -77,6 +77,7 @@ vi.mock("@/features/featured-meals/api/featuredMealsClient", () => ({
 }));
 
 const FOOTER_POLICY_LINKS = [
+  ["Apply to Cook", "/apply"],
   ["Chef Terms", "/legal/chef-agreement"],
   ["Code of Conduct", "/legal/code-of-conduct"],
   ["Customer Terms", "/legal/customer-terms"],

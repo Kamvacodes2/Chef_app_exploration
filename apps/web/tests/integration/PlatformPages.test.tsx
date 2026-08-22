@@ -176,6 +176,7 @@ describe("platform pages", () => {
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
     fireEvent.change(screen.getByLabelText("Service areas (comma-separated)"), {
       target: { value: "Fourways, Sandton" },
     });
@@ -233,6 +234,7 @@ describe("platform pages", () => {
       experience: "Ten years of private chef and event cooking experience.",
       references: null,
       backgroundCheckConsent: true,
+      documents: [],
     });
   });
 

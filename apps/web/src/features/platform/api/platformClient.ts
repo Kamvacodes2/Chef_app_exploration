@@ -32,6 +32,7 @@ export interface ChefApplicationInput {
   readonly hasOwnTransport?: boolean;
   readonly references?: readonly ChefReferenceInput[] | null;
   readonly backgroundCheckConsent: true;
+  readonly documents?: readonly UploadedApplicationDocument[];
 }
 
 export interface ChefApplicationUpdateInput {
@@ -129,6 +130,31 @@ const bankAccountPreviewSchema = z.object({
   accountType: z.string().nullable(),
   updatedAt: z.string(),
 });
+const applicationDocumentSchema = z.object({
+  id: z.string().min(1),
+  applicationId: z.string().min(1),
+  docType: z.enum([
+    "ID_DOC",
+    "CV",
+    "PORTFOLIO",
+    "CERTIFICATE",
+    "FOOD_SAFETY",
+    "FIRST_AID",
+    "BACKGROUND_CHECK",
+    "OTHER",
+  ]),
+  storageKey: z.string().min(1),
+  originalName: z.string().min(1),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  uploadedAt: z.string(),
+});
+
+const uploadedApplicationDocumentSchema = applicationDocumentSchema.omit({
+  id: true,
+  applicationId: true,
+  uploadedAt: true,
+});
 
 const chefApplicationSchema = z.object({
   id: z.string().min(1),
@@ -148,6 +174,7 @@ const chefApplicationSchema = z.object({
   appliedAt: z.string(),
   updatedAt: z.string(),
   verification: chefVerificationSchema.nullable(),
+  documents: z.array(applicationDocumentSchema).default([]),
 });
 
 const chefProfileSchema = z.object({
@@ -322,8 +349,54 @@ export type ChefOffer = z.infer<typeof chefOfferSchema>;
 export type ChefEarning = z.infer<typeof chefEarningSchema>;
 export type ChefBooking = z.infer<typeof chefBookingSchema>;
 export type AdminDashboard = z.infer<typeof adminDashboardSchema>;
+export type ApplicationDocument = z.infer<typeof applicationDocumentSchema>;
+export type UploadedApplicationDocument = z.infer<typeof uploadedApplicationDocumentSchema>;
 export type CommunicationLog = z.infer<typeof communicationLogSchema>;
 export type PopularMeal = z.infer<typeof popularMealSchema>;
+
+export async function uploadApplicationDocument(
+  docType: ApplicationDocument["docType"],
+  file: File,
+  options: PlatformRequestOptions = {},
+): Promise<UploadedApplicationDocument> {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  const response = await (options.fetchImpl ?? fetch)(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      `/chef-applications/documents?docType=${encodeURIComponent(docType)}`,
+    ),
+    { method: "POST", credentials: "include", body: formData },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Document upload failed (" + response.status + ")"),
+    );
+  }
+  return uploadedApplicationDocumentSchema.parse((await response.json()).data);
+}
+
+export async function listApplicationDocuments(
+  applicationId: string,
+  options: PlatformRequestOptions = {},
+): Promise<readonly ApplicationDocument[]> {
+  const response = await send(
+    `/operations/chef-applications/${encodeURIComponent(applicationId)}/documents`,
+    "GET",
+    undefined,
+    options,
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate request failed (" + response.status + ")"),
+    );
+  }
+  return itemsEnvelope(applicationDocumentSchema).parse(await response.json()).data.items;
+}
+
+export function applicationDocumentDownloadUrl(applicationId: string, documentId: string): string {
+  return `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/documents/${encodeURIComponent(documentId)}/download`;
+}
 export type PlatformUser = z.infer<typeof platformUserSchema>;
 export type ChefSummary = z.infer<typeof chefSummarySchema>;
 
