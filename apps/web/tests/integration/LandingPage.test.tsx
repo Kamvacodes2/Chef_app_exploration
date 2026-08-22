@@ -96,7 +96,7 @@ describe("LandingPage", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  it("renders the complete canonical policy and HURU disclosure footer on the homepage", () => {
+  it("renders the canonical policy footer with Privacy and no Chef verification disclosure banner", () => {
     render(<Home />);
 
     const footer = screen.getByRole("contentinfo");
@@ -107,15 +107,16 @@ describe("LandingPage", () => {
         .map((link) => [link.textContent, link.getAttribute("href")]),
     ).toEqual(FOOTER_POLICY_LINKS);
 
-    const verification = within(footer).getByRole("region", { name: "Chef verification" });
     expect(
-      within(verification).getByText(
-        "Chef applicants complete required background checks directly on HURU/Afiswitch's platform. ChefMate keeps only a minimal verification record — status, provider reference, outcome, review date and expiry — for onboarding and audit. We do not store HURU reports or offence details.",
-      ),
-    ).toBeInTheDocument();
+      within(footer).queryByRole("region", { name: "Chef verification" }),
+    ).not.toBeInTheDocument();
     expect(
-      within(verification).getByRole("link", { name: "How we handle verification data" }),
-    ).toHaveAttribute("href", "/legal/privacy");
+      within(footer).queryByRole("heading", { name: "Chef verification" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(footer).queryByRole("link", { name: "How we handle verification data" }),
+    ).not.toBeInTheDocument();
+    expect(within(footer).queryByText(/HURU\/Afiswitch/)).not.toBeInTheDocument();
   });
 
   it("keeps the kitchen trust chef image in a stable landscape frame before large layouts", () => {

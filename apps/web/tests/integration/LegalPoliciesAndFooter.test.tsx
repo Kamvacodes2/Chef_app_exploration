@@ -96,30 +96,25 @@ describe("SiteFooter legal and social destinations", () => {
     expect(within(footer).queryByRole("link", { name: /draft|preview/i })).not.toBeInTheDocument();
   });
 
-  it("states that HURU performs checks externally while ChefMate retains only verification metadata", () => {
+  it("renders no Chef verification disclosure banner while keeping the Privacy policy link", () => {
     render(<SiteFooter />);
     const footer = screen.getByRole("contentinfo");
-    const verification = within(footer).getByRole("region", { name: "Chef verification" });
 
-    expect(verification).toHaveTextContent(
-      "Chef applicants complete required background checks directly on HURU/Afiswitch's platform",
-    );
-    expect(verification).toHaveTextContent(
-      "ChefMate keeps only a minimal verification record — status, provider reference, outcome, review date and expiry — for onboarding and audit",
-    );
-    expect(verification).toHaveTextContent("We do not store HURU reports or offence details");
-    expect(verification).not.toHaveTextContent(
-      /ChefMate (?:performs|runs|conducts|completes) (?:the )?(?:required )?(?:criminal )?background checks?/i,
-    );
-    expect(verification).not.toHaveTextContent(
-      /(?:ChefMate|we) (?:stores?|keeps?|retains?) (?:the )?(?:raw )?(?:HURU\/Afiswitch )?(?:reports?|offence details)/i,
-    );
-    expect(verification).not.toHaveTextContent(
-      /automated (?:API )?integration|integrat(?:ed|es?) (?:directly )?with (?:the )?HURU\/Afiswitch API/i,
-    );
     expect(
-      within(verification).getByRole("link", { name: "How we handle verification data" }),
-    ).toHaveAttribute("href", "/legal/privacy");
+      within(footer).queryByRole("region", { name: "Chef verification" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(footer).queryByRole("heading", { name: "Chef verification" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(footer).queryByRole("link", { name: "How we handle verification data" }),
+    ).not.toBeInTheDocument();
+    expect(within(footer).queryByText(/HURU\/Afiswitch/)).not.toBeInTheDocument();
+
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute(
+      "href",
+      "/legal/privacy",
+    );
   });
 
   it("exposes the exact Instagram and TikTok destinations as labelled icon links", () => {

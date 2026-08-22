@@ -5,31 +5,6 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-[var(--color-oxblood)]/10 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-8 md:px-8">
-        <section
-          aria-labelledby="chef-verification-heading"
-          className="flex flex-col gap-3 rounded-2xl bg-[var(--color-warm-cream)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="max-w-3xl">
-            <h2
-              className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-oxblood)]"
-              id="chef-verification-heading"
-            >
-              Chef verification
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-[var(--color-charcoal)]/70">
-              Chef applicants complete required background checks directly on HURU/Afiswitch&apos;s
-              platform. ChefMate keeps only a minimal verification record — status, provider
-              reference, outcome, review date and expiry — for onboarding and audit. We do not store
-              HURU reports or offence details.
-            </p>
-          </div>
-          <Link
-            className="shrink-0 text-sm font-bold text-[var(--color-oxblood)] underline decoration-[var(--color-oxblood)]/30 underline-offset-4 hover:decoration-current"
-            href="/legal/privacy"
-          >
-            How we handle verification data
-          </Link>
-        </section>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="font-brand text-lg text-[var(--color-oxblood)]">
