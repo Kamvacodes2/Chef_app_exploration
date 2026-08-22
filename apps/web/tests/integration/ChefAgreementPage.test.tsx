@@ -61,7 +61,7 @@ describe("canonical Chef Agreement", () => {
     });
   });
 
-  it("retains the conspicuous consumer, HURU, liability, indemnity, and reacceptance protections", () => {
+  it("retains the consumer notice, eligibility, liability, indemnity, and amendment provisions", () => {
     render(<ChefAgreementPage />);
 
     expect(getTermsSection("2. Consumer Protection Notice")).toHaveTextContent(
@@ -69,19 +69,21 @@ describe("canonical Chef Agreement", () => {
     );
     const access = getTermsSection("5. Platform Access");
     expect(access).toHaveTextContent(
-      "only after obtaining your affirmative, purpose-specific consent",
+      "You must hold a culinary qualification from a registered institution",
     );
+    expect(access).toHaveTextContent("Quality Council for Trades and Occupations");
+    expect(access).toHaveTextContent("You must undergo a criminal record check");
     expect(access).toHaveTextContent(
-      "No rejection, suspension, or termination is made solely by automated processing",
+      "We retain the discretion to approve, reject, or restrict your access to the CM Platform for any lawful reason",
     );
     expect(getTermsSection("14. Limitation of Liability")).toHaveTextContent(
-      "Nothing excludes or limits liability that cannot be excluded or limited under Applicable Laws, including the CPA",
+      "Nothing in these Terms shall exclude or limit liability that cannot be excluded or limited under Applicable Laws, including the CPA",
     );
     expect(getTermsSection("15. Indemnities")).toHaveTextContent(
       "personal injury, illness, property damage, allergic reactions, or food contamination",
     );
     expect(getTermsSection("20. General")).toHaveTextContent(
-      "A prior version remains evidence of the terms accepted at that time but does not constitute acceptance of a newer version",
+      "Your continued use of the CM Platform following notification of a change shall constitute your acceptance of the amended Terms. If you do not agree with any amendment, your remedy is to discontinue use of the CM Platform and to deactivate your CM Account",
     );
   });
 });
