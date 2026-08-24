@@ -23,6 +23,12 @@ export function SiteFooter() {
                 Apply to Cook
               </Link>
               <Link
+                href="/waitlist"
+                className="font-bold text-[var(--color-oxblood)] transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                Join the Waitlist
+              </Link>
+              <Link
                 href="/legal/chef-agreement"
                 className="transition-colors hover:text-[var(--color-charcoal)]"
               >
