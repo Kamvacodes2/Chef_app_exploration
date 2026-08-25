@@ -31,6 +31,8 @@ export interface OrderState {
   readonly preferredDays: readonly PreferredDayId[];
   readonly planScheduleDeferred: boolean;
   readonly favoriteMealId: string | null;
+  /** Optional second meal for meal-prep packs (option 2). */
+  readonly secondFavoriteMealId: string | null;
   readonly favoriteMealDeferred: boolean;
   readonly goalId: GoalId | null;
   readonly main: OrderMenuItem | null;
@@ -52,6 +54,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   preferredDays: Object.freeze([]),
   planScheduleDeferred: false,
   favoriteMealId: null,
+  secondFavoriteMealId: null,
   favoriteMealDeferred: false,
   goalId: null,
   main: null,
@@ -81,6 +84,7 @@ export type OrderAction =
   | { type: "TOGGLE_PREFERRED_DAY"; day: PreferredDayId }
   | { type: "DECIDE_PLAN_DAYS" }
   | { type: "SELECT_PLAN_FAVORITE"; item: OrderMenuItem }
+  | { type: "SELECT_PLAN_SECOND_FAVORITE"; item: OrderMenuItem }
   | { type: "DECIDE_PLAN_FAVORITE" }
   | { type: "SELECT_MAIN"; item: OrderMenuItem }
   | { type: "PRESELECT_MAIN"; item: OrderMenuItem }
@@ -193,18 +197,45 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     }
     case "DECIDE_PLAN_DAYS":
       return { ...state, preferredDays: [], planScheduleDeferred: true };
-    case "SELECT_PLAN_FAVORITE":
+    case "SELECT_PLAN_FAVORITE": {
+      if (action.item.id === state.favoriteMealId) {
+        // Toggling the current option 1 off; keep option 2.
+        return {
+          ...state,
+          favoriteMealId: null,
+          main: state.main?.id === action.item.id ? null : state.main,
+          customRequest: null,
+        };
+      }
       return {
         ...state,
         favoriteMealId: action.item.id,
         favoriteMealDeferred: false,
+        // A meal can only fill one slot: if it was option 2, promote it.
+        secondFavoriteMealId:
+          state.secondFavoriteMealId === action.item.id ? null : state.secondFavoriteMealId,
         main: action.item,
         customRequest: null,
       };
+    }
+    case "SELECT_PLAN_SECOND_FAVORITE": {
+      if (action.item.id === state.secondFavoriteMealId) {
+        return { ...state, secondFavoriteMealId: null };
+      }
+      if (action.item.id === state.favoriteMealId) {
+        return state;
+      }
+      return {
+        ...state,
+        secondFavoriteMealId: action.item.id,
+        favoriteMealDeferred: false,
+      };
+    }
     case "DECIDE_PLAN_FAVORITE":
       return {
         ...state,
         favoriteMealId: null,
+        secondFavoriteMealId: null,
         favoriteMealDeferred: true,
         main: null,
         customRequest: null,

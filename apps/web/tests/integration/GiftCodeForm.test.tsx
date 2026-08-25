@@ -40,6 +40,7 @@ function Harness(): React.ReactElement {
     togglePreferredDay: () => {},
     decidePlanDays: () => {},
     selectPlanFavorite: () => {},
+    selectPlanSecondFavorite: () => {},
     decidePlanFavorite: () => {},
     selectMain: () => {},
     preselectMain: () => {},

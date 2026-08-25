@@ -51,6 +51,8 @@ export interface OrderController {
   readonly togglePreferredDay: (day: PreferredDayId) => void;
   readonly decidePlanDays: () => void;
   readonly selectPlanFavorite: (item: OrderMenuItem) => void;
+  /** Optional second meal for meal-prep packs (option 2). */
+  readonly selectPlanSecondFavorite: (item: OrderMenuItem) => void;
   readonly decidePlanFavorite: () => void;
   readonly selectMain: (item: OrderMenuItem) => void;
   /** Highlights a deep-linked meal on the meal step without advancing it. */
@@ -180,6 +182,7 @@ export function useOrderController(): OrderController {
         preferredDays: state.preferredDays,
         planScheduleDeferred: state.planScheduleDeferred,
         favoriteMealId: state.favoriteMealId,
+        secondFavoriteMealId: state.secondFavoriteMealId,
         favoriteMealDeferred: state.favoriteMealDeferred,
       }),
     [
@@ -188,6 +191,7 @@ export function useOrderController(): OrderController {
       state.dessert,
       state.favoriteMealDeferred,
       state.favoriteMealId,
+      state.secondFavoriteMealId,
       state.main,
       state.planId,
       state.planScheduleDeferred,
@@ -332,6 +336,10 @@ export function useOrderController(): OrderController {
     togglePreferredDay: useCallback((day) => dispatch({ type: "TOGGLE_PREFERRED_DAY", day }), []),
     decidePlanDays: useCallback(() => dispatch({ type: "DECIDE_PLAN_DAYS" }), []),
     selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
+    selectPlanSecondFavorite: useCallback(
+      (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
+      [],
+    ),
     decidePlanFavorite: useCallback(() => dispatch({ type: "DECIDE_PLAN_FAVORITE" }), []),
     selectMain: useCallback((item) => dispatch({ type: "SELECT_MAIN", item }), []),
     preselectMain: useCallback((item) => dispatch({ type: "PRESELECT_MAIN", item }), []),

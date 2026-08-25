@@ -161,6 +161,9 @@ export function ReviewStep(): ReactElement {
       ? state.main.name
       : (findItem(state.favoriteMealId)?.name ?? "Your selected favourite")
     : null;
+  const secondFavourite = state.secondFavoriteMealId
+    ? (findItem(state.secondFavoriteMealId)?.name ?? "Your selected second meal")
+    : null;
   const preferredDays = state.preferredDays.flatMap((dayId) => {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
     return day ? [day.label] : [];
@@ -216,6 +219,11 @@ export function ReviewStep(): ReactElement {
               <p className="text-sm text-[var(--color-bone)]/80">
                 Favourite meal: {favourite ?? "Choose each visit as you go."}
               </p>
+              {secondFavourite ? (
+                <p className="text-sm text-[var(--color-bone)]/80">
+                  Meal-prep option 2: {secondFavourite}
+                </p>
+              ) : null}
             </div>
           ) : null}
 

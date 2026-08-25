@@ -21,7 +21,20 @@ interface BookingDetail {
     readonly subtotalCents: number;
     readonly discountCents: number;
     readonly totalCents: number;
+    readonly plan?: { readonly name: string; readonly recurring: boolean };
+    readonly campaign?: { readonly campaignId: string; readonly code: string };
   };
+}
+
+interface BankDetails {
+  readonly bankName: string;
+  readonly branchName: string;
+  readonly branchCode: string;
+  readonly electronicBranchCode?: string | null;
+  readonly swiftCode?: string | null;
+  readonly accountHolder: string;
+  readonly accountNumber: string;
+  readonly accountType: string;
 }
 
 // ── Payment state helpers ──────────────────────────────────────────────────
@@ -107,6 +120,23 @@ function ConfirmedPageContent() {
   const bookingRef = searchParams.get("ref") ?? "";
 
   const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
+
+  const fetchBankDetails = useCallback(async () => {
+    try {
+      const res = await fetch(`${getChefmateApiUrl()}/api/v1/payments/bank-details`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setBankDetails(data.data ?? null);
+    } catch {
+      // Bank details are a convenience; the confirmation email carries them.
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchBankDetails();
+  }, [fetchBankDetails]);
+
   const [loading, setLoading] = useState(true);
 
   const fetchBooking = useCallback(async () => {
@@ -196,7 +226,17 @@ function ConfirmedPageContent() {
   }
 
   const paymentPending = isPaymentPending(booking.status);
-
+  const planName = booking.type === "SUBSCRIPTION" ? (booking.pricing.plan?.name ?? null) : null;
+  const welcomeHeading = planName
+    ? `Welcome to ${planName} 🤎`
+    : paymentPending
+      ? "Your Chefmate booking has been received 🤎"
+      : "Dinner is handled. 🤎";
+  const welcomeCopy = planName
+    ? "We're excited to help you truly rest when you get back from work — or when you really wished someone else would cook the groceries in your fridge before they go off. Warm, hearty meals, the kind your grandma or mom used to make."
+    : paymentPending
+      ? "Complete your bank transfer to secure your booking."
+      : "Your payment has been received and your Chefmate booking is confirmed.";
   return (
     <div className="flex min-h-[60vh] flex-col items-center gap-8 px-4 py-12 text-center">
       {/* ── Logo + heading ──────────────────────────────────────────── */}
@@ -211,13 +251,9 @@ function ConfirmedPageContent() {
           />
         </div>
         <h1 className="font-display text-3xl text-[var(--color-oxblood)] sm:text-4xl">
-          {paymentPending ? "Your Chefmate booking has been received 🤎" : "Dinner is handled. 🤎"}
+          {welcomeHeading}
         </h1>
-        <p className="max-w-md text-lg text-[var(--color-charcoal)]/70">
-          {paymentPending
-            ? "Complete your bank transfer to secure your booking."
-            : "Your payment has been received and your Chefmate booking is confirmed."}
-        </p>
+        <p className="max-w-md text-lg text-[var(--color-charcoal)]/70">{welcomeCopy}</p>
       </div>
 
       {/* ── Booking details card ────────────────────────────────────── */}
@@ -246,11 +282,31 @@ function ConfirmedPageContent() {
         <div className="w-full max-w-md rounded-3xl border-2 border-amber-200 bg-amber-50 p-6 text-left">
           <h2 className="mb-3 font-display text-lg text-amber-800">Bank transfer required</h2>
           <p className="mb-4 text-sm leading-relaxed text-amber-700">
-            Your booking is not yet confirmed. Please complete your bank transfer using the details
-            in your confirmation email, using the reference above. Once payment is received,
-            we&apos;ll confirm your cook and session.
+            Your booking is not yet confirmed. Please complete your bank transfer to secure your
+            first session using the Chefmate business details below.
           </p>
-          <p className="text-sm font-semibold text-amber-800">Reference: {booking.reference}</p>
+          {bankDetails ? (
+            <dl className="divide-y divide-amber-200 text-sm">
+              <DetailRow label="Bank">{bankDetails.bankName}</DetailRow>
+              <DetailRow label="Branch">
+                {bankDetails.branchName} ({bankDetails.branchCode})
+              </DetailRow>
+              {bankDetails.electronicBranchCode ? (
+                <DetailRow label="Electronic branch">{bankDetails.electronicBranchCode}</DetailRow>
+              ) : null}
+              {bankDetails.swiftCode ? (
+                <DetailRow label="SWIFT">{bankDetails.swiftCode}</DetailRow>
+              ) : null}
+              <DetailRow label="Account holder">{bankDetails.accountHolder}</DetailRow>
+              <DetailRow label="Account number">{bankDetails.accountNumber}</DetailRow>
+              <DetailRow label="Account type">{bankDetails.accountType}</DetailRow>
+              <DetailRow label="Payment reference">
+                <span className="font-bold text-amber-900">{booking.reference}</span>
+              </DetailRow>
+            </dl>
+          ) : (
+            <p className="text-sm font-semibold text-amber-800">Reference: {booking.reference}</p>
+          )}
         </div>
       ) : (
         /* ── What happens next (confirmed only) ──────────────────── */

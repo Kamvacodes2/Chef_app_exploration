@@ -72,6 +72,7 @@ export function buildPricingQuotePayload(
     | "preferredDays"
     | "planScheduleDeferred"
     | "favoriteMealId"
+    | "secondFavoriteMealId"
     | "favoriteMealDeferred"
   >,
 ): PricingQuotePayload | null {

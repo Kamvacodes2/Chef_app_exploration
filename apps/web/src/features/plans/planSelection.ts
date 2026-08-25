@@ -10,6 +10,7 @@ export interface PlanSelectionInput {
   readonly preferredDays: readonly PreferredDayId[];
   readonly planScheduleDeferred: boolean;
   readonly favoriteMealId: string | null;
+  readonly secondFavoriteMealId: string | null;
   readonly favoriteMealDeferred: boolean;
 }
 
@@ -26,5 +27,6 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
         : "SELECTED_DAYS"
       : "NOT_APPLICABLE",
     favoriteMealSlug: input.favoriteMealDeferred ? null : input.favoriteMealId,
+    secondFavoriteMealSlug: input.favoriteMealDeferred ? null : input.secondFavoriteMealId,
   };
 }

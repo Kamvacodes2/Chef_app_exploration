@@ -92,6 +92,8 @@ export interface ChefmatePlanSelection {
   readonly preferredDays: readonly PreferredDayId[];
   readonly schedulePreference: PlanSchedulePreference;
   readonly favoriteMealSlug: string | null;
+  /** Optional second meal for meal-prep packs. */
+  readonly secondFavoriteMealSlug: string | null;
 }
 
 export function isChefmatePlanId(value: string): value is ChefmatePlanId {

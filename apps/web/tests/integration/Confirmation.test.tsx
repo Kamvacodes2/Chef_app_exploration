@@ -46,6 +46,7 @@ function controller(overrides: Partial<OrderController> = {}): OrderController {
     togglePreferredDay: vi.fn(),
     decidePlanDays: vi.fn(),
     selectPlanFavorite: vi.fn(),
+    selectPlanSecondFavorite: vi.fn(),
     decidePlanFavorite: vi.fn(),
     selectMain: vi.fn(),
     preselectMain: vi.fn(),

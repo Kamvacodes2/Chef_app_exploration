@@ -76,6 +76,7 @@ function createController(overrides: Partial<OrderController> = {}): OrderContro
     togglePreferredDay: vi.fn(),
     decidePlanDays: vi.fn(),
     selectPlanFavorite: vi.fn(),
+    selectPlanSecondFavorite: vi.fn(),
     decidePlanFavorite: vi.fn(),
     selectMain: vi.fn(),
     preselectMain: vi.fn(),
@@ -148,6 +149,24 @@ describe("PlanFavoriteSelect", () => {
         name: "Chicken Gyro Bowl",
         course: "main",
       }),
+    );
+  });
+
+  it("fills the second meal slot for meal-prep packs", async () => {
+    const controller = renderStep({
+      state: {
+        ...INITIAL_ORDER_STATE,
+        step: "plan-favorite",
+        planId: "family",
+        favoriteMealId: "wors-pap-chakalaka",
+      },
+    });
+    await screen.findByTestId("plan-favourite-chicken-gyro-bowl");
+
+    fireEvent.click(screen.getByTestId("plan-favourite-chicken-gyro-bowl"));
+
+    expect(controller.selectPlanSecondFavorite).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "chicken-gyro-bowl" }),
     );
   });
 
