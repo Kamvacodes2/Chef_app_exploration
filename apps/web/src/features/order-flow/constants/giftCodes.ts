@@ -20,6 +20,10 @@ const GIFT_CODES: Readonly<Record<string, { discountFraction: number; label: str
       discountFraction: 0.15,
       label: "15% off applied — welcome to ChefMate!",
     }),
+    MAMA15: Object.freeze({
+      discountFraction: 0.15,
+      label: "15% off your first subscription applied",
+    }),
   });
 
 /** Normalize a code (trim + uppercase) so entry is forgiving. */

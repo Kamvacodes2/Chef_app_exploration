@@ -932,3 +932,45 @@ export async function fetchPolicyStatus(
     select: (data) => data.items,
   });
 }
+
+// ── Discount campaigns ────────────────────────────────────────────
+
+const discountCampaignSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string(),
+  description: z.string().nullable(),
+  discountType: z.enum(["PERCENTAGE", "FIXED"]),
+  discountValue: z.number(),
+  appliesTo: z.enum(["SUBSCRIPTION", "ONCE_OFF", "ALL"]),
+  firstPaymentOnly: z.boolean(),
+  active: z.boolean(),
+  startsAt: z.string().nullable(),
+  endsAt: z.string().nullable(),
+  usageLimit: z.number().nullable(),
+  usageCount: z.number(),
+  planSlugs: z.array(z.string()),
+});
+
+const discountCampaignReportRowSchema = z.object({
+  campaign: discountCampaignSchema,
+  redemptionCount: z.number(),
+  grossRevenueCents: z.number(),
+  discountIssuedCents: z.number(),
+  netRevenueCents: z.number(),
+  platformDiscountCostCents: z.number(),
+  averageOrderValueCents: z.number(),
+});
+
+export type DiscountCampaignReportRow = z.infer<typeof discountCampaignReportRowSchema>;
+
+export async function fetchDiscountCampaignReport(
+  options: PlatformRequestOptions = {},
+): Promise<DiscountCampaignReportRow[]> {
+  return requestData({
+    path: "/api/v1/discount-campaigns/admin/report",
+    method: "GET",
+    schema: envelope(z.array(discountCampaignReportRowSchema)),
+    options,
+  });
+}
