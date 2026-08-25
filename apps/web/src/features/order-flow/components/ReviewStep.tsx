@@ -160,10 +160,14 @@ export function ReviewStep(): ReactElement {
     ? state.main?.id === state.favoriteMealId
       ? state.main.name
       : (findItem(state.favoriteMealId)?.name ?? "Your selected favourite")
-    : null;
+    : state.favoriteMealLink
+      ? `Your linked meal (${state.favoriteMealLink.source.toLowerCase()})`
+      : null;
   const secondFavourite = state.secondFavoriteMealId
     ? (findItem(state.secondFavoriteMealId)?.name ?? "Your selected second meal")
-    : null;
+    : state.secondFavoriteMealLink
+      ? `Your linked meal (${state.secondFavoriteMealLink.source.toLowerCase()})`
+      : null;
   const preferredDays = state.preferredDays.flatMap((dayId) => {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
     return day ? [day.label] : [];
@@ -218,10 +222,30 @@ export function ReviewStep(): ReactElement {
               ) : null}
               <p className="text-sm text-[var(--color-bone)]/80">
                 Favourite meal: {favourite ?? "Choose each visit as you go."}
+                {state.favoriteMealLink ? (
+                  <a
+                    href={state.favoriteMealLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 underline decoration-[var(--color-bone)]/40 underline-offset-2"
+                  >
+                    view link
+                  </a>
+                ) : null}
               </p>
               {secondFavourite ? (
                 <p className="text-sm text-[var(--color-bone)]/80">
                   Meal-prep option 2: {secondFavourite}
+                  {state.secondFavoriteMealLink ? (
+                    <a
+                      href={state.secondFavoriteMealLink.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 underline decoration-[var(--color-bone)]/40 underline-offset-2"
+                    >
+                      view link
+                    </a>
+                  ) : null}
                 </p>
               ) : null}
             </div>

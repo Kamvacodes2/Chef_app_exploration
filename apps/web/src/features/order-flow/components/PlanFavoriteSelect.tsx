@@ -9,6 +9,7 @@ import { mealImage } from "@/features/meal-browser/mealPresentation";
 import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
 import { cn } from "@/lib/cn";
 import { useOrder } from "../state/OrderContext";
+import type { MealLinkSource } from "../state/orderReducer";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -22,9 +23,23 @@ const SEARCH_DEBOUNCE_MS = 250;
  * feels like the meal browser.
  */
 export function PlanFavoriteSelect(): ReactElement {
-  const { state, selectPlanFavorite, selectPlanSecondFavorite, decidePlanFavorite, reset } =
-    useOrder();
+  const {
+    state,
+    selectPlanFavorite,
+    selectPlanSecondFavorite,
+    setPlanFavoriteLink,
+    setPlanSecondFavoriteLink,
+    clearPlanFavoriteLink,
+    clearPlanSecondFavoriteLink,
+    decidePlanFavorite,
+    reset,
+  } = useOrder();
   const plan = findChefmatePlan(state.planId);
+
+  const [linkPanelOpen, setLinkPanelOpen] = useState(false);
+  const [linkSource, setLinkSource] = useState<MealLinkSource>("TIKTOK");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkSlot, setLinkSlot] = useState<"one" | "two">("one");
 
   const [meals, setMeals] = useState<readonly BrowserMeal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,11 +161,37 @@ export function PlanFavoriteSelect(): ReactElement {
           </p>
         ) : null}
 
-        {firstMeal || secondMeal ? (
+        {firstMeal || secondMeal || state.favoriteMealLink || state.secondFavoriteMealLink ? (
           <div
             className="flex max-w-xl flex-wrap items-center gap-2"
             aria-label="Your chosen meals"
           >
+            {state.favoriteMealLink ? (
+              <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
+                Option 1: {state.favoriteMealLink.source.toLowerCase()} link
+                <button
+                  type="button"
+                  aria-label="Remove option 1 link"
+                  onClick={clearPlanFavoriteLink}
+                  className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-oxblood)]/15 text-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/25"
+                >
+                  ×
+                </button>
+              </span>
+            ) : null}
+            {state.secondFavoriteMealLink ? (
+              <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--color-bone)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20">
+                Option 2: {state.secondFavoriteMealLink.source.toLowerCase()} link
+                <button
+                  type="button"
+                  aria-label="Remove option 2 link"
+                  onClick={clearPlanSecondFavoriteLink}
+                  className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[var(--color-bone)] hover:bg-white/30"
+                >
+                  ×
+                </button>
+              </span>
+            ) : null}
             {firstMeal ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
                 <Image
@@ -280,6 +321,81 @@ export function PlanFavoriteSelect(): ReactElement {
         <p className="text-sm text-[var(--color-bone)]/62">
           Choosing later takes you to the full menu before your first booking.
         </p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          aria-expanded={linkPanelOpen}
+          onClick={() => setLinkPanelOpen((open) => !open)}
+          className="w-fit text-sm font-bold text-[var(--color-bone)] underline decoration-[var(--color-bone)]/40 underline-offset-4 transition hover:decoration-[var(--color-bone)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]"
+        >
+          Can&apos;t find what you want? Paste a link
+        </button>
+
+        {linkPanelOpen ? (
+          <div className="flex max-w-xl flex-col gap-3 rounded-2xl bg-white/[0.07] p-4 ring-1 ring-white/15">
+            <p className="text-sm text-[var(--color-bone)]/80">
+              Saw something delicious on TikTok, Instagram or Pinterest? Paste the link and our
+              chefs will make it happen.
+            </p>
+            <div
+              className="flex flex-wrap gap-2"
+              role="radiogroup"
+              aria-label="Where did you see it?"
+            >
+              {(["TIKTOK", "INSTAGRAM", "PINTEREST", "OTHER"] as const).map((source) => (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={linkSource === source}
+                  onClick={() => setLinkSource(source)}
+                  className={
+                    "min-h-9 rounded-full px-4 text-xs font-extrabold uppercase tracking-wide ring-1 transition-colors " +
+                    (linkSource === source
+                      ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                      : "bg-white/[0.07] text-[var(--color-bone)] ring-white/20 hover:bg-white/[0.13]")
+                  }
+                >
+                  {source === "OTHER" ? "Other" : source.charAt(0) + source.slice(1).toLowerCase()}
+                </button>
+              ))}
+            </div>
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(event) => setLinkUrl(event.target.value)}
+              placeholder="Paste your meal link"
+              aria-label="Meal link"
+              className="min-h-11 w-full rounded-xl border border-white/20 bg-[var(--color-bone)] px-4 text-sm font-semibold text-[var(--color-oxblood)] placeholder:text-[var(--color-oxblood)]/45 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[var(--color-bone)]"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={linkUrl.trim().length < 5}
+                onClick={() => {
+                  setPlanFavoriteLink(linkSource, linkUrl.trim());
+                  setLinkUrl("");
+                  setLinkSlot("two");
+                }}
+                className="min-h-10 rounded-xl bg-[var(--color-bone)] px-4 text-sm font-bold text-[var(--color-oxblood)] transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Use as option 1
+              </button>
+              <button
+                type="button"
+                disabled={linkUrl.trim().length < 5}
+                onClick={() => {
+                  setPlanSecondFavoriteLink(linkSource, linkUrl.trim());
+                  setLinkUrl("");
+                }}
+                className="min-h-10 rounded-xl bg-white/[0.13] px-4 text-sm font-bold text-[var(--color-bone)] ring-1 ring-white/20 transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Use as option 2
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <a

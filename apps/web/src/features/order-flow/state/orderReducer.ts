@@ -13,6 +13,13 @@ import {
 } from "../constants/menu";
 import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
 
+export type MealLinkSource = "TIKTOK" | "INSTAGRAM" | "PINTEREST" | "OTHER";
+
+export interface PlanMealLink {
+  readonly source: MealLinkSource;
+  readonly url: string;
+}
+
 export type OrderStep =
   | "goal"
   | "plan-days"
@@ -31,8 +38,10 @@ export interface OrderState {
   readonly preferredDays: readonly PreferredDayId[];
   readonly planScheduleDeferred: boolean;
   readonly favoriteMealId: string | null;
-  /** Optional second meal for meal-prep packs (option 2). */
   readonly secondFavoriteMealId: string | null;
+  /** Pasted-link meal references (TikTok / Instagram / Pinterest / other). */
+  readonly favoriteMealLink: PlanMealLink | null;
+  readonly secondFavoriteMealLink: PlanMealLink | null;
   readonly favoriteMealDeferred: boolean;
   readonly goalId: GoalId | null;
   readonly main: OrderMenuItem | null;
@@ -55,6 +64,8 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   planScheduleDeferred: false,
   favoriteMealId: null,
   secondFavoriteMealId: null,
+  favoriteMealLink: null,
+  secondFavoriteMealLink: null,
   favoriteMealDeferred: false,
   goalId: null,
   main: null,
@@ -79,12 +90,16 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
 
 export type OrderAction =
   | { type: "SELECT_GOAL"; goalId: GoalId }
-  | { type: "START_MEAL_DISCOVERY" }
   | { type: "START_PLAN_SETUP"; planId: ChefmatePlanId }
   | { type: "TOGGLE_PREFERRED_DAY"; day: PreferredDayId }
   | { type: "DECIDE_PLAN_DAYS" }
+  | { type: "START_MEAL_DISCOVERY" }
   | { type: "SELECT_PLAN_FAVORITE"; item: OrderMenuItem }
   | { type: "SELECT_PLAN_SECOND_FAVORITE"; item: OrderMenuItem }
+  | { type: "SET_PLAN_FAVORITE_LINK"; source: MealLinkSource; url: string }
+  | { type: "SET_PLAN_SECOND_FAVORITE_LINK"; source: MealLinkSource; url: string }
+  | { type: "CLEAR_PLAN_FAVORITE_LINK" }
+  | { type: "CLEAR_PLAN_SECOND_FAVORITE_LINK" }
   | { type: "DECIDE_PLAN_FAVORITE" }
   | { type: "SELECT_MAIN"; item: OrderMenuItem }
   | { type: "PRESELECT_MAIN"; item: OrderMenuItem }
@@ -203,6 +218,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         return {
           ...state,
           favoriteMealId: null,
+          favoriteMealLink: null,
           main: state.main?.id === action.item.id ? null : state.main,
           customRequest: null,
         };
@@ -210,6 +226,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return {
         ...state,
         favoriteMealId: action.item.id,
+        favoriteMealLink: null,
         favoriteMealDeferred: false,
         // A meal can only fill one slot: if it was option 2, promote it.
         secondFavoriteMealId:
@@ -228,14 +245,35 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return {
         ...state,
         secondFavoriteMealId: action.item.id,
+        secondFavoriteMealLink: null,
         favoriteMealDeferred: false,
       };
     }
+    case "SET_PLAN_FAVORITE_LINK":
+      return {
+        ...state,
+        favoriteMealId: null,
+        favoriteMealLink: { source: action.source, url: action.url },
+        favoriteMealDeferred: false,
+      };
+    case "SET_PLAN_SECOND_FAVORITE_LINK":
+      return {
+        ...state,
+        secondFavoriteMealId: null,
+        secondFavoriteMealLink: { source: action.source, url: action.url },
+        favoriteMealDeferred: false,
+      };
+    case "CLEAR_PLAN_FAVORITE_LINK":
+      return { ...state, favoriteMealLink: null };
+    case "CLEAR_PLAN_SECOND_FAVORITE_LINK":
+      return { ...state, secondFavoriteMealLink: null };
     case "DECIDE_PLAN_FAVORITE":
       return {
         ...state,
         favoriteMealId: null,
         secondFavoriteMealId: null,
+        favoriteMealLink: null,
+        secondFavoriteMealLink: null,
         favoriteMealDeferred: true,
         main: null,
         customRequest: null,
@@ -369,7 +407,11 @@ export function selectCanContinue(state: OrderState, usesAccountContact = false)
     case "plan-days":
       return state.planScheduleDeferred || state.preferredDays.length > 0;
     case "plan-favorite":
-      return state.favoriteMealDeferred || state.favoriteMealId !== null;
+      return (
+        state.favoriteMealDeferred ||
+        state.favoriteMealId !== null ||
+        state.favoriteMealLink !== null
+      );
     case "meal":
       return state.main !== null;
     case "sides":

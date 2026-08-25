@@ -16,6 +16,7 @@ import {
   selectDiscount,
   selectSubtotal,
   selectTotal,
+  type MealLinkSource,
   type OrderState,
   type OrderStep,
 } from "./orderReducer";
@@ -54,6 +55,10 @@ export interface OrderController {
   /** Optional second meal for meal-prep packs (option 2). */
   readonly selectPlanSecondFavorite: (item: OrderMenuItem) => void;
   readonly decidePlanFavorite: () => void;
+  readonly setPlanFavoriteLink: (source: MealLinkSource, url: string) => void;
+  readonly setPlanSecondFavoriteLink: (source: MealLinkSource, url: string) => void;
+  readonly clearPlanFavoriteLink: () => void;
+  readonly clearPlanSecondFavoriteLink: () => void;
   readonly selectMain: (item: OrderMenuItem) => void;
   /** Highlights a deep-linked meal on the meal step without advancing it. */
   readonly preselectMain: (item: OrderMenuItem) => void;
@@ -182,17 +187,19 @@ export function useOrderController(): OrderController {
         preferredDays: state.preferredDays,
         planScheduleDeferred: state.planScheduleDeferred,
         favoriteMealId: state.favoriteMealId,
+        favoriteMealLink: state.favoriteMealLink,
         secondFavoriteMealId: state.secondFavoriteMealId,
+        secondFavoriteMealLink: state.secondFavoriteMealLink,
         favoriteMealDeferred: state.favoriteMealDeferred,
       }),
     [
       state.appliedGift,
       state.customRequest,
       state.dessert,
-      state.favoriteMealDeferred,
       state.favoriteMealId,
+      state.favoriteMealLink,
       state.secondFavoriteMealId,
-      state.main,
+      state.secondFavoriteMealLink,
       state.planId,
       state.planScheduleDeferred,
       state.preferredDays,
@@ -332,15 +339,28 @@ export function useOrderController(): OrderController {
     isSessionLoading,
     selectGoal: useCallback((goalId) => dispatch({ type: "SELECT_GOAL", goalId }), []),
     startMealDiscovery: useCallback(() => dispatch({ type: "START_MEAL_DISCOVERY" }), []),
-    startPlanSetup: useCallback((planId) => dispatch({ type: "START_PLAN_SETUP", planId }), []),
-    togglePreferredDay: useCallback((day) => dispatch({ type: "TOGGLE_PREFERRED_DAY", day }), []),
-    decidePlanDays: useCallback(() => dispatch({ type: "DECIDE_PLAN_DAYS" }), []),
-    selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
     selectPlanSecondFavorite: useCallback(
       (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
       [],
     ),
+    setPlanFavoriteLink: useCallback(
+      (source, url) => dispatch({ type: "SET_PLAN_FAVORITE_LINK", source, url }),
+      [],
+    ),
+    setPlanSecondFavoriteLink: useCallback(
+      (source, url) => dispatch({ type: "SET_PLAN_SECOND_FAVORITE_LINK", source, url }),
+      [],
+    ),
+    clearPlanFavoriteLink: useCallback(() => dispatch({ type: "CLEAR_PLAN_FAVORITE_LINK" }), []),
+    clearPlanSecondFavoriteLink: useCallback(
+      () => dispatch({ type: "CLEAR_PLAN_SECOND_FAVORITE_LINK" }),
+      [],
+    ),
     decidePlanFavorite: useCallback(() => dispatch({ type: "DECIDE_PLAN_FAVORITE" }), []),
+    startPlanSetup: useCallback((planId) => dispatch({ type: "START_PLAN_SETUP", planId }), []),
+    togglePreferredDay: useCallback((day) => dispatch({ type: "TOGGLE_PREFERRED_DAY", day }), []),
+    decidePlanDays: useCallback(() => dispatch({ type: "DECIDE_PLAN_DAYS" }), []),
+    selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
     selectMain: useCallback((item) => dispatch({ type: "SELECT_MAIN", item }), []),
     preselectMain: useCallback((item) => dispatch({ type: "PRESELECT_MAIN", item }), []),
     toggleSide: useCallback((item) => dispatch({ type: "TOGGLE_SIDE", item }), []),
