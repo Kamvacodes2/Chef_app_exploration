@@ -6,7 +6,13 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { DashboardLayout, type NavItem } from "@/components/layout/DashboardLayout";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
 import { useAuth } from "@/features/auth/AuthContext";
-import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
+import {
+  fetchDocReuploadStatus,
+  fetchPolicyStatus,
+  type DocReuploadStatus,
+  type PolicyStatusItem,
+} from "@/features/platform/api/platformClient";
+import { ChefDocReuploadScreen } from "@/features/platform/ChefDocReuploadScreen";
 
 interface ChefPolicyGateProps {
   readonly children: ReactNode;
@@ -18,6 +24,8 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
   const pathname = usePathname();
   const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
+  const [docReupload, setDocReupload] = useState<DocReuploadStatus | null>(null);
+  const [docReuploadChecked, setDocReuploadChecked] = useState(false);
   const [confirmedPathname, setConfirmedPathname] = useState<string | null>(null);
   const [checkingPolicies, setCheckingPolicies] = useState(false);
   const [policyError, setPolicyError] = useState<string | null>(null);
@@ -30,6 +38,8 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     () => policyStatus?.filter((policy) => policy.required && !policy.accepted) ?? [],
     [policyStatus],
   );
+
+  const pendingReupload = docReupload && !docReupload.termsAccepted ? docReupload : null;
 
   const fetchAndConfirmStatus = useCallback(async (): Promise<PolicyStatusItem[]> => {
     const requestId = ++requestSequence.current;
@@ -78,11 +88,18 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     if (!isOperationalChef) return;
 
     void fetchAndConfirmStatus().catch(() => undefined);
+    void fetchDocReuploadStatus()
+      .then((status) => {
+        setDocReupload(status);
+        setDocReuploadChecked(true);
+      })
+      .catch(() => {
+        setDocReuploadChecked(true);
+      });
     return () => {
       requestSequence.current += 1;
     };
   }, [authLoading, fetchAndConfirmStatus, isAuthenticated, isOperationalChef, router]);
-
   useEffect(() => {
     if (authLoading || !isAuthenticated || !isOperationalChef) return;
 
@@ -120,6 +137,23 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
       <GateFrame message="This Chef account is not active and cannot use operational tools.">
         <GateActions onLogout={handleLogout} />
       </GateFrame>
+    );
+  }
+
+  if (!docReuploadChecked) {
+    return <GateFrame message="Checking your compliance status..." />;
+  }
+
+  if (pendingReupload) {
+    return (
+      <ChefDocReuploadScreen
+        initialStatus={pendingReupload}
+        onComplete={async () => {
+          const status = await fetchDocReuploadStatus().catch(() => null);
+          setDocReupload(status);
+          await fetchAndConfirmStatus().catch(() => undefined);
+        }}
+      />
     );
   }
 

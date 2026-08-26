@@ -6,6 +6,7 @@ import type { PolicyStatusItem } from "@/features/platform/api/platformClient";
 const api = vi.hoisted(() => ({
   acceptPolicy: vi.fn(),
   fetchPolicyStatus: vi.fn(),
+  fetchDocReuploadStatus: vi.fn(async () => null),
 }));
 const auth = vi.hoisted(() => ({
   useAuth: vi.fn(),
@@ -132,7 +133,11 @@ describe("ChefPolicyGate", () => {
     api.fetchPolicyStatus.mockReturnValueOnce(initialStatus.promise);
     renderGate();
 
-    expect(screen.getByRole("status")).toHaveTextContent("Confirming your current policy status");
+    // The compliance check resolves first (no pending re-upload), so the gate
+    // proceeds to the policy-status confirmation.
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("Confirming your current policy status");
+    });
     expect(
       screen.queryByRole("heading", { name: "Protected chef operations" }),
     ).not.toBeInTheDocument();

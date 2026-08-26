@@ -150,6 +150,36 @@ const applicationDocumentSchema = z.object({
   uploadedAt: z.string(),
 });
 
+const reuploadDocTypeSchema = z.enum([
+  "ID_DOC",
+  "BACKGROUND_CHECK",
+  "CV",
+  "QUALIFICATION",
+  "FOOD_SAFETY",
+]);
+
+const reuploadDocumentSchema = z.object({
+  id: z.string().min(1),
+  requestId: z.string().min(1),
+  docType: reuploadDocTypeSchema,
+  storageKey: z.string().min(1),
+  originalName: z.string().min(1),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  uploadedAt: z.string(),
+});
+
+const docReuploadStatusSchema = z.object({
+  requestId: z.string().min(1),
+  requestedAt: z.string(),
+  requiredDocuments: z.array(reuploadDocTypeSchema),
+  completedDocuments: z.array(reuploadDocTypeSchema),
+  documentsCompletedAt: z.string().nullable(),
+  termsAccepted: z.boolean(),
+  termsCompletedAt: z.string().nullable(),
+  applicationId: z.string().min(1),
+});
+
 const uploadedApplicationDocumentSchema = applicationDocumentSchema.omit({
   id: true,
   applicationId: true,
@@ -294,6 +324,7 @@ const adminDashboardSchema = z.object({
 const chefSummarySchema = platformUserSchema.extend({
   profile: chefProfileSchema.omit({ displayName: true, email: true, bankAccount: true }).nullable(),
   bankAccount: bankAccountPreviewSchema.nullable(),
+  docReupload: docReuploadStatusSchema.nullish(),
 });
 
 const communicationLogSchema = z.object({
@@ -353,6 +384,9 @@ export type ApplicationDocument = z.infer<typeof applicationDocumentSchema>;
 export type UploadedApplicationDocument = z.infer<typeof uploadedApplicationDocumentSchema>;
 export type CommunicationLog = z.infer<typeof communicationLogSchema>;
 export type PopularMeal = z.infer<typeof popularMealSchema>;
+export type ReuploadDocType = z.infer<typeof reuploadDocTypeSchema>;
+export type ReuploadDocument = z.infer<typeof reuploadDocumentSchema>;
+export type DocReuploadStatus = z.infer<typeof docReuploadStatusSchema>;
 
 export async function uploadApplicationDocument(
   docType: ApplicationDocument["docType"],
@@ -662,6 +696,94 @@ export async function inviteChefApplication(
   });
 }
 
+export async function requestChefDocReupload(
+  chefId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{ request: DocReuploadStatus; application: ChefApplication }> {
+  return requestData({
+    path: `/api/v1/operations/chefs/${encodeURIComponent(chefId)}/doc-reupload`,
+    method: "POST",
+    schema: envelope(
+      z.object({
+        application: chefApplicationSchema,
+        request: docReuploadStatusSchema,
+        chef: z.object({
+          id: z.string().min(1),
+          email: z.string(),
+          displayName: z.string().min(1),
+          roles: z.array(platformRoleSchema),
+        }),
+        expiresAt: z.string(),
+      }),
+    ),
+    options,
+    select: (data) => ({ request: data.request, application: data.application }),
+  });
+}
+
+export async function fetchDocReuploadStatus(
+  options: PlatformRequestOptions = {},
+): Promise<DocReuploadStatus | null> {
+  return requestData({
+    path: "/api/v1/chef/doc-reupload/status",
+    method: "GET",
+    schema: envelope(docReuploadStatusSchema.nullable()),
+    options,
+  });
+}
+
+export async function uploadDocReuploadDocument(
+  docType: ReuploadDocType,
+  file: File,
+  options: PlatformRequestOptions = {},
+): Promise<ReuploadDocument> {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  const response = await (options.fetchImpl ?? fetch)(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      `/chef/doc-reupload/documents?docType=${encodeURIComponent(docType)}`,
+    ),
+    { method: "POST", credentials: "include", body: formData },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Document upload failed (" + response.status + ")"),
+    );
+  }
+  return reuploadDocumentSchema.parse((await response.json()).data);
+}
+
+export async function removeDocReuploadDocument(
+  docType: ReuploadDocType,
+  options: PlatformRequestOptions = {},
+): Promise<void> {
+  await requestNoContent({
+    path: `/api/v1/chef/doc-reupload/documents/${encodeURIComponent(docType)}`,
+    method: "DELETE",
+    options,
+  });
+}
+
+export async function completeReuploadTerms(
+  acceptedPolicies: readonly { readonly policyKey: string; readonly version: string }[],
+  options: PlatformRequestOptions = {},
+): Promise<{ termsAcceptedAt: string }> {
+  return requestData({
+    path: "/api/v1/chef/doc-reupload/complete-terms",
+    method: "POST",
+    body: { acceptedPolicies },
+    schema: envelope(
+      z.object({
+        request: docReuploadStatusSchema,
+        termsAcceptedAt: z.string(),
+      }),
+    ),
+    options,
+    select: (data) => ({ termsAcceptedAt: data.termsAcceptedAt }),
+  });
+}
+
 export async function fetchCustomers(
   options: PlatformRequestOptions = {},
 ): Promise<PlatformUser[]> {
@@ -723,7 +845,7 @@ export async function logWhatsAppPreview(
   });
 }
 
-type RequestMethod = "GET" | "POST" | "PUT" | "PATCH";
+type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface RequestDataArgs<Schema extends z.ZodTypeAny, Result> {
   readonly path: string;
