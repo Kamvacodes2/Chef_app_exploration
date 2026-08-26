@@ -124,10 +124,10 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl font-semibold text-[var(--color-bone)]">
+        <h1 className="font-display text-3xl font-semibold text-[var(--color-oxblood)]">
           Action needed: re-upload & accept terms
         </h1>
-        <p className="text-sm text-[var(--color-bone)]/72">
+        <p className="text-sm text-[var(--color-oxblood)]/80">
           As part of our refreshed chef terms, please re-upload your compliance documents and
           digitally accept the current Chefmate terms. Your acceptance record is emailed to you as a
           PDF.
