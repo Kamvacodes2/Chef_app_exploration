@@ -398,7 +398,7 @@ export async function uploadApplicationDocument(
   const response = await (options.fetchImpl ?? fetch)(
     apiUrl(
       options.baseUrl ?? getChefmateApiUrl(),
-      `/chef-applications/documents?docType=${encodeURIComponent(docType)}`,
+      `/api/v1/chef-applications/documents?docType=${encodeURIComponent(docType)}`,
     ),
     { method: "POST", credentials: "include", body: formData },
   );
@@ -742,7 +742,7 @@ export async function uploadDocReuploadDocument(
   const response = await (options.fetchImpl ?? fetch)(
     apiUrl(
       options.baseUrl ?? getChefmateApiUrl(),
-      `/chef/doc-reupload/documents?docType=${encodeURIComponent(docType)}`,
+      `/api/v1/chef/doc-reupload/documents?docType=${encodeURIComponent(docType)}`,
     ),
     { method: "POST", credentials: "include", body: formData },
   );

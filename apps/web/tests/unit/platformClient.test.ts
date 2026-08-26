@@ -25,6 +25,7 @@ import {
   updateChefApplicationVerification,
   updateChefBankDetails,
   updateChefProfile,
+  uploadDocReuploadDocument,
 } from "@/features/platform/api/platformClient";
 import type { z } from "zod";
 
@@ -558,6 +559,34 @@ describe("platformClient", () => {
     expect(fetchImpl).toHaveBeenCalledWith(
       "http://api.test/api/v1/policies/status",
       expect.objectContaining({ method: "GET", credentials: "include" }),
+    );
+  });
+
+  it("posts re-upload documents to the API-prefixed endpoint with the doc type", async () => {
+    const fetchImpl = mockFetch({
+      data: {
+        id: "reupload-doc-1",
+        requestId: "request-1",
+        docType: "ID_DOC",
+        storageKey: "uploads/reupload/abc.pdf",
+        originalName: "id.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 1024,
+        uploadedAt: "2026-08-26T12:00:00.000Z",
+      },
+    });
+    const file = new File(["id"], "id.pdf", { type: "application/pdf" });
+
+    await expect(
+      uploadDocReuploadDocument("ID_DOC", file, {
+        baseUrl: "http://api.test",
+        fetchImpl,
+      }),
+    ).resolves.toMatchObject({ docType: "ID_DOC", originalName: "id.pdf" });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/chef/doc-reupload/documents?docType=ID_DOC",
+      expect.objectContaining({ method: "POST", credentials: "include" }),
     );
   });
 
