@@ -30,6 +30,11 @@ const DOC_TYPE_LABELS: Record<ReuploadDocType, string> = {
   FOOD_SAFETY: "Food safety certificate",
 };
 
+// The re-upload flow asks chefs to re-accept only the chef-specific terms
+// (service agreement + code of conduct); the remaining required policies are
+// handled by the standard policy-acceptance gate.
+const REUPLOAD_POLICY_KEYS = new Set(["chef_service_agreement", "chef_code_of_conduct"]);
+
 interface ChefDocReuploadScreenProps {
   readonly initialStatus: DocReuploadStatus;
   readonly onComplete: () => Promise<void>;
@@ -57,7 +62,11 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
 
   useEffect(() => {
     void fetchPolicyStatus()
-      .then((items) => setPolicies(items.filter((policy) => policy.required)))
+      .then((items) =>
+        setPolicies(
+          items.filter((policy) => policy.required && REUPLOAD_POLICY_KEYS.has(policy.policyKey)),
+        ),
+      )
       .catch(() => undefined);
   }, []);
 
@@ -212,7 +221,7 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
               rel="noopener noreferrer"
               className="rounded-xl bg-[var(--color-warm-cream)] px-4 py-3 text-sm font-bold text-[var(--color-oxblood)] underline decoration-[var(--color-oxblood)]/30 underline-offset-4"
             >
-              {policy.title} (version {policy.requiredVersion})
+              {policy.title}
             </Link>
           ))}
           {policies.length === 0 ? (
