@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardLayout, type NavItem } from "@/components/layout/DashboardLayout";
+import { SiteHeader } from "@/components/SiteHeader";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import {
@@ -146,14 +147,17 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
 
   if (pendingReupload) {
     return (
-      <ChefDocReuploadScreen
-        initialStatus={pendingReupload}
-        onComplete={async () => {
-          const status = await fetchDocReuploadStatus().catch(() => null);
-          setDocReupload(status);
-          await fetchAndConfirmStatus().catch(() => undefined);
-        }}
-      />
+      <>
+        <SiteHeader variant="chefPortal" />
+        <ChefDocReuploadScreen
+          initialStatus={pendingReupload}
+          onComplete={async () => {
+            const status = await fetchDocReuploadStatus().catch(() => null);
+            setDocReupload(status);
+            await fetchAndConfirmStatus().catch(() => undefined);
+          }}
+        />
+      </>
     );
   }
 

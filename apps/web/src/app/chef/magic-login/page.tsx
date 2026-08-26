@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader variant="chefPortal" />
       <ChefMagicLoginPage token={token} />
     </>
   );

@@ -27,4 +27,16 @@ describe("SiteHeader", () => {
     expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
     expect(screen.queryByRole("link", { name: "Chef portal" })).not.toBeInTheDocument();
   });
+
+  it("renders a customer-CTA-free header for the chef portal variant", () => {
+    render(<SiteHeader variant="chefPortal" />);
+
+    const header = screen.getByTestId("site-header");
+    expect(header).toContainElement(screen.getByTestId("brand-mark"));
+    expect(header).toContainElement(screen.getByTestId("chef-portal-indicator"));
+    expect(screen.getByText("Chef portal")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Primary" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Book a chef" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
 });
