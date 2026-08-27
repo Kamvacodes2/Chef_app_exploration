@@ -54,6 +54,7 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
   const [success, setSuccess] = useState<string | null>(null);
   const [policies, setPolicies] = useState<PolicyStatusItem[]>([]);
   const [agreeChecked, setAgreeChecked] = useState(false);
+  const [signature, setSignature] = useState("");
 
   const refresh = useCallback(async (): Promise<void> => {
     const next = await fetchDocReuploadStatus();
@@ -105,7 +106,7 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
   };
 
   const handleAcceptTerms = async (): Promise<void> => {
-    if (!allDocsComplete || requiredPolicies.length === 0 || updating) return;
+    if (!allDocsComplete || requiredPolicies.length === 0 || !signature.trim() || updating) return;
     setUpdating(true);
     setError(null);
     setSuccess(null);
@@ -115,6 +116,7 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
           policyKey: policy.policyKey,
           version: policy.requiredVersion,
         })),
+        signature.trim(),
       );
       setSuccess(
         `Terms accepted ${new Date(result.termsAcceptedAt).toLocaleString()}. A copy of your acceptance record has been emailed to you.`,
@@ -216,12 +218,10 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
           {requiredPolicies.map((policy) => (
             <Link
               key={policy.policyKey}
-              href={policy.documentPath}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`${policy.documentPath}?returnTo=/chef/portal`}
               className="rounded-xl bg-[var(--color-warm-cream)] px-4 py-3 text-sm font-bold text-[var(--color-oxblood)] underline decoration-[var(--color-oxblood)]/30 underline-offset-4"
             >
-              {policy.title}
+              Read {policy.title} <span aria-hidden="true">→</span>
             </Link>
           ))}
           {policies.length === 0 ? (
@@ -243,6 +243,21 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
           </p>
         ) : (
           <div className="mt-4 flex flex-col items-start gap-3">
+            <label className="flex w-full flex-col gap-2 text-sm text-[var(--color-charcoal)]/80">
+              <span className="font-bold text-[var(--color-charcoal)]">Digital signature</span>
+              <span className="text-xs text-[var(--color-charcoal)]/60">
+                Type your full name exactly as it should appear on your acceptance record.
+              </span>
+              <input
+                type="text"
+                value={signature}
+                onChange={(event) => setSignature(event.target.value)}
+                placeholder="Your full name"
+                required
+                autoComplete="name"
+                className="min-h-12 w-full rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm text-[var(--color-charcoal)] outline-none focus:border-[var(--color-oxblood)]"
+              />
+            </label>
             <label className="flex items-start gap-2 text-sm text-[var(--color-charcoal)]/80">
               <input
                 type="checkbox"
@@ -257,7 +272,7 @@ export function ChefDocReuploadScreen({ initialStatus, onComplete }: ChefDocReup
             </label>
             <button
               type="button"
-              disabled={!agreeChecked || updating}
+              disabled={!agreeChecked || !signature.trim() || updating}
               onClick={() => void handleAcceptTerms()}
               className="min-h-12 rounded-2xl bg-[var(--color-oxblood)] px-6 text-sm font-bold text-white disabled:opacity-40"
             >

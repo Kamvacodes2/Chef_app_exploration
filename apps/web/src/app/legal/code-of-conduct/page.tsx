@@ -2,12 +2,26 @@
 
 import Link from "next/link";
 
+function ReturnToAcceptance() {
+  return (
+    <Link
+      href="/chef/portal"
+      className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--color-oxblood)]/25 px-3 text-sm font-bold text-[var(--color-oxblood)]"
+    >
+      <span aria-hidden="true">←</span> Back to acceptance
+    </Link>
+  );
+}
+
 export default function CodeOfConductPage() {
   return (
     <article className="rounded-3xl bg-white p-8 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
-      <Link href="/" className="mb-6 inline-block font-brand text-xl text-[var(--color-oxblood)]">
-        ChefMate
-      </Link>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link href="/" className="font-brand text-xl text-[var(--color-oxblood)]">
+          ChefMate
+        </Link>
+        <ReturnToAcceptance />
+      </div>
       <h1 className="text-3xl font-black text-[var(--color-oxblood)]">Chef Code of Conduct</h1>
       <p className="mt-2 text-sm text-[var(--color-charcoal)]/50">Version 2026-08-09</p>
 

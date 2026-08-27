@@ -767,12 +767,13 @@ export async function removeDocReuploadDocument(
 
 export async function completeReuploadTerms(
   acceptedPolicies: readonly { readonly policyKey: string; readonly version: string }[],
+  signature: string,
   options: PlatformRequestOptions = {},
 ): Promise<{ termsAcceptedAt: string }> {
   return requestData({
     path: "/api/v1/chef/doc-reupload/complete-terms",
     method: "POST",
-    body: { acceptedPolicies },
+    body: { acceptedPolicies, signature },
     schema: envelope(
       z.object({
         request: docReuploadStatusSchema,

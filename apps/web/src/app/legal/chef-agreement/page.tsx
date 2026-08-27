@@ -56,6 +56,17 @@ function Clause({ number, children }: { readonly number: string; readonly childr
   );
 }
 
+function ReturnToAcceptance() {
+  return (
+    <Link
+      href="/chef/portal"
+      className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--color-oxblood)]/25 px-3 text-sm font-bold text-[var(--color-oxblood)]"
+    >
+      <span aria-hidden="true">←</span> Back to acceptance
+    </Link>
+  );
+}
+
 function Definition({ term, children }: { readonly term: string; readonly children: ReactNode }) {
   return (
     <div className="grid gap-1 border-b border-[var(--color-oxblood)]/8 pb-3 last:border-0">
@@ -73,9 +84,12 @@ export default function ChefAgreementPage() {
       id="top"
       className="rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)] sm:p-10"
     >
-      <Link href="/" className="mb-6 inline-block font-brand text-xl text-[var(--color-oxblood)]">
-        ChefMate
-      </Link>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link href="/" className="font-brand text-xl text-[var(--color-oxblood)]">
+          ChefMate
+        </Link>
+        <ReturnToAcceptance />
+      </div>
 
       <header className="rounded-2xl border border-[var(--color-oxblood)]/15 bg-[var(--color-warm-cream)] p-5">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-oxblood)]/70">
