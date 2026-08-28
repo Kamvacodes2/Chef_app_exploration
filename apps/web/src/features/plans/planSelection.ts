@@ -45,7 +45,10 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
       : "NOT_APPLICABLE",
     favoriteMealSlug: deferred ? null : input.favoriteMealId,
     favoriteMealLink: deferred ? null : formatMealLink(input.favoriteMealLink),
-    secondFavoriteMealSlug: deferred ? null : input.secondFavoriteMealId,
+    // The second meal is NOT gated on the favourite deferral: it may also be
+    // picked later, at the meal-flow's "Add another meal" step, in which case
+    // the favourite is deferred but the second meal is a real choice.
+    secondFavoriteMealSlug: input.secondFavoriteMealId,
     secondFavoriteMealLink: deferred ? null : formatMealLink(input.secondFavoriteMealLink),
   };
 }

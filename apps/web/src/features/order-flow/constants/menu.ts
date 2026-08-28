@@ -4,6 +4,12 @@ export const INCLUDED_SIDE_COUNT = 2;
 export const INCLUDED_MAIN_PRICE_ZAR = 0;
 export const EXTRA_SIDE_PRICE_ZAR = 55;
 export const DESSERT_PRICE_ZAR = 90;
+/**
+ * Meal-prep second meal. Included for subscription (recurring) plans; once-off
+ * "chefmate tonight" sessions pay this flat fee. Mirrors the server's
+ * `second_meal_cents` pricing rule.
+ */
+export const SECOND_MEAL_PRICE_ZAR = 175;
 
 const INCLUDED_MAIN_PRICE_DISPLAY = "Included in package";
 const EXTRA_SIDE_PRICE_DISPLAY = `First ${INCLUDED_SIDE_COUNT} included, then R${EXTRA_SIDE_PRICE_ZAR}`;

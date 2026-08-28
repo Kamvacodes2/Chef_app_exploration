@@ -87,6 +87,7 @@ const STEP_SEQUENCE: readonly OrderStep[] = Object.freeze([
   "plan-days",
   "plan-favorite",
   "meal",
+  "second-meal",
   "sides",
   "dessert",
   "schedule",

@@ -2,8 +2,12 @@
 
 import Image from "next/image";
 import type { ReactElement } from "react";
-import { findChefmatePlan, PREFERRED_DAYS } from "@/features/plans/planCatalog";
-import { INCLUDED_SIDE_COUNT } from "../constants/menu";
+import {
+  findChefmatePlan,
+  isRecurringChefmatePlan,
+  PREFERRED_DAYS,
+} from "@/features/plans/planCatalog";
+import { INCLUDED_SIDE_COUNT, SECOND_MEAL_PRICE_ZAR } from "../constants/menu";
 import { findItem } from "../state/orderReducer";
 import { useOrder } from "../state/OrderContext";
 import { GiftCodeForm } from "./GiftCodeForm";
@@ -36,10 +40,16 @@ function SelectionRow({
   item,
   kind,
   priceCents,
+  caption,
+  priceLabel,
 }: {
   readonly item: OrderMenuItem;
   readonly kind: "main" | "side" | "dessert";
   readonly priceCents: number | undefined;
+  /** Optional sub-label under the name, e.g. "Second meal · meal-prep pack". */
+  readonly caption?: string;
+  /** Overrides the default price text (used for the meal-prep second meal). */
+  readonly priceLabel?: string;
 }): ReactElement {
   const imageSize = kind === "main" ? "h-16 w-16 rounded-2xl" : "h-12 w-12 rounded-xl";
 
@@ -58,10 +68,15 @@ function SelectionRow({
       ) : null}
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-[var(--color-bone)]">{item.name}</p>
-        {kind !== "main" ? <p className="text-xs text-[var(--color-bone)]/50">({kind})</p> : null}
+        {caption ? (
+          <p className="text-xs text-[var(--color-bone)]/50">{caption}</p>
+        ) : kind !== "main" ? (
+          <p className="text-xs text-[var(--color-bone)]/50">({kind})</p>
+        ) : null}
       </div>
       <p className="shrink-0 text-sm font-semibold text-[var(--color-bone)]">
-        {kind === "main" ? "Included in your session" : pricingLineLabel(priceCents)}
+        {priceLabel ??
+          (kind === "main" ? "Included in your session" : pricingLineLabel(priceCents))}
       </p>
     </div>
   );
@@ -164,10 +179,27 @@ export function ReviewStep(): ReactElement {
       ? `Your linked meal (${state.favoriteMealLink.source.toLowerCase()})`
       : null;
   const secondFavourite = state.secondFavoriteMealId
-    ? (findItem(state.secondFavoriteMealId)?.name ?? "Your selected second meal")
+    ? (state.secondFavoriteMeal?.name ??
+      findItem(state.secondFavoriteMealId)?.name ??
+      "Your selected second meal")
     : state.secondFavoriteMealLink
       ? `Your linked meal (${state.secondFavoriteMealLink.source.toLowerCase()})`
       : null;
+  // The meal-prep second meal is quoted as its own pricing item (flat fee for
+  // once-off sessions, included at R0 for subscription plans).
+  const secondMealQuoted = state.secondFavoriteMealId
+    ? pricesBySlug.get(state.secondFavoriteMealId)
+    : undefined;
+  const secondMealIsRecurring =
+    plan?.recurring ?? (state.planId ? isRecurringChefmatePlan(state.planId) : false);
+  const secondMealPriceLabel =
+    secondMealQuoted !== undefined
+      ? pricingLineLabel(secondMealQuoted)
+      : hasPricingQuote
+        ? undefined
+        : secondMealIsRecurring
+          ? "Included"
+          : formatZarCents(SECOND_MEAL_PRICE_ZAR * 100);
   const preferredDays = state.preferredDays.flatMap((dayId) => {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
     return day ? [day.label] : [];
@@ -188,6 +220,15 @@ export function ReviewStep(): ReactElement {
         <div className="flex flex-col gap-3">
           {state.main ? (
             <SelectionRow item={state.main} kind="main" priceCents={priceFor(state.main, "main")} />
+          ) : null}
+          {state.secondFavoriteMeal ? (
+            <SelectionRow
+              item={state.secondFavoriteMeal}
+              kind="main"
+              priceCents={secondMealQuoted}
+              caption="Second meal · meal-prep pack"
+              priceLabel={secondMealPriceLabel}
+            />
           ) : null}
           {state.sides.map((side, index) => (
             <SelectionRow

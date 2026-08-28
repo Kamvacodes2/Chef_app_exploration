@@ -30,6 +30,11 @@ export interface BookingRequestPayload {
   readonly contact?: ContactDetails;
   readonly giftCode: string | null;
   readonly planSelection?: ChefmatePlanSelection;
+  /**
+   * Meal-prep second meal for bookings with no plan selection (goal/discovery
+   * flows). Plan bookings carry it in planSelection.secondFavoriteMealSlug.
+   */
+  readonly secondMainSlug?: string | null;
 }
 
 export interface BuildBookingRequestOptions {
@@ -180,7 +185,11 @@ export function buildBookingRequestPayload(
     },
     ...(contact ? { contact } : {}),
     giftCode: state.appliedGift?.code ?? null,
-    ...(planSelection ? { planSelection } : {}),
+    ...(planSelection
+      ? { planSelection }
+      : state.secondFavoriteMealId
+        ? { secondMainSlug: state.secondFavoriteMealId }
+        : {}),
   };
 }
 

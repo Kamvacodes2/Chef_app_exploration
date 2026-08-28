@@ -10,6 +10,7 @@ import {
   DESSERT_PRICE_ZAR,
   EXTRA_SIDE_PRICE_ZAR,
   INCLUDED_SIDE_COUNT,
+  SECOND_MEAL_PRICE_ZAR,
 } from "../constants/menu";
 import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
 
@@ -25,6 +26,7 @@ export type OrderStep =
   | "plan-days"
   | "plan-favorite"
   | "meal"
+  | "second-meal"
   | "sides"
   | "dessert"
   | "schedule"
@@ -39,6 +41,8 @@ export interface OrderState {
   readonly planScheduleDeferred: boolean;
   readonly favoriteMealId: string | null;
   readonly secondFavoriteMealId: string | null;
+  /** Full item for the second meal, so review/summary can show name + photo. */
+  readonly secondFavoriteMeal: OrderMenuItem | null;
   /** Pasted-link meal references (TikTok / Instagram / Pinterest / other). */
   readonly favoriteMealLink: PlanMealLink | null;
   readonly secondFavoriteMealLink: PlanMealLink | null;
@@ -64,6 +68,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   planScheduleDeferred: false,
   favoriteMealId: null,
   secondFavoriteMealId: null,
+  secondFavoriteMeal: null,
   favoriteMealLink: null,
   secondFavoriteMealLink: null,
   favoriteMealDeferred: false,
@@ -127,6 +132,7 @@ export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
   "plan-days",
   "plan-favorite",
   "meal",
+  "second-meal",
   "sides",
   "dessert",
   "schedule",
@@ -237,14 +243,17 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     }
     case "SELECT_PLAN_SECOND_FAVORITE": {
       if (action.item.id === state.secondFavoriteMealId) {
-        return { ...state, secondFavoriteMealId: null };
+        return { ...state, secondFavoriteMealId: null, secondFavoriteMeal: null };
       }
-      if (action.item.id === state.favoriteMealId) {
+      // One meal per slot: it can neither duplicate option 1 (plan-favorite
+      // step) nor the main picked at the meal step.
+      if (action.item.id === state.favoriteMealId || action.item.id === state.main?.id) {
         return state;
       }
       return {
         ...state,
         secondFavoriteMealId: action.item.id,
+        secondFavoriteMeal: action.item,
         secondFavoriteMealLink: null,
         favoriteMealDeferred: false,
       };
@@ -260,6 +269,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       return {
         ...state,
         secondFavoriteMealId: null,
+        secondFavoriteMeal: null,
         secondFavoriteMealLink: { source: action.source, url: action.url },
         favoriteMealDeferred: false,
       };
@@ -272,6 +282,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         ...state,
         favoriteMealId: null,
         secondFavoriteMealId: null,
+        secondFavoriteMeal: null,
         favoriteMealLink: null,
         secondFavoriteMealLink: null,
         favoriteMealDeferred: true,
@@ -279,7 +290,20 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         customRequest: null,
       };
     case "SELECT_MAIN":
-      return { ...state, main: action.item, customRequest: null, step: "sides" };
+      return {
+        ...state,
+        main: action.item,
+        customRequest: null,
+        // A meal can only fill one slot: picking it as the main clears it from
+        // the optional second-meal slot picked at the next step.
+        secondFavoriteMealId:
+          state.secondFavoriteMealId === action.item.id ? null : state.secondFavoriteMealId,
+        secondFavoriteMeal:
+          state.secondFavoriteMeal?.id === action.item.id ? null : state.secondFavoriteMeal,
+        // Meal discovery continues with the optional meal-prep second meal
+        // before sides; custom requests skip it via SET_CUSTOM_REQUEST.
+        step: "second-meal",
+      };
     // Deep links (a landing-page "Popular this week" tile) resolve their meal
     // asynchronously from the catalog. The customer must stay on the meal step
     // with that meal highlighted, so this never advances the step and never
@@ -388,7 +412,11 @@ export function selectSubtotal(state: OrderState): number {
   const packageBase = findChefmatePlan(state.planId ?? "tonight")?.priceCents ?? 0;
   const extraSides = Math.max(0, state.sides.length - INCLUDED_SIDE_COUNT) * EXTRA_SIDE_PRICE_ZAR;
   const dessert = state.dessert ? DESSERT_PRICE_ZAR : 0;
-  return packageBase / 100 + extraSides + dessert;
+  // Meal-prep second meal: included for subscription plans, flat fee for
+  // once-off (tonight / no-plan) sessions.
+  const isRecurringPlan = state.planId ? isRecurringChefmatePlan(state.planId) : false;
+  const secondMeal = state.secondFavoriteMealId && !isRecurringPlan ? SECOND_MEAL_PRICE_ZAR : 0;
+  return packageBase / 100 + extraSides + dessert + secondMeal;
 }
 
 export function selectDiscount(state: OrderState): number {
@@ -414,6 +442,8 @@ export function selectCanContinue(state: OrderState, usesAccountContact = false)
       );
     case "meal":
       return state.main !== null;
+    // The meal-prep second meal is optional — continue with or without it.
+    case "second-meal":
     case "sides":
     case "dessert":
       return true;

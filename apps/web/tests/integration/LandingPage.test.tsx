@@ -243,9 +243,14 @@ describe("LandingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
     // Clicking the "+" button on a meal card dispatches SELECT_MAIN which
-    // auto-advances to sides, so no Continue click is needed here.
+    // auto-advances to the optional meal-prep second-meal step.
     fireEvent.click(await screen.findByRole("button", { name: "Choose Wors, Pap and Chakalaka" }));
 
+    expect(await screen.findByRole("heading", { name: "Add another meal?" })).toBeInTheDocument();
+    expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "second-meal");
+
+    // The second meal is optional: continuing lands on the sides step.
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
   });
 

@@ -11,6 +11,7 @@ import { OrderContext } from "./state/OrderContext";
 import type { OrderStep } from "./state/orderReducer";
 import { GoalSelect } from "./components/GoalSelect";
 import { MealSelect } from "./components/MealSelect";
+import { SecondMealSelect } from "./components/SecondMealSelect";
 import { SidesSelect } from "./components/SidesSelect";
 import { DessertSelect } from "./components/DessertSelect";
 import { ScheduleSelect } from "./components/ScheduleSelect";
@@ -26,6 +27,7 @@ const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
   "plan-days": PlanDaysSelect,
   "plan-favorite": PlanFavoriteSelect,
   meal: MealSelect,
+  "second-meal": SecondMealSelect,
   sides: SidesSelect,
   dessert: DessertSelect,
   schedule: ScheduleSelect,
@@ -39,6 +41,7 @@ const STEP_LABELS: Record<OrderStep, string> = {
   "plan-days": "Choose suitable Chefmate days",
   "plan-favorite": "Choose your Chefmate favourite",
   meal: "Find your Chefmate meal",
+  "second-meal": "Add another Chefmate meal",
   sides: "Choose Chefmate sides",
   dessert: "Choose a Chefmate dessert",
   schedule: "Choose your Chefmate visit time",

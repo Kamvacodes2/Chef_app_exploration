@@ -21,7 +21,7 @@ const dessert = DESSERTS.find((d) => d.id === "dessert-malva")!;
 
 /** Drive the reducer through a complete order and assert every transition. */
 describe("order flow end-to-end", () => {
-  it("walks goal -> meal -> sides -> dessert -> schedule -> address -> review -> confirmed", () => {
+  it("walks goal -> meal -> second-meal -> sides -> dessert -> schedule -> address -> review -> confirmed", () => {
     let s: OrderState = INITIAL_ORDER_STATE;
     expect(s.step).toBe("goal");
 
@@ -30,8 +30,13 @@ describe("order flow end-to-end", () => {
     expect(s.goalId).toBe("build-muscle");
 
     s = orderReducer(s, { type: "SELECT_MAIN", item: main });
-    expect(s.step).toBe("sides");
+    expect(s.step).toBe("second-meal");
     expect(s.main?.id).toBe("chicken-peri-peri");
+
+    // The second meal is optional; continue without one.
+    expect(selectCanContinue(s)).toBe(true);
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("sides");
 
     s = orderReducer(s, { type: "TOGGLE_SIDE", item: side });
     expect(s.sides).toHaveLength(1);
@@ -79,6 +84,39 @@ describe("order flow end-to-end", () => {
     expect(s.step).toBe("confirmed");
   });
 
+  it("offers an optional meal-prep second meal after the main is picked", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "SELECT_GOAL", goalId: "just-good-food" });
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+
+    const second = MAINS.find((m) => m.id === "sa-oxtail-seven-colours")!;
+    s = orderReducer(s, { type: "SELECT_PLAN_SECOND_FAVORITE", item: second });
+    expect(s.secondFavoriteMealId).toBe("sa-oxtail-seven-colours");
+    expect(s.secondFavoriteMeal?.id).toBe("sa-oxtail-seven-colours");
+
+    // Tapping the same meal again removes it.
+    s = orderReducer(s, { type: "SELECT_PLAN_SECOND_FAVORITE", item: second });
+    expect(s.secondFavoriteMealId).toBeNull();
+
+    // The main meal cannot be doubled up as the second meal.
+    const blocked = orderReducer(
+      { ...INITIAL_ORDER_STATE, step: "second-meal", main },
+      { type: "SELECT_PLAN_SECOND_FAVORITE", item: main },
+    );
+    expect(blocked.secondFavoriteMealId).toBeNull();
+
+    // Choosing the second meal as a new main clears it from the second slot.
+    s = orderReducer(
+      { ...INITIAL_ORDER_STATE, step: "second-meal", main },
+      { type: "SELECT_PLAN_SECOND_FAVORITE", item: second },
+    );
+    s = orderReducer(s, { type: "BACK" });
+    expect(s.step).toBe("meal");
+    s = orderReducer(s, { type: "SELECT_MAIN", item: second });
+    expect(s.secondFavoriteMealId).toBeNull();
+    expect(s.secondFavoriteMeal).toBeNull();
+  });
+
   it("computes fallback totals from the package model with a gift-code discount", () => {
     let s: OrderState = INITIAL_ORDER_STATE;
     s = orderReducer(s, { type: "SELECT_MAIN", item: main });
@@ -92,6 +130,50 @@ describe("order flow end-to-end", () => {
     expect(s.appliedGift?.discountFraction).toBeCloseTo(0.1);
     expect(selectDiscount(s)).toBe(Math.round(617.85 * 0.1));
     expect(selectTotal(s)).toBeCloseTo(617.85 - 62);
+  });
+
+  it("prices the meal-prep second meal as a once-off fee, included on plans", () => {
+    const second = MAINS.find((item) => item.id === "sa-oxtail-seven-colours")!;
+
+    // Once-off (no plan): the second meal adds R175 to the tonight base.
+    let s: OrderState = {
+      ...INITIAL_ORDER_STATE,
+      step: "second-meal",
+      planId: null,
+      main,
+      secondFavoriteMealId: second.id,
+      secondFavoriteMeal: second,
+    };
+    expect(selectSubtotal(s)).toBeCloseTo(527.85 + 175);
+
+    // Subscription plan: included at no charge.
+    const planned: OrderState = {
+      ...s,
+      planId: "rhythm",
+    };
+    expect(selectSubtotal(planned)).toBeCloseTo(1999);
+
+    // One-off tonight plan: still pays the second-meal fee.
+    const tonight: OrderState = { ...s, planId: "tonight" };
+    expect(selectSubtotal(tonight)).toBeCloseTo(527.85 + 175);
+  });
+
+  it("sends the second meal as secondMainSlug when no plan is selected", () => {
+    const second = MAINS.find((item) => item.id === "sa-oxtail-seven-colours")!;
+    const s: OrderState = {
+      ...INITIAL_ORDER_STATE,
+      step: "second-meal",
+      planId: null,
+      main,
+      secondFavoriteMealId: second.id,
+      secondFavoriteMeal: second,
+    };
+
+    expect(buildPricingQuotePayload(s)).toMatchObject({
+      mainSlug: "chicken-peri-peri",
+      secondMainSlug: "sa-oxtail-seven-colours",
+    });
+    expect(buildPricingQuotePayload(s)).not.toHaveProperty("planSelection");
   });
 
   it("applies the CHEFMATE50 launch code at 50% off", () => {
