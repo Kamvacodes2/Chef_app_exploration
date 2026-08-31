@@ -75,7 +75,7 @@ describe("LandingHeroCarousel", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /Come home\.\s+Switch off\.\s+Let someone\s+else cook\./,
+        name: /Come home\.\s+Switch off\.\s+Let us cook\./,
       }),
     ).toBeInTheDocument();
     expect(

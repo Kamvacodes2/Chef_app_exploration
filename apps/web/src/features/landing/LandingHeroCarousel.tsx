@@ -43,9 +43,7 @@ const POSTER_STORIES: Array<{
         <br />
         Switch off.
         <br />
-        Let someone
-        <br />
-        else cook.
+        Let us cook.
       </>
     ),
     body: HERO_STORIES[2].body,
@@ -111,7 +109,7 @@ export function LandingHeroCarousel(): ReactElement {
 
           <p
             key={`hero-copy-${activeIndex}`}
-            className="landing-hero-story-reveal mt-5 max-w-[32rem] text-base leading-7 text-[var(--color-warm-cream)]/78 sm:mt-7 sm:text-lg"
+            className="landing-hero-story-reveal mt-5 line-clamp-3 min-h-[5.25rem] max-w-[32rem] text-base leading-7 text-[var(--color-warm-cream)]/78 sm:mt-7 sm:text-lg"
           >
             {activePosterStory.body}
           </p>
