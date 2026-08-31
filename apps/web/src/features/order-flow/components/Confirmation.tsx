@@ -2,8 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, type ReactElement, type ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { findChefmatePlan } from "@/features/plans/planCatalog";
 import { useOrder } from "../state/OrderContext";
 
@@ -42,29 +41,16 @@ function DetailRow({
 
 export function Confirmation(): ReactElement {
   const { state, bookingConfirmation, reset } = useOrder();
-  const router = useRouter();
   const payment = bookingConfirmation?.payment;
   const bankTransfer = payment?.method === "BANK_TRANSFER" ? payment.bankTransfer : null;
   const paystack = payment?.method === "PAYSTACK" ? payment.paystack : null;
   const isReviewRequest = bookingConfirmation?.status === "NEEDS_REVIEW";
   const isPlanRequest = isReviewRequest && Boolean(findChefmatePlan(state.planId)?.recurring);
-  const isPaystackOrder = payment?.method === "PAYSTACK";
   const milestones = isPlanRequest
     ? ["Plan request received", "Schedule review", "Payment details", "Plan activation"]
     : isReviewRequest
       ? ["Request received", "Chefmate review", "Price confirmation", "Chef matching"]
-      : isPaystackOrder
-        ? ["Order received", "Secure checkout", "Chef matching", "Visit complete"]
-        : ["Order received", "Payment review", "Chef matching", "Visit complete"];
-
-  // Redirect to standalone confirmation page when booking is confirmed.
-  // This fires for both bank-transfer bookings (immediate) and Paystack
-  // bookings (when the user returns from the payment gateway).
-  useEffect(() => {
-    if (bookingConfirmation?.reference && !isPaystackOrder) {
-      router.replace(`/confirmed?ref=${bookingConfirmation.reference}`);
-    }
-  }, [bookingConfirmation?.reference, isPaystackOrder, router]);
+      : ["Order received", "Payment review", "Chef matching", "Visit complete"];
 
   return (
     <div className="flex w-full flex-col items-center gap-6 py-8 text-center">
@@ -87,19 +73,17 @@ export function Confirmation(): ReactElement {
       <div className="flex flex-col gap-2">
         <h2 className="font-display text-4xl font-semibold text-[var(--color-bone)]">
           {isPlanRequest
-            ? "Plan request received."
+            ? "Thank you. Your plan request is received."
             : isReviewRequest
-              ? "Request received."
-              : "Order received."}
+              ? "Thank you. Your request is received."
+              : "Thank you for your order."}
         </h2>
         <p className="mx-auto max-w-md text-sm text-[var(--color-bone)]/70">
           {isPlanRequest
             ? "We will confirm your recurring routine and monthly payment details before activating your plan."
             : isReviewRequest
               ? "Our team will review your recipe and email a tailored price before payment."
-              : isPaystackOrder
-                ? "Complete your secure Paystack checkout so we can match your Chefmate."
-                : `We have received your request for ${state.main?.name ?? "your meal"} on ${state.date ?? ""}${state.time ? " at " + state.time : ""}.`}
+              : `Thank you for ordering ${state.main?.name ?? "your meal"} for ${state.date ?? ""}${state.time ? " at " + state.time : ""}.`}
         </p>
         {bankTransfer && (
           <p className="mx-auto max-w-md text-sm text-[var(--color-bone)]/70">
@@ -166,24 +150,15 @@ export function Confirmation(): ReactElement {
         </div>
       ) : paystack ? (
         <div className="w-full max-w-lg rounded-3xl bg-[var(--color-bone)] p-5 text-left text-[var(--color-oxblood)]">
-          <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h3 className="font-display text-2xl font-semibold">Secure checkout</h3>
+          <div className="mb-2 flex items-baseline justify-between gap-4">
+            <h3 className="font-display text-2xl font-semibold">Payment details</h3>
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]/60">
               {payment?.status}
             </span>
           </div>
           <p className="text-sm leading-6 text-[var(--color-charcoal)]/75">
-            We are sending you to Paystack to complete payment. If the redirect does not open, use
-            the secure checkout button below.
+            A confirmation of your order and payment details has been sent to your email.
           </p>
-          {paystack.authorizationUrl ? (
-            <a
-              href={paystack.authorizationUrl}
-              className="mt-4 inline-flex rounded-2xl bg-[var(--color-oxblood)] px-5 py-3 font-display text-sm text-[var(--color-bone)] shadow-lg transition-transform hover:scale-105 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)]"
-            >
-              Continue to Paystack
-            </a>
-          ) : null}
         </div>
       ) : (
         <p className="max-w-md text-sm text-[var(--color-bone)]/70">

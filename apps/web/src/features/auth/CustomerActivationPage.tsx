@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
+import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 import {
   consumeCustomerActivation,
   setCustomerPassword,
@@ -26,6 +28,8 @@ export function CustomerActivationPage({
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
+  const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const activationStarted = useRef(false);
 
   useEffect(() => {
@@ -44,8 +48,16 @@ export function CustomerActivationPage({
     }
 
     void consumeCustomerActivation(token)
-      .then((user) => {
-        if (active) setState({ status: "ready", user });
+      .then(async (user) => {
+        if (active) {
+          setState({ status: "ready", user });
+          try {
+            const status = await fetchPolicyStatus();
+            if (active) setPolicyStatus(status);
+          } catch {
+            // If the status check fails, still let the customer continue.
+          }
+        }
       })
       .catch((error: unknown) => {
         if (active) {
@@ -114,6 +126,19 @@ export function CustomerActivationPage({
 
         {state.status === "ready" ? (
           <div className="mt-6 space-y-7">
+            {policyStatus !== null &&
+            policyStatus.some((policy) => policy.required && !policy.accepted) &&
+            !policiesAccepted ? (
+              <PolicyAcceptanceModal
+                mode="required"
+                policies={policyStatus.filter((policy) => policy.required && !policy.accepted)}
+                onComplete={async () => {
+                  const nextStatus = await fetchPolicyStatus();
+                  setPolicyStatus(nextStatus);
+                  setPoliciesAccepted(true);
+                }}
+              />
+            ) : null}
             <div className="rounded-lg bg-[var(--color-warm-cream)] p-4" role="status">
               <p className="font-semibold text-[var(--color-oxblood)]">
                 You are signed in as {state.user.displayName}.

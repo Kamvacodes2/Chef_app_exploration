@@ -24,7 +24,9 @@ export function CustomerOverview() {
       .catch(() => setPolicyStatus(null));
   }, []);
 
-  const unacceptedCount = policyStatus?.filter((p) => !p.accepted).length ?? 0;
+  const requiredPending = policyStatus?.filter((p) => p.required && !p.accepted) ?? [];
+  const optionalPending = policyStatus?.filter((p) => !p.required && !p.accepted) ?? [];
+  const unacceptedCount = requiredPending.length + optionalPending.length;
 
   return (
     <div className="space-y-6">
@@ -63,11 +65,24 @@ export function CustomerOverview() {
         </div>
       ) : null}
 
-      {/* Policy modal */}
-      {showPolicyModal && policyStatus ? (
+      {/* Required policy gate: the customer must accept current required terms to continue. */}
+      {requiredPending.length > 0 ? (
+        <PolicyAcceptanceModal
+          mode="required"
+          policies={requiredPending}
+          onComplete={async () => {
+            const nextStatus = await fetchPolicyStatus();
+            setPolicyStatus(nextStatus);
+            requestAnimationFrame(() => dashboardHeadingRef.current?.focus());
+          }}
+        />
+      ) : null}
+
+      {/* Optional policy modal */}
+      {showPolicyModal && policyStatus && optionalPending.length > 0 ? (
         <PolicyAcceptanceModal
           mode="optional"
-          policies={policyStatus}
+          policies={optionalPending}
           onComplete={async () => {
             const nextStatus = await fetchPolicyStatus();
             setPolicyStatus(nextStatus);

@@ -132,7 +132,7 @@ describe("Confirmation — completed order", () => {
   it("announces the order and shows the reference", () => {
     renderWith(controller({ bookingConfirmation: confirmed }));
 
-    expect(screen.getByRole("heading", { name: "Order received." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Thank you for your order." })).toBeInTheDocument();
     expect(screen.getByText("CM-1001")).toBeInTheDocument();
   });
 
@@ -168,15 +168,12 @@ describe("Confirmation — completed order", () => {
     expect(screen.getByText("Visit complete")).toBeInTheDocument();
   });
 
-  it("renders the Paystack checkout fallback link for Paystack orders", () => {
+  it("shows the payment-details placeholder rather than redirecting to Paystack", () => {
     renderWith(controller({ bookingConfirmation: paystackConfirmed }));
 
-    expect(screen.getByRole("heading", { name: "Secure checkout" })).toBeInTheDocument();
-    expect(screen.getByText(/secure Paystack checkout/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Continue to Paystack" })).toHaveAttribute(
-      "href",
-      "https://checkout.paystack.com/test-auth",
-    );
+    expect(screen.getByRole("heading", { name: "Payment details" })).toBeInTheDocument();
+    expect(screen.getByText(/confirmation of your order and payment details/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Continue to Paystack" })).not.toBeInTheDocument();
   });
 
   it("resets the flow when the customer starts another request", () => {
@@ -199,7 +196,9 @@ describe("Confirmation — request needing review", () => {
   it("does not quote a price that has not been confirmed", () => {
     renderWith(controller({ bookingConfirmation: review }));
 
-    expect(screen.getByRole("heading", { name: "Request received." })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Thank you. Your request is received." }),
+    ).toBeInTheDocument();
     expect(screen.getByText("To be confirmed")).toBeInTheDocument();
   });
 
