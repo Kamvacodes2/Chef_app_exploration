@@ -212,8 +212,7 @@ function ConfirmedPageContent() {
           Dinner is handled. 🤎
         </h1>
         <p className="max-w-md text-[var(--color-charcoal)]/70">
-          We couldn&apos;t find a booking to show here. If you just completed an order, check your
-          email for the confirmation details.
+          Thank you for making your order. Check your email for the confirmation details.
         </p>
         <Link
           href="/"
