@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { createCustomerAccount, signIn, type AuthenticatedUser } from "./api/authClient";
+import { useAuth } from "./AuthContext";
 
 type AuthMode = "login" | "register";
 
 export function AuthPage() {
+  const { refresh } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +35,9 @@ export function AuthPage() {
         ? await createCustomerAccount({ displayName, email, password })
         : await signIn({ email, password });
       setUser(authenticatedUser);
+      // Sync into the global auth context so the site header reflects the
+      // sign-in immediately—no page refresh needed before navigating.
+      void refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Chefmate could not sign you in.");
     } finally {

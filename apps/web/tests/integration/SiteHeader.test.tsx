@@ -70,6 +70,26 @@ describe("SiteHeader", () => {
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
   });
 
+  it("toggles a mobile menu with navigation and actions", () => {
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole("link", { name: "Book a chef" })).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "Open menu" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole("button", { name: "Close menu" })).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("link", { name: "How it works" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: "Book a chef" }).length).toBeGreaterThanOrEqual(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Close menu" }));
+
+    expect(screen.getByRole("button", { name: "Open menu" })).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("shows only logout without a dashboard link for a signed-in non-customer", () => {
     mockAuth.user = { roles: ["CHEF"] };
     render(<SiteHeader />);

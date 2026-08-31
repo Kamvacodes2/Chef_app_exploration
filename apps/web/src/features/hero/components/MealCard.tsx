@@ -49,10 +49,10 @@ export function MealCard({ meal }: MealCardProps) {
         </div>
       </div>
       <div className="-mt-7 w-full max-w-[17rem] rounded-xl bg-white/85 px-3.5 pb-4 pt-9 text-center leading-relaxed shadow backdrop-blur-sm sm:-mt-9 sm:max-w-[19rem] sm:px-4 sm:pb-4 sm:pt-11">
-        <h3 className="font-display text-xs font-semibold leading-snug text-neutral-900 sm:text-sm">
+        <h3 className="line-clamp-1 font-display text-xs font-semibold leading-snug text-neutral-900 sm:text-sm">
           {meal.name}
         </h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 sm:mt-2 sm:text-xs">
+        <p className="mt-1.5 line-clamp-3 min-h-[3.75rem] text-xs leading-relaxed text-neutral-600 sm:mt-2 sm:text-xs">
           {meal.description}
         </p>
         <NutritionFacts nutrition={meal.nutrition} />
