@@ -212,23 +212,11 @@ export function PolicyAcceptanceModal({
 
         {current ? (
           <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-[var(--color-charcoal)]/75">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-2xl bg-[var(--color-warm-cream)] p-4">
-              <dt className="font-semibold text-[var(--color-charcoal)]">Version</dt>
-              <dd>{current.requiredVersion}</dd>
-              <dt className="font-semibold text-[var(--color-charcoal)]">Effective</dt>
-              <dd>{formatPolicyDate(current.effectiveAt)}</dd>
-            </dl>
-
             {current.stale ? (
               <div className="mt-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4 text-amber-950">
                 <p className="font-semibold">This policy has been updated.</p>
                 <p className="mt-1 text-xs">
-                  {current.acceptedVersion
-                    ? `Your previous acceptance was for version ${current.acceptedVersion}.`
-                    : "You have not accepted the current version."}{" "}
-                  {current.acceptedAt
-                    ? `That acceptance was recorded on ${formatPolicyDate(current.acceptedAt)}.`
-                    : null}
+                  Please review the current document and acknowledge it again to continue.
                 </p>
               </div>
             ) : null}
@@ -251,10 +239,7 @@ export function PolicyAcceptanceModal({
                 onChange={(event) => setAcknowledged(event.target.checked)}
                 type="checkbox"
               />
-              <span>
-                I acknowledge that I have reviewed and accept {current.title} version{" "}
-                {current.requiredVersion}.
-              </span>
+              <span>I acknowledge that I have reviewed and accept {current.title}.</span>
             </label>
           </div>
         ) : (
@@ -285,7 +270,7 @@ export function PolicyAcceptanceModal({
               onClick={() => void handleAccept()}
               type="button"
             >
-              {busy ? "Please wait..." : `Accept version ${current.requiredVersion}`}
+              {busy ? "Please wait..." : "Accept"}
             </button>
           ) : (
             <button
@@ -311,10 +296,4 @@ export function PolicyAcceptanceModal({
       </div>
     </div>
   );
-}
-
-function formatPolicyDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(date);
 }

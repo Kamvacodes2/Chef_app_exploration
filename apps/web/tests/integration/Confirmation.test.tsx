@@ -2,11 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-// Confirmation calls useRouter() to redirect bank-transfer bookings to the
-// standalone /confirmed page. jsdom has no App Router, so the hook throws
-// unless next/navigation is mocked (invariant expected app router to be
-// mounted). The redirect itself is covered by the order-flow E2E suite; these
-// tests only need a no-op router.
+// Confirmation was previously wired to redirect bank-transfer bookings to the
+// standalone /confirmed page. The in-flow thank-you screen now persists after
+// checkout (no redirect). next/navigation is still mocked so this component
+// renders in jsdom without an App Router; the whole order flow is covered by
+// the order-flow test suite.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     replace: vi.fn(),

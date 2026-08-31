@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-const TERMS_VERSION = "2026-08-18";
-
 const contents = [
   ["introduction", "Introduction"],
   ["consumer-protection-notice", "Consumer Protection Notice"],
@@ -98,9 +96,6 @@ export default function ChefAgreementPage() {
         <h1 className="mt-2 text-3xl font-black text-[var(--color-oxblood)] sm:text-4xl">
           Terms and Conditions for Chefs
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--color-charcoal)]/70">
-          Version {TERMS_VERSION} · Effective 18 August 2026
-        </p>
         <p className="mt-3 text-sm leading-relaxed text-[var(--color-charcoal)]/70">
           These binding Terms govern every Chef&apos;s access to and use of the Chef Mate platform.
           The service currently supports once-off Bookings. Clauses concerning a Subscription
@@ -1335,9 +1330,6 @@ export default function ChefAgreementPage() {
       </div>
 
       <footer className="mt-12 border-t border-[var(--color-oxblood)]/10 pt-6 text-sm text-[var(--color-charcoal)]/55">
-        <p>
-          <strong>Version:</strong> {TERMS_VERSION} · <strong>Effective:</strong> 18 August 2026
-        </p>
         <a
           className="mt-4 inline-block font-bold text-[var(--color-oxblood)] underline"
           href="#top"

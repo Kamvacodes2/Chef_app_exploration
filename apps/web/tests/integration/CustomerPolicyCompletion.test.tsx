@@ -60,10 +60,8 @@ describe("CustomerOverview optional policy completion", () => {
     fireEvent.click(review);
     await screen.findByRole("dialog", { name: "Customer Terms" });
 
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: /accept Customer Terms version 2026-08-19/ }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Accept version 2026-08-19" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /accept Customer Terms/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
     await waitFor(() => expect(api.fetchPolicyStatus).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

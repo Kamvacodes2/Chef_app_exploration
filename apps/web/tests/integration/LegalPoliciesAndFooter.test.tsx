@@ -14,7 +14,7 @@ describe("published companion policies", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Customer Terms and Conditions",
     );
-    expect(screen.getByText("Version 2026-08-19 · Effective 19 August 2026")).toBeInTheDocument();
+    expect(screen.queryByText(/Version 2026-08-19/)).not.toBeInTheDocument();
     expect(sectionFor("4. Customer cancellation")).toHaveTextContent(
       "The applicable band is only a ceiling",
     );
@@ -32,7 +32,7 @@ describe("published companion policies", () => {
   it("publishes purpose-specific HURU consent, special-information handling, and human review", () => {
     render(<PrivacyPage />);
 
-    expect(screen.getByText("Version 2026-08-19 · Effective 19 August 2026")).toBeInTheDocument();
+    expect(screen.queryByText(/Version 2026-08-19/)).not.toBeInTheDocument();
     const huru = sectionFor("4. HURU/Afiswitch criminal background checks");
     expect(huru).toHaveTextContent("affirmative, purpose-specific consent");
     expect(huru).toHaveTextContent(
@@ -67,7 +67,7 @@ describe("published companion policies", () => {
     render(<Page />);
 
     expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
-    expect(screen.getByText("Version 2026-08-19 · Effective 19 August 2026")).toBeInTheDocument();
+    expect(screen.queryByText(/Version 2026-08-19/)).not.toBeInTheDocument();
     expect(sectionFor(section)).toHaveTextContent(contract);
   });
 });

@@ -42,7 +42,7 @@ describe("canonical Chef Agreement", () => {
     const header = heading.closest("header");
 
     expect(header).toHaveTextContent("Binding terms");
-    expect(header).toHaveTextContent("Version 2026-08-18 · Effective 18 August 2026");
+    expect(header).not.toHaveTextContent(/Version|Effective/);
     expect(header).toHaveTextContent("These binding Terms govern every Chef's access");
     expect(container).not.toHaveTextContent(/draft|preview|activation blocker/i);
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();

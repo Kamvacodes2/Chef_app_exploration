@@ -60,9 +60,10 @@ describe("PolicyAcceptanceModal", () => {
     const heading = screen.getByRole("heading", { name: "Chef Terms" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(heading).toHaveFocus();
-    expect(screen.getByText("2026-08-18")).toBeInTheDocument();
     expect(screen.getByText("This policy has been updated.")).toBeInTheDocument();
-    expect(screen.getByText(/previous acceptance was for version 2026-08-09/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Please review the current document and acknowledge it again to continue."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Open Chef Terms/ })).toHaveAttribute(
       "href",
       "/legal/chef-agreement",
@@ -76,7 +77,7 @@ describe("PolicyAcceptanceModal", () => {
 
     const acknowledgement = screen.getByRole("checkbox", { name: /I acknowledge/ });
     expect(acknowledgement).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "Accept version 2026-08-18" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Accept" })).toBeDisabled();
 
     unmount();
     expect(outside).toHaveFocus();
@@ -87,11 +88,9 @@ describe("PolicyAcceptanceModal", () => {
     const onComplete = vi.fn().mockResolvedValue(undefined);
     render(<PolicyAcceptanceModal onComplete={onComplete} policies={[chefTerms, codeOfConduct]} />);
 
-    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms version 2026-08-18/ }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Accept version 2026-08-18" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Accept version 2026-08-18" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
     await expect(
       screen.findByRole("heading", { name: "Chef Code of Conduct" }),
@@ -99,13 +98,11 @@ describe("PolicyAcceptanceModal", () => {
     expect(api.acceptPolicy).toHaveBeenNthCalledWith(1, "CHEF_TERMS", "2026-08-18");
     expect(onComplete).not.toHaveBeenCalled();
     expect(screen.getByRole("checkbox", { name: /accept Chef Code of Conduct/ })).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "Accept version 2026-08-09" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Accept" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Code of Conduct/ }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Accept version 2026-08-09" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Accept version 2026-08-09" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
     expect(api.acceptPolicy).toHaveBeenNthCalledWith(2, "CHEF_CODE_OF_CONDUCT", "2026-08-09");
@@ -118,7 +115,7 @@ describe("PolicyAcceptanceModal", () => {
     render(<PolicyAcceptanceModal onComplete={vi.fn()} policies={[chefTerms]} />);
 
     fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Accept version 2026-08-18" }));
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
     expect(screen.getByRole("dialog")).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Saving your acceptance");
@@ -132,7 +129,7 @@ describe("PolicyAcceptanceModal", () => {
       "Required policy version changed",
     );
     expect(screen.getByRole("heading", { name: "Chef Terms" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Accept version 2026-08-18" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled();
   });
 
   it("cannot be dismissed in required mode while logout remains available", () => {

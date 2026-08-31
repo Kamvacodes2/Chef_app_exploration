@@ -168,9 +168,7 @@ describe("ChefPolicyGate", () => {
       screen.getByRole("button", { name: "Log out and leave the Chef Portal" }),
     ).toBeInTheDocument();
     if (previous) {
-      expect(
-        screen.getByText(new RegExp(`previous acceptance was for version ${previous}`)),
-      ).toBeInTheDocument();
+      expect(screen.getByText("This policy has been updated.")).toBeInTheDocument();
     }
   });
 
@@ -185,8 +183,8 @@ describe("ChefPolicyGate", () => {
     initialStatus.resolve([staleAcceptance]);
 
     await screen.findByRole("dialog", { name: "Chef Terms" });
-    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms version 2026-08-18/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Accept version 2026-08-18" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
     await waitFor(() => expect(api.fetchPolicyStatus).toHaveBeenCalledTimes(2));
     expect(api.acceptPolicy).toHaveBeenCalledWith("CHEF_TERMS", "2026-08-18");

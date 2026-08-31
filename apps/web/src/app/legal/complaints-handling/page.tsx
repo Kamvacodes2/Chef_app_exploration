@@ -9,10 +9,6 @@ export default function ComplaintsHandlingPage() {
       <h1 className="text-3xl font-black text-[var(--color-oxblood)]">
         Complaints Handling Process
       </h1>
-      <p className="mt-2 text-sm text-[var(--color-charcoal)]/50">
-        Version 2026-08-19 · Effective 19 August 2026
-      </p>
-
       <div className="mt-8 space-y-8 text-sm leading-relaxed text-[var(--color-charcoal)]/75">
         <section>
           <h2 className="text-lg font-bold text-[var(--color-charcoal)]">1. Purpose and scope</h2>

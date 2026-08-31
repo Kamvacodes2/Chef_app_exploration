@@ -11,7 +11,6 @@ export default function TermsPage() {
       <h1 className="text-3xl font-black text-[var(--color-oxblood)]">
         Website & App Terms of Use
       </h1>
-      <p className="mt-2 text-sm text-[var(--color-charcoal)]/50">Version 2026-08-09</p>
 
       <section className="mt-8 space-y-6 text-sm leading-relaxed">
         <div>
