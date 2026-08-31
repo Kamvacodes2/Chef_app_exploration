@@ -10,6 +10,10 @@ const api = vi.hoisted(() => ({
 
 vi.mock("@/features/platform/api/platformClient", () => api);
 
+vi.mock("@/features/customer/api/customerBookingsClient", () => ({
+  fetchCustomerBookings: vi.fn(async () => []),
+}));
+
 const pendingCustomerTerms: PolicyStatusItem = {
   policyKey: "CUSTOMER_TERMS",
   title: "Customer Terms",
