@@ -5,6 +5,10 @@ import {
   logout,
   signIn,
 } from "@/features/auth/api/authClient";
+import {
+  consumeCustomerActivation,
+  setCustomerPassword,
+} from "@/features/auth/api/customerActivationClient";
 
 const authenticatedUser = {
   id: "user-1",
@@ -103,6 +107,50 @@ describe("authClient", () => {
         method: "POST",
         credentials: "include",
         signal: expect.any(AbortSignal),
+      }),
+    );
+  });
+
+  it("consumes a customer activation link with browser credentials enabled", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { user: authenticatedUser } }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      consumeCustomerActivation("activation-token", { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toMatchObject({
+      email: authenticatedUser.email,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/auth/customer-activation",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({ token: "activation-token" }),
+      }),
+    );
+  });
+
+  it("sets a customer password through the authenticated session", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { user: authenticatedUser } }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      setCustomerPassword("A-secure-password-2026!", { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toMatchObject({
+      email: authenticatedUser.email,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/auth/password",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({ password: "A-secure-password-2026!" }),
       }),
     );
   });
