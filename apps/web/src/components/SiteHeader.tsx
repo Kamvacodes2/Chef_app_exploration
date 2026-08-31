@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BrandMark } from "@/features/hero/components/BrandMark";
+import { useAuth } from "@/features/auth/AuthContext";
 
 interface SiteHeaderProps {
   /**
@@ -18,8 +19,17 @@ interface SiteHeaderProps {
  * feature state when the wordmark is activated.
  */
 export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
+  const { user, logout } = useAuth();
+  const isCustomer = user?.roles.includes("CUSTOMER") ?? false;
+
   const returnToStart = (): void => {
     window.location.assign("/");
+  };
+
+  const handleLogout = (): void => {
+    void logout().finally(() => {
+      window.location.assign("/");
+    });
   };
 
   return (
@@ -68,12 +78,32 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
               >
                 Book a chef
               </Link>
-              <a
-                href="/login"
-                className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
-              >
-                Login
-              </a>
+              {user ? (
+                <>
+                  {isCustomer ? (
+                    <Link
+                      href="/customer/dashboard"
+                      className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
+                    >
+                      My Dashboard
+                    </Link>
+                  ) : null}
+                  <button
+                    className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
+                    onClick={handleLogout}
+                    type="button"
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <a
+                  href="/login"
+                  className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-oxblood)]/35 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-4 sm:text-sm"
+                >
+                  Login
+                </a>
+              )}
             </div>
           </>
         )}

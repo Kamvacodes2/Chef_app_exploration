@@ -209,6 +209,10 @@ function postLoginLinks(roles: AuthenticatedUser["roles"]): readonly PostLoginLi
     links.push({ href: "/chef/portal", label: "Go to chef portal" });
   }
 
+  if (roles.includes("CUSTOMER")) {
+    links.push({ href: "/customer/dashboard", label: "Go to customer dashboard" });
+  }
+
   if (links.length === 0) {
     links.push({ href: "/#order-flow", label: "Book a chef" });
   }

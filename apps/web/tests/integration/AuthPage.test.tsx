@@ -56,7 +56,7 @@ describe("AuthPage", () => {
     expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "new-password");
   });
 
-  it("signs in returning customers and offers a booking deep link", async () => {
+  it("signs in returning customers and offers a link to the customer dashboard", async () => {
     authApi.signIn.mockResolvedValue(customer);
     render(<AuthPage />);
 
@@ -71,9 +71,9 @@ describe("AuthPage", () => {
     await expect(screen.findByRole("status")).resolves.toHaveTextContent(
       "Signed in as Test Customer.",
     );
-    expect(screen.getByRole("link", { name: "Book a chef" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Go to customer dashboard" })).toHaveAttribute(
       "href",
-      "/#order-flow",
+      "/customer/dashboard",
     );
     expect(authApi.signIn).toHaveBeenCalledWith({
       email: customer.email,

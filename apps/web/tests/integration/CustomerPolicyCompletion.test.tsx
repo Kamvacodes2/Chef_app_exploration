@@ -8,7 +8,18 @@ const api = vi.hoisted(() => ({
   fetchPolicyStatus: vi.fn(),
 }));
 
-vi.mock("@/features/platform/api/platformClient", () => api);
+vi.mock("@/features/platform/api/platformClient", async () => {
+  const { z } = await import("zod");
+  return {
+    ...api,
+    // AuthContext pulls platformRoleSchema through the auth client; a valid
+    // schema keeps z.array(platformRoleSchema) from throwing on import.
+    platformRoleSchema: z.preprocess(
+      (value) => (value === "COOK" ? "CHEF" : value),
+      z.enum(["CUSTOMER", "CHEF", "ADMIN", "SUPPORT"]),
+    ),
+  };
+});
 
 vi.mock("@/features/customer/api/customerBookingsClient", () => ({
   fetchCustomerBookings: vi.fn(async () => []),

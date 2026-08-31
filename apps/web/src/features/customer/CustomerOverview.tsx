@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
+import { useAuth } from "@/features/auth/AuthContext";
 import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 import {
   fetchCustomerBookings,
@@ -49,10 +50,17 @@ function mealList(booking: CustomerBooking): string {
 }
 
 export function CustomerOverview() {
+  const { logout } = useAuth();
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [bookings, setBookings] = useState<CustomerBooking[] | null>(null);
   const dashboardHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  const handleLogout = (): void => {
+    void logout().finally(() => {
+      window.location.assign("/");
+    });
+  };
 
   useEffect(() => {
     void fetchPolicyStatus()
@@ -78,13 +86,26 @@ export function CustomerOverview() {
     <div className="space-y-6">
       {/* Welcome banner */}
       <div className="rounded-3xl bg-[var(--color-oxblood)] p-8 text-white">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/70">
-          Customer Dashboard
-        </p>
-        <h2 ref={dashboardHeadingRef} className="mt-3 text-3xl font-black" tabIndex={-1}>
-          Welcome back! 👋
-        </h2>
-        <p className="mt-3 max-w-3xl text-white/75">Your next dinner is handled with ChefMate.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/70">
+              Customer Dashboard
+            </p>
+            <h2 ref={dashboardHeadingRef} className="mt-3 text-3xl font-black" tabIndex={-1}>
+              Welcome back! 👋
+            </h2>
+            <p className="mt-3 max-w-3xl text-white/75">
+              Your next dinner is handled with ChefMate.
+            </p>
+          </div>
+          <button
+            className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-white/35 px-4 text-sm font-bold text-white transition hover:border-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            onClick={handleLogout}
+            type="button"
+          >
+            Log out
+          </button>
+        </div>
       </div>
 
       {/* Policy acceptance banner */}

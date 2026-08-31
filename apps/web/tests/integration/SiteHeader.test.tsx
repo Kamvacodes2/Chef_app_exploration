@@ -1,8 +1,26 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "@/components/SiteHeader";
 
+interface AuthState {
+  user: { roles: readonly string[] } | null;
+  logout: () => Promise<void>;
+}
+
+let mockAuth: AuthState = {
+  user: null,
+  logout: vi.fn(async () => {}),
+};
+
+vi.mock("@/features/auth/AuthContext", () => ({
+  useAuth: () => mockAuth,
+}));
+
 describe("SiteHeader", () => {
+  beforeEach(() => {
+    mockAuth.user = null;
+  });
+
   it("renders the brand mark, primary navigation, booking action, and login action", () => {
     render(<SiteHeader />);
 
@@ -38,5 +56,45 @@ describe("SiteHeader", () => {
     expect(screen.queryByRole("navigation", { name: "Primary" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Book a chef" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("replaces Login with dashboard and logout for a signed-in customer", () => {
+    mockAuth.user = { roles: ["CUSTOMER"] };
+    render(<SiteHeader />);
+
+    expect(screen.getByRole("link", { name: "My Dashboard" })).toHaveAttribute(
+      "href",
+      "/customer/dashboard",
+    );
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("shows only logout without a dashboard link for a signed-in non-customer", () => {
+    mockAuth.user = { roles: ["CHEF"] };
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole("link", { name: "My Dashboard" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("logs a signed-in customer out when Log out is clicked", async () => {
+    mockAuth.user = { roles: ["CUSTOMER"] };
+    mockAuth.logout = vi.fn(async () => {});
+    const assign = vi.fn();
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, assign },
+      writable: true,
+    });
+
+    render(<SiteHeader />);
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+
+    await waitFor(() => expect(mockAuth.logout).toHaveBeenCalledTimes(1));
+    expect(assign).toHaveBeenCalledWith("/");
+    expect(window.location.assign).toHaveBeenCalledWith("/");
   });
 });
