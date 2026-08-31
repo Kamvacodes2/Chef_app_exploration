@@ -1,5 +1,12 @@
 export const CHEFMATE_BUSINESS_TIME_ZONE = "Africa/Johannesburg";
 
+/**
+ * Operational lead time: bookings must start at least this many hours from
+ * now. Mirrors the backend's LEAD_TIME_HOURS so the local fallback agrees
+ * with the server even when the availability API is unreachable.
+ */
+export const LEAD_TIME_HOURS = 24;
+
 export interface BusinessDateParts {
   readonly year: number;
   readonly month: number;
@@ -52,7 +59,7 @@ export function businessDateToCalendarDate(parts: BusinessDateParts): Date {
   return new Date(parts.year, parts.month - 1, parts.day);
 }
 
-/** Mirrors the API's same-day rule so stale times are never selectable in the UI. */
+/** Mirrors the API's 24h lead-time rule so slots inside the window are never selectable in the UI. */
 export function isBookableJohannesburgTimeSlot(
   date: string,
   time: string,
@@ -61,13 +68,29 @@ export function isBookableJohannesburgTimeSlot(
   const now = getJohannesburgBusinessDateTime(instant);
   const today = businessDateToISODate(now);
   if (date < today) return false;
-  if (date > today) return true;
 
   const [hourText, minuteText] = time.split(":");
   const hour = Number(hourText);
   const minute = Number(minuteText);
   if (!Number.isInteger(hour) || !Number.isInteger(minute)) return false;
-  return hour * 60 + minute > now.hour * 60 + now.minute;
+
+  const dayDiff = dayDiffFromISODate(date, today);
+  const leadMinutes = dayDiff * 24 * 60 + (hour * 60 + minute - (now.hour * 60 + now.minute));
+  return leadMinutes >= LEAD_TIME_HOURS * 60;
+}
+
+/** Whole days between two yyyy-mm-dd strings (negative if `date` is before `today`). */
+function dayDiffFromISODate(date: string, today: string): number {
+  const [y1, m1, d1] = date.split("-").map(Number);
+  const [y2, m2, d2] = today.split("-").map(Number);
+  if (!Number.isInteger(y1) || !Number.isInteger(m1) || !Number.isInteger(d1) ||
+      !Number.isInteger(y2) || !Number.isInteger(m2) || !Number.isInteger(d2)) {
+    return -1;
+  }
+  return (
+    (Date.UTC(y1 as number, (m1 as number) - 1, d1 as number) -
+      Date.UTC(y2 as number, (m2 as number) - 1, d2 as number)) / 86_400_000
+  );
 }
 
 function toBusinessDate(parts: BusinessDateTimeParts): BusinessDateParts {

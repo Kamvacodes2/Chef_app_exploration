@@ -118,28 +118,46 @@ describe("ScheduleSelect", () => {
       fireEvent.click(screen.getByRole("button", { name: /pick a date/i }));
 
       expect(screen.getByRole("button", { name: "Previous month" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "14" })).toBeDisabled();
-      const fifteenth = screen.getByRole("button", { name: "15" });
-      expect(fifteenth).not.toBeDisabled();
+      // 24h lead time at 00:30 JHB Aug 15: Aug 15 entirely inside the window;
+      // Aug 16 07:00 JHB is 30.5h away -> bookable.
+      expect(screen.getByRole("button", { name: "15" })).toBeDisabled();
+      const sixteenth = screen.getByRole("button", { name: "16" });
+      expect(sixteenth).not.toBeDisabled();
 
-      fireEvent.click(fifteenth);
-      expect(setDate).toHaveBeenCalledWith("2026-08-15");
+      fireEvent.click(sixteenth);
+      expect(setDate).toHaveBeenCalledWith("2026-08-16");
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("disables passed same-day slots while leaving later slots selectable", () => {
+  it("shows the 24h lead-time notice with the earliest bookable day", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-15T13:19:00.000Z"));
+    vi.setSystemTime(new Date("2026-08-15T10:30:00.000Z")); // 12:30 Johannesburg
 
     try {
-      renderSchedule({ state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-15" } });
+      renderSchedule({});
+
+      // Window closes 2026-08-16 12:30 JHB; tomorrow's 20:00 slot is beyond, so Aug 16 is bookable.
+      expect(screen.getByText(/at least 24 hours/i)).toBeInTheDocument();
+      expect(screen.getByText(/earliest day you can book is/i)).toBeInTheDocument();
+      expect(screen.getByText("16 August 2026")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("disables slots inside the 24h lead-time window while leaving later slots selectable", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T13:19:00.000Z")); // 15:19 Johannesburg
+
+    try {
+      renderSchedule({ state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-16" } });
 
       fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
 
+      // 2026-08-16 15:00 JHB is only 23.7h away -> inside window.
       expect(screen.getByRole("button", { name: "15:00" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "16:00" })).toBeEnabled();
     } finally {
       vi.useRealTimers();
     }

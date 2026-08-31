@@ -82,6 +82,12 @@ function buildMonthDays(month: Date, todayIso: string): readonly CalendarDay[] {
   return days;
 }
 
+function addDaysISO(iso: string, days: number): string {
+  const d = parseISODate(iso);
+  d.setDate(d.getDate() + days);
+  return toISODate(d);
+}
+
 function addMonths(d: Date, amount: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + amount, 1);
 }
@@ -146,11 +152,26 @@ export function ScheduleSelect(): ReactElement {
     if (state.time && availability.get(state.time) === false) setTime(null);
   }, [availability, setTime, state.time]);
 
-  const days = useMemo(() => buildMonthDays(visibleMonth, todayIso), [todayIso, visibleMonth]);
   const leadingBlanks = visibleMonth.getDay();
   const canGoToPreviousMonth = visibleMonth > currentMonth;
   const selectedDateLabel = selectedDate ? friendlyDate(selectedDate) : "Choose a day";
   const activePeriodConfig = TIME_PERIODS.find((period) => period.id === activePeriod) ?? null;
+
+  // 24h lead-time notice: earliest bookable date is today+1 (or today+2 if no
+  // tomorrow slot clears the window yet).
+  const earliestBookableIso = useMemo(() => {
+    const tomorrowIso = addDaysISO(todayIso, 1);
+    const dayAfterIso = addDaysISO(todayIso, 2);
+    const anyTomorrow = TIME_PERIODS.flatMap((p) => p.slots).some((t) =>
+      isBookableJohannesburgTimeSlot(tomorrowIso, t, now),
+    );
+    return anyTomorrow ? tomorrowIso : dayAfterIso;
+  }, [now, todayIso]);
+
+  const days = useMemo(
+    () => buildMonthDays(visibleMonth, earliestBookableIso),
+    [earliestBookableIso, visibleMonth],
+  );
 
   const chooseDate = (iso: string): void => {
     setDate(iso);
@@ -164,7 +185,12 @@ export function ScheduleSelect(): ReactElement {
           What day and time works for you?
         </h2>
         <p className="text-sm text-[var(--color-bone)]/70">
-          Pick when your Chefmate should come by.
+          Pick when your Chefmate should come by. Orders need at least 24 hours
+          of lead time — the earliest day you can book is{" "}
+          <strong className="text-[var(--color-bone)]">
+            {friendlyDate(parseISODate(earliestBookableIso))}
+          </strong>
+          .
         </p>
       </div>
 
