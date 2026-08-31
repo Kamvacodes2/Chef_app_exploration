@@ -83,13 +83,20 @@ export function isBookableJohannesburgTimeSlot(
 function dayDiffFromISODate(date: string, today: string): number {
   const [y1, m1, d1] = date.split("-").map(Number);
   const [y2, m2, d2] = today.split("-").map(Number);
-  if (!Number.isInteger(y1) || !Number.isInteger(m1) || !Number.isInteger(d1) ||
-      !Number.isInteger(y2) || !Number.isInteger(m2) || !Number.isInteger(d2)) {
+  if (
+    !Number.isInteger(y1) ||
+    !Number.isInteger(m1) ||
+    !Number.isInteger(d1) ||
+    !Number.isInteger(y2) ||
+    !Number.isInteger(m2) ||
+    !Number.isInteger(d2)
+  ) {
     return -1;
   }
   return (
     (Date.UTC(y1 as number, (m1 as number) - 1, d1 as number) -
-      Date.UTC(y2 as number, (m2 as number) - 1, d2 as number)) / 86_400_000
+      Date.UTC(y2 as number, (m2 as number) - 1, d2 as number)) /
+    86_400_000
   );
 }
 

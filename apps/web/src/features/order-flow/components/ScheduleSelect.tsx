@@ -185,8 +185,8 @@ export function ScheduleSelect(): ReactElement {
           What day and time works for you?
         </h2>
         <p className="text-sm text-[var(--color-bone)]/70">
-          Pick when your Chefmate should come by. Orders need at least 24 hours
-          of lead time — the earliest day you can book is{" "}
+          Pick when your Chefmate should come by. Orders need at least 24 hours of lead time — the
+          earliest day you can book is{" "}
           <strong className="text-[var(--color-bone)]">
             {friendlyDate(parseISODate(earliestBookableIso))}
           </strong>
