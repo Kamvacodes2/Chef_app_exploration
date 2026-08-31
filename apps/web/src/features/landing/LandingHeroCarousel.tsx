@@ -15,7 +15,7 @@ const POSTER_STORIES: Array<{
   {
     headline: (
       <>
-        Dinner&apos;s handled.
+        It&apos;s handled.
         <br />
         Your evening
         <br />

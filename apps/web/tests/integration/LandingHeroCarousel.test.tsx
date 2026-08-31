@@ -13,7 +13,7 @@ describe("LandingHeroCarousel", () => {
 
     expect(screen.queryByText("CHEFMATE")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /Dinner's handled\.\s+Your evening\s+is yours\./ }),
+      screen.getByRole("heading", { name: /It's handled\.\s+Your evening\s+is yours\./ }),
     ).toHaveClass("font-display-wide");
     expect(
       screen.getByText(
