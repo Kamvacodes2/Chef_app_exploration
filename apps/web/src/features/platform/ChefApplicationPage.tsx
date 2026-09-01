@@ -385,18 +385,16 @@ export function ChefApplicationPage() {
             Application received
           </h2>
           <p className="mt-2 text-[var(--color-charcoal)]/70">
-            We&apos;ll review your application and get back to you within 48 hours.
+            Thank you for applying. Our team reviews every application by hand and will reach out at
+            the email you provided within 48 hours — no further action is needed from you.
           </p>
           <p className="mt-1 text-xs text-[var(--color-charcoal)]/40">Reference: {submitted.id}</p>
-          <button
-            onClick={() => {
-              setSubmitted(null);
-              setStep("personal");
-            }}
-            className="mt-6 rounded-xl bg-[var(--color-oxblood)] px-6 py-3 text-sm font-bold text-white"
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-xl bg-[var(--color-oxblood)] px-6 py-3 text-sm font-bold text-white"
           >
-            Submit another
-          </button>
+            Back to home
+          </Link>
         </div>
       </main>
     );
