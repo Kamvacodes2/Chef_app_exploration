@@ -1158,8 +1158,8 @@ function Checkbox({
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="font-bold text-[var(--color-charcoal)]/50">{label}</span>
-      <span className="text-right text-[var(--color-charcoal)]">{value}</span>
+      <span className="shrink-0 font-bold text-[var(--color-charcoal)]/50">{label}</span>
+      <span className="min-w-0 break-words text-right text-[var(--color-charcoal)]">{value}</span>
     </div>
   );
 }
