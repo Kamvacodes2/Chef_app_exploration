@@ -333,6 +333,10 @@ describe("platform pages", () => {
       expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
     );
     expect(await screen.findByText("chef-cv.pdf")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
+    );
+    expect(await screen.findByText("chef-cv.pdf")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
