@@ -44,6 +44,8 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
+type ConfirmAction = { readonly kind: "approve" | "invite"; readonly application: ChefApplication };
+
 const DEFAULT_SECTION: SectionId = "applications";
 
 const HURU_PORTAL_URL = "https://portal.huru.co.za/";
@@ -71,6 +73,7 @@ export function AdminDashboardPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const isAdmin = currentUser?.roles.includes("ADMIN") === true;
 
   const load = async (): Promise<void> => {
@@ -145,13 +148,7 @@ export function AdminDashboardPage() {
     });
   };
 
-  const approve = (application: ChefApplication): void => {
-    if (
-      application.status !== "INTERVIEW_CONDUCTED" ||
-      !hasCurrentPassedVerification(application)
-    ) {
-      return;
-    }
+  const performApprove = (application: ChefApplication): void => {
     void run("approve-" + application.id, async () => {
       const updated = await updateChefApplication(application.id, { status: "APPROVED" });
       setApplications((current) => replaceApplication(current, updated));
@@ -159,15 +156,37 @@ export function AdminDashboardPage() {
     });
   };
 
-  const invite = (application: ChefApplication): void => {
-    if (!hasCurrentPassedVerification(application)) return;
-    if (application.status !== "APPROVED") return;
+  const requestApprove = (application: ChefApplication): void => {
+    if (
+      application.status !== "INTERVIEW_CONDUCTED" ||
+      !hasCurrentPassedVerification(application)
+    ) {
+      return;
+    }
+    setConfirm({ kind: "approve", application });
+  };
+
+  const performInvite = (application: ChefApplication): void => {
     void run("invite-" + application.id, async () => {
       const result = await inviteChefApplication(application.id);
       setApplications((current) => replaceApplication(current, result.application));
       setNotice(`Chef portal invite queued for ${application.fullName}.`);
       await load();
     });
+  };
+
+  const requestInvite = (application: ChefApplication): void => {
+    if (!hasCurrentPassedVerification(application)) return;
+    if (application.status !== "APPROVED") return;
+    setConfirm({ kind: "invite", application });
+  };
+
+  const confirmAction = (): void => {
+    if (!confirm) return;
+    const action = confirm;
+    setConfirm(null);
+    if (action.kind === "approve") performApprove(action.application);
+    else performInvite(action.application);
   };
 
   const previewWhatsApp = (): void => {
@@ -271,7 +290,7 @@ export function AdminDashboardPage() {
                         }
                         title={approvalDisabledReason(application) || undefined}
                         kind="secondary"
-                        onClick={() => approve(application)}
+                        onClick={() => requestApprove(application)}
                       >
                         Approve
                       </Button>
@@ -282,7 +301,7 @@ export function AdminDashboardPage() {
                           busy === "invite-" + application.id
                         }
                         title={inviteDisabledReason(application) || undefined}
-                        onClick={() => invite(application)}
+                        onClick={() => requestInvite(application)}
                       >
                         Send portal access
                       </Button>
@@ -414,14 +433,81 @@ export function AdminDashboardPage() {
           ) : null}
         </div>
       </section>
+
+      {confirm ? (
+        <ConfirmDialog
+          action={confirm}
+          busy={
+            busy ===
+            (confirm.kind === "approve"
+              ? "approve-" + confirm.application.id
+              : "invite-" + confirm.application.id)
+          }
+          onCancel={() => setConfirm(null)}
+          onConfirm={confirmAction}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function ConfirmDialog({
+  action,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  readonly action: ConfirmAction;
+  readonly busy: boolean;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}) {
+  const isApprove = action.kind === "approve";
+  const app = action.application;
+  const title = isApprove ? "Approve this application?" : "Send portal access?";
+  const description = isApprove
+    ? `You are about to approve ${app.fullName}'s chef application (${app.email}). This changes the application status to APPROVED and is required before portal access can be sent.`
+    : `You are about to send a chef portal invitation to ${app.fullName} (${app.email}). A magic-link email will be queued for delivery.`;
+  const confirmLabel = isApprove ? "Approve application" : "Send portal access";
+
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div className="max-w-md rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.2)]">
+        <h3 className="text-lg font-black text-[var(--color-oxblood)]">{title}</h3>
+        <p className="mt-2 text-sm text-[var(--color-charcoal)]/70">{description}</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
+            disabled={busy}
+            onClick={onCancel}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="min-h-10 rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
+            disabled={busy}
+            onClick={onConfirm}
+            type="button"
+          >
+            {busy ? "Processing..." : isApprove ? "Approve application" : "Confirm and send"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function tabDomId(section: SectionId): string {
   return `admin-tab-${section}`;
 }
-
 function panelDomId(section: SectionId): string {
   return `admin-panel-${section}`;
 }

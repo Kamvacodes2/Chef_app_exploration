@@ -333,10 +333,6 @@ describe("platform pages", () => {
       expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
     );
     expect(await screen.findByText("chef-cv.pdf")).toBeInTheDocument();
-    await waitFor(() =>
-      expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
-    );
-    expect(await screen.findByText("chef-cv.pdf")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
@@ -589,7 +585,13 @@ describe("platform pages", () => {
     await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
     expect(screen.getAllByText("Nomsa Dlamini").length).toBeGreaterThan(0);
 
+    // Send portal access now opens a confirmation dialog first.
     fireEvent.click(screen.getByRole("button", { name: "Send portal access" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(api.inviteChefApplication).not.toHaveBeenCalled();
+
+    // Confirm inside the dialog (the modal's confirm button, not the row button).
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and send" }));
     await waitFor(() => expect(api.inviteChefApplication).toHaveBeenCalledWith("application-1"));
     expect(await screen.findByRole("status")).toHaveTextContent("invite queued");
 
@@ -632,7 +634,19 @@ describe("platform pages", () => {
 
     await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
 
+    // Approve now opens a confirmation dialog instead of firing immediately.
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(api.updateChefApplication).not.toHaveBeenCalled();
+
+    // Cancel keeps the application untouched.
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.updateChefApplication).not.toHaveBeenCalled();
+
+    // Confirming the dialog performs the approval.
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    fireEvent.click(screen.getByRole("button", { name: "Approve application" }));
     await waitFor(() =>
       expect(api.updateChefApplication).toHaveBeenCalledWith("application-1", {
         status: "APPROVED",
