@@ -172,6 +172,42 @@ describe("HURU application operations", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("requires confirmation before approving or sending portal access", async () => {
+    const approval = namedApplication("Approval confirmation", { verification });
+    const invited = namedApplication("Invite confirmation", { status: "APPROVED", verification });
+    api.fetchChefApplications.mockResolvedValue([approval, invited]);
+    api.updateChefApplication.mockResolvedValue({ ...approval, status: "APPROVED" });
+    api.inviteChefApplication.mockResolvedValue({
+      application: { ...invited, status: "INVITED" },
+      deliveryStatus: "QUEUED",
+    });
+
+    render(<AdminApplications />);
+    await screen.findByRole("heading", { name: "Approval confirmation" });
+
+    fireEvent.click(buttonFor("Approval confirmation", "Approve"));
+    expect(await screen.findByRole("dialog")).toHaveTextContent("Approve this application?");
+    expect(api.updateChefApplication).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(buttonFor("Approval confirmation", "Approve"));
+    fireEvent.click(screen.getByRole("button", { name: "Approve application" }));
+    await waitFor(() =>
+      expect(api.updateChefApplication).toHaveBeenCalledWith("application-approval-confirmation", {
+        status: "APPROVED",
+      }),
+    );
+
+    fireEvent.click(buttonFor("Invite confirmation", "Send Portal Access"));
+    expect(await screen.findByRole("dialog")).toHaveTextContent("Send portal access?");
+    expect(api.inviteChefApplication).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and send" }));
+    await waitFor(() =>
+      expect(api.inviteChefApplication).toHaveBeenCalledWith("application-invite-confirmation"),
+    );
+  });
+
   it("submits explicit nulls for cleared optional fields and reflects the returned summary", async () => {
     const application = namedApplication("Cleared summary", { verification });
     api.fetchChefApplications.mockResolvedValue([application]);

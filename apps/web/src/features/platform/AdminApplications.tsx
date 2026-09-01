@@ -67,6 +67,10 @@ export function AdminApplications() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [confirm, setConfirm] = useState<{
+    kind: "approve" | "invite";
+    app: ChefApplication;
+  } | null>(null);
   const isAdmin = currentUser?.roles.includes("ADMIN") === true;
 
   const load = async () => {
@@ -117,8 +121,7 @@ export function AdminApplications() {
     });
   };
 
-  const approve = (app: ChefApplication) => {
-    if (app.status !== "INTERVIEW_CONDUCTED" || !hasCurrentPassedVerification(app)) return;
+  const performApprove = (app: ChefApplication) => {
     void run(`approve-${app.id}`, async () => {
       const updated = await updateChefApplication(app.id, {
         status: "APPROVED",
@@ -128,9 +131,12 @@ export function AdminApplications() {
     });
   };
 
-  const invite = (app: ChefApplication) => {
-    if (!hasCurrentPassedVerification(app)) return;
-    if (app.status !== "APPROVED") return;
+  const approve = (app: ChefApplication) => {
+    if (app.status !== "INTERVIEW_CONDUCTED" || !hasCurrentPassedVerification(app)) return;
+    setConfirm({ kind: "approve", app });
+  };
+
+  const performInvite = (app: ChefApplication) => {
     void run(`invite-${app.id}`, async () => {
       const result = await inviteChefApplication(app.id);
       setApplications((prev) =>
@@ -139,6 +145,20 @@ export function AdminApplications() {
       setNotice(`Portal invite sent to ${app.fullName}.`);
       await load();
     });
+  };
+
+  const invite = (app: ChefApplication) => {
+    if (!hasCurrentPassedVerification(app)) return;
+    if (app.status !== "APPROVED") return;
+    setConfirm({ kind: "invite", app });
+  };
+
+  const confirmAction = () => {
+    if (!confirm) return;
+    const action = confirm;
+    setConfirm(null);
+    if (action.kind === "approve") performApprove(action.app);
+    else performInvite(action.app);
   };
 
   if (busy === "load") {
@@ -297,7 +317,69 @@ export function AdminApplications() {
           </article>
         ))
       )}
+
+      {confirm ? (
+        <ApplicationActionDialog
+          action={confirm}
+          busy={busy === `${confirm.kind === "approve" ? "approve" : "invite"}-${confirm.app.id}`}
+          onCancel={() => setConfirm(null)}
+          onConfirm={confirmAction}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function ApplicationActionDialog({
+  action,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  readonly action: { kind: "approve" | "invite"; app: ChefApplication };
+  readonly busy: boolean;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}) {
+  const approving = action.kind === "approve";
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+      role="dialog"
+    >
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.2)]">
+        <h3 className="text-lg font-black text-[var(--color-oxblood)]">
+          {approving ? "Approve this application?" : "Send portal access?"}
+        </h3>
+        <p className="mt-2 text-sm text-[var(--color-charcoal)]/70">
+          {approving
+            ? `This will approve ${action.app.fullName}'s chef application.`
+            : `A chef portal access email will be queued for ${action.app.fullName} at ${action.app.email}.`}
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
+            disabled={busy}
+            onClick={onCancel}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="min-h-10 rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
+            disabled={busy}
+            onClick={onConfirm}
+            type="button"
+          >
+            {busy ? "Processing..." : approving ? "Approve application" : "Confirm and send"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
