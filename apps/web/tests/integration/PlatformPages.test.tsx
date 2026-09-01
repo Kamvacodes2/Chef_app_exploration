@@ -303,19 +303,32 @@ describe("platform pages", () => {
     fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+27821234567" } });
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
 
-    // Documents step shows a fixed upload slot per known document type.
+    // Documents step shows the fixed upload sections, each with its own
+    // one-click Upload button (no shared type dropdown).
     expect(screen.getByRole("heading", { name: "Documents" })).toBeInTheDocument();
-    for (const slot of ["ID document", "CV / Résumé", "Portfolio", "Food safety", "First aid"]) {
+    expect(screen.queryByLabelText("Document type")).not.toBeInTheDocument();
+    for (const [slot, label] of [
+      ["ID document", "Upload ID document"],
+      ["CV", "Upload CV"],
+      ["Qualification", "Upload Qualification"],
+      ["Food safety certificate", "Upload Food safety certificate"],
+      ["Background check", "Upload Background check"],
+      ["Portfolio", "Upload Portfolio"],
+    ] as const) {
       expect(screen.getByText(slot)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
 
-    // Upload a CV in its own slot.
-    fireEvent.change(screen.getByLabelText(/Choose CV \/ Résumé file/), {
+    // Upload a CV in its own slot: picking the file uploads immediately.
+    // (The file input is visually hidden and driven by its section button, so
+    // we target it directly by its stable id.)
+    const cvInput = document.getElementById("doc-upload-CV");
+    expect(cvInput).not.toBeNull();
+    fireEvent.change(cvInput as HTMLInputElement, {
       target: {
         files: [new File(["cv"], "chef-cv.pdf", { type: "application/pdf" })],
       },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Upload CV / Résumé" }));
     await waitFor(() =>
       expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
     );
@@ -348,12 +361,13 @@ describe("platform pages", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Continue/ })).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/Choose Food safety file/), {
+    const fsInput = document.getElementById("doc-upload-FOOD_SAFETY");
+    expect(fsInput).not.toBeNull();
+    fireEvent.change(fsInput as HTMLInputElement, {
       target: {
         files: [new File(["cert"], "food-safety.pdf", { type: "application/pdf" })],
       },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Upload Food safety" }));
     await waitFor(() =>
       expect(api.uploadApplicationDocument).toHaveBeenCalledWith("FOOD_SAFETY", expect.any(File)),
     );

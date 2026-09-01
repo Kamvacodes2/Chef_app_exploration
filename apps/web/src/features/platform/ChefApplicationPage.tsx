@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   submitChefApplication,
@@ -26,10 +26,10 @@ const DOC_TYPES: readonly DocType[] = [
 
 const DOC_TYPE_LABELS: Record<DocType, string> = {
   ID_DOC: "ID document",
-  CV: "CV / Résumé",
+  CV: "CV",
   PORTFOLIO: "Portfolio",
-  CERTIFICATE: "Certificate",
-  FOOD_SAFETY: "Food safety",
+  CERTIFICATE: "Qualification",
+  FOOD_SAFETY: "Food safety certificate",
   FIRST_AID: "First aid",
   BACKGROUND_CHECK: "Background check",
   OTHER: "Other",
@@ -39,12 +39,22 @@ const DOC_TYPE_DESCRIPTIONS: Record<DocType, string> = {
   ID_DOC: "South African ID or passport",
   CV: "Your CV / résumé",
   PORTFOLIO: "Photos or examples of your dishes and work",
-  CERTIFICATE: "Culinary or training certificates",
+  CERTIFICATE: "Culinary qualifications, diplomas or training certificates",
   FOOD_SAFETY: "Food safety / hygiene certificate",
   FIRST_AID: "First aid certificate",
-  BACKGROUND_CHECK: "Existing background check, if you have one",
+  BACKGROUND_CHECK: "Existing background check report, if you have one",
   OTHER: "Any other supporting document",
 };
+
+// The Documents step surfaces exactly these sections, in this order.
+const DOC_SLOTS: readonly DocType[] = [
+  "ID_DOC",
+  "CV",
+  "CERTIFICATE",
+  "FOOD_SAFETY",
+  "BACKGROUND_CHECK",
+  "PORTFOLIO",
+];
 
 const ACCEPTED_DOC_EXTENSIONS: readonly string[] = ["pdf", "jpg", "jpeg", "png", "webp"];
 
@@ -507,7 +517,7 @@ export function ChefApplicationPage() {
                 PNG and WebP files only.
               </p>
               <div className="space-y-4">
-                {DOC_TYPES.map((t) => (
+                {DOC_SLOTS.map((t) => (
                   <DocumentUploadRow
                     key={t}
                     docType={t}
@@ -517,6 +527,38 @@ export function ChefApplicationPage() {
                   />
                 ))}
               </div>
+              {DOC_TYPES.filter((t) => !DOC_SLOTS.includes(t)).some((t) => form.documents[t]) && (
+                <div className="mt-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-charcoal)]/50">
+                    Other documents
+                  </p>
+                  {DOC_TYPES.filter((t) => !DOC_SLOTS.includes(t)).flatMap((t) => {
+                    const doc = form.documents[t];
+                    return doc
+                      ? [
+                          <div
+                            key={t}
+                            className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-[var(--color-warm-cream)] p-3 text-sm"
+                          >
+                            <div>
+                              <p className="font-bold text-[var(--color-charcoal)]">
+                                {DOC_TYPE_LABELS[t]}
+                              </p>
+                              <p className="text-[var(--color-charcoal)]/60">{doc.originalName}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeDocument(t)}
+                              className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm font-bold text-[var(--color-oxblood)]"
+                            >
+                              Remove
+                            </button>
+                          </div>,
+                        ]
+                      : [];
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -943,7 +985,7 @@ function DocumentUploadRow({
   onUploaded: (doc: UploadedApplicationDocument) => void;
   onRemove: () => void;
 }) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputId = `doc-upload-${docType}`;
@@ -951,37 +993,26 @@ function DocumentUploadRow({
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (!file) {
-      setSelectedFile(null);
-      return;
-    }
+    e.target.value = "";
+    if (!file) return;
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!ACCEPTED_DOC_EXTENSIONS.includes(extension)) {
-      setSelectedFile(null);
       setUploadError("Only PDF, JPEG, PNG and WebP files are accepted.");
-      e.target.value = "";
-      return;
-    }
-    setUploadError(null);
-    setSelectedFile(file);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadError("Choose a file to upload first.");
       return;
     }
     setUploadError(null);
     setUploading(true);
-    try {
-      const doc = await uploadApplicationDocument(docType, selectedFile);
-      onUploaded(doc);
-      setSelectedFile(null);
-    } catch (caught) {
-      setUploadError(caught instanceof Error ? caught.message : "Upload failed. Please try again.");
-    } finally {
-      setUploading(false);
-    }
+    uploadApplicationDocument(docType, file)
+      .then((doc) => {
+        onUploaded(doc);
+        setUploadError(null);
+      })
+      .catch((caught) => {
+        setUploadError(
+          caught instanceof Error ? caught.message : "Upload failed. Please try again.",
+        );
+      })
+      .finally(() => setUploading(false));
   };
 
   return (
@@ -998,14 +1029,13 @@ function DocumentUploadRow({
             {DOC_TYPE_DESCRIPTIONS[docType]}
           </p>
         </div>
-        {uploaded && !selectedFile ? (
+        {uploaded ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
             ✓ Uploaded
           </span>
         ) : null}
-      </div>
-
-      {uploaded && !selectedFile ? (
+      </div>{" "}
+      {uploaded ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-3">
           <div className="min-w-0 text-sm">
             <p className="truncate font-bold text-[var(--color-charcoal)]">
@@ -1016,19 +1046,14 @@ function DocumentUploadRow({
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            <label
-              htmlFor={inputId}
-              className="min-h-9 cursor-pointer rounded-xl border border-[var(--color-oxblood)]/20 px-3 py-2 text-sm font-bold text-[var(--color-oxblood)]"
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-40"
             >
-              Replace
-            </label>
-            <input
-              id={inputId}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              onChange={handleFileChange}
-              className="sr-only"
-            />
+              {uploading ? "Uploading..." : "Replace"}
+            </button>
             <button
               type="button"
               onClick={onRemove}
@@ -1040,31 +1065,14 @@ function DocumentUploadRow({
         </div>
       ) : (
         <div className="mt-3">
-          <label
-            htmlFor={inputId}
-            className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-oxblood)]/25 bg-white px-4 text-center text-sm font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)]/50"
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-oxblood)]/25 bg-white px-4 text-sm font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)]/50 disabled:opacity-40"
           >
-            {selectedFile
-              ? `Selected: ${selectedFile.name}`
-              : `Choose ${label} file (PDF, JPEG, PNG, WebP)`}
-          </label>
-          <input
-            id={inputId}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            onChange={handleFileChange}
-            className="sr-only"
-          />
-          {selectedFile ? (
-            <button
-              type="button"
-              onClick={() => void handleUpload()}
-              disabled={uploading}
-              className="mt-3 min-h-10 rounded-2xl bg-[var(--color-oxblood)] px-6 text-sm font-bold text-white disabled:opacity-40"
-            >
-              {uploading ? "Uploading..." : `Upload ${label}`}
-            </button>
-          ) : null}
+            {uploading ? "Uploading..." : `Upload ${label}`}
+          </button>
           {uploadError ? (
             <p
               className="mt-2 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900"
@@ -1075,6 +1083,14 @@ function DocumentUploadRow({
           ) : null}
         </div>
       )}
+      <input
+        ref={inputRef}
+        id={inputId}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.webp"
+        onChange={handleFileChange}
+        className="sr-only"
+      />
     </div>
   );
 }
