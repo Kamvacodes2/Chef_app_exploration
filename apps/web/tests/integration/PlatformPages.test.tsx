@@ -30,6 +30,7 @@ const api = vi.hoisted(() => ({
   updateChefApplicationVerification: vi.fn(),
   updateChefBankDetails: vi.fn(),
   updateChefProfile: vi.fn(),
+  uploadApplicationDocument: vi.fn(),
   fetchPolicyStatus: vi.fn(),
 }));
 
@@ -163,6 +164,7 @@ describe("platform pages", () => {
     authApi.getCurrentUser.mockResolvedValue(adminUser);
     featuredMealsApi.fetchCatalogMeals.mockResolvedValue([]);
     window.history.replaceState(null, "", "/");
+    window.localStorage.removeItem("chefmate.chef-application.v1");
   });
 
   it("requires affirmative HURU consent and submits the exact consented application", async () => {
@@ -236,6 +238,176 @@ describe("platform pages", () => {
       backgroundCheckConsent: true,
       documents: [],
     });
+  });
+
+  it("restores an in-flight draft at the documents step after a reload instead of losing progress", async () => {
+    api.uploadApplicationDocument.mockResolvedValue({
+      storageKey: "stored/pdf.pdf",
+      docType: "CV",
+      originalName: "chef-cv.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 512,
+    });
+    const first = render(<ChefApplicationPage />);
+
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Nomsa Dlamini" },
+    });
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "nomsa@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText("Phone"), {
+      target: { value: "+27821234567" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    expect(screen.getByRole("heading", { name: "Documents" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("chefmate.chef-application.v1")).toContain(
+      '"step":"documents"',
+    );
+
+    // Simulate a full page reload / navigation away and back: the component
+    // remounts and must restore the draft at the same step.
+    first.unmount();
+    render(<ChefApplicationPage />);
+    expect(screen.getByRole("heading", { name: "Documents" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Personal Details" })).not.toBeInTheDocument();
+    // The persisted draft (including the personal details) survives the reload.
+    const restored = JSON.parse(
+      window.localStorage.getItem("chefmate.chef-application.v1") ?? "{}",
+    ) as { step: string; form: { fullName: string; email: string; phone: string } };
+    expect(restored.step).toBe("documents");
+    expect(restored.form).toMatchObject({
+      fullName: "Nomsa Dlamini",
+      email: "nomsa@example.test",
+      phone: "+27821234567",
+    });
+  });
+
+  it("lets applicants tap cuisines and languages and uploads each known document in its own slot", async () => {
+    api.submitChefApplication.mockResolvedValue(application);
+    api.uploadApplicationDocument.mockImplementation(async (docType: string, file: File) => ({
+      storageKey: `stored/${file.name}`,
+      docType,
+      originalName: file.name,
+      mimeType: file.type || "application/pdf",
+      sizeBytes: 1024,
+    }));
+    render(<ChefApplicationPage />);
+
+    // Personal details
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Nomsa Dlamini" },
+    });
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nomsa@example.test" } });
+    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+27821234567" } });
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Documents step shows a fixed upload slot per known document type.
+    expect(screen.getByRole("heading", { name: "Documents" })).toBeInTheDocument();
+    for (const slot of ["ID document", "CV / Résumé", "Portfolio", "Food safety", "First aid"]) {
+      expect(screen.getByText(slot)).toBeInTheDocument();
+    }
+
+    // Upload a CV in its own slot.
+    fireEvent.change(screen.getByLabelText(/Choose CV \/ Résumé file/), {
+      target: {
+        files: [new File(["cv"], "chef-cv.pdf", { type: "application/pdf" })],
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload CV / Résumé" }));
+    await waitFor(() =>
+      expect(api.uploadApplicationDocument).toHaveBeenCalledWith("CV", expect.any(File)),
+    );
+    expect(await screen.findByText("chef-cv.pdf")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Skills step: tap cuisines and languages instead of typing them.
+    const cuisineChip = screen.getByRole("button", { name: /Italian/ });
+    expect(cuisineChip).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(cuisineChip);
+    expect(screen.getByRole("button", { name: /Italian/ })).toHaveAttribute("aria-pressed", "true");
+    // English is pre-selected by default; add isiZulu as a second language.
+    expect(screen.getByRole("button", { name: /English/ })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: /isiZulu/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Service step: claiming a food safety certificate reveals its upload slot
+    // and gates progress until the certificate is actually provided.
+    fireEvent.change(screen.getByLabelText("Service areas (comma-separated)"), {
+      target: { value: "Fourways, Sandton" },
+    });
+    fireEvent.change(screen.getByLabelText("Cooking experience"), {
+      target: { value: "Ten years of private chef and event cooking experience." },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "I have a food safety certificate" }));
+    expect(
+      screen.getByText("Upload your food safety certificate to continue."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Continue/ })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Choose Food safety file/), {
+      target: {
+        files: [new File(["cert"], "food-safety.pdf", { type: "application/pdf" })],
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload Food safety" }));
+    await waitFor(() =>
+      expect(api.uploadApplicationDocument).toHaveBeenCalledWith("FOOD_SAFETY", expect.any(File)),
+    );
+    expect(await screen.findByText("food-safety.pdf")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Upload your food safety certificate to continue."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Continue/ })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    // Review reflects the tapped selections and uploaded documents.
+    expect(screen.getByRole("heading", { name: "Review your application" })).toBeInTheDocument();
+    expect(screen.getByText("Italian")).toBeInTheDocument();
+    expect(screen.getByText("English, isiZulu")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /I affirmatively consent to Chef Mate requesting the HURU\/Afiswitch background check/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Submit application" }));
+
+    await expect(screen.findByRole("status")).resolves.toHaveTextContent("Application received");
+    expect(api.submitChefApplication).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cuisines: ["Italian"],
+        languages: ["English", "isiZulu"],
+        hasFoodSafetyCert: true,
+        documents: expect.arrayContaining([
+          expect.objectContaining({ docType: "CV", originalName: "chef-cv.pdf" }),
+          expect.objectContaining({ docType: "FOOD_SAFETY", originalName: "food-safety.pdf" }),
+        ]),
+      }),
+    );
+  });
+
+  it("renders connected step progress lines between every numbered step", () => {
+    render(<ChefApplicationPage />);
+    const steps = screen.queryAllByTestId("apply-step");
+    expect(steps.length).toBeGreaterThanOrEqual(6);
+    // Every step except the final one is linked to the next by a connector line
+    // (checked via classList.contains because jsdom mis-parses leading-digit
+    // class selectors such as `.h-0.5` in querySelector).
+    const connectors = steps
+      .slice(0, -1)
+      .map((stepEl) =>
+        [...stepEl.querySelectorAll("*")].some((node) =>
+          (node as HTMLElement).classList.contains("h-0.5"),
+        ),
+      );
+    expect(connectors).toHaveLength(steps.length - 1);
+    connectors.forEach((connector) => expect(connector).toBe(true));
   });
 
   it("consumes chef magic links and sends chefs into the portal", async () => {

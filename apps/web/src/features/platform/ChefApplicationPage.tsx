@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   submitChefApplication,
@@ -35,6 +35,17 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
   OTHER: "Other",
 };
 
+const DOC_TYPE_DESCRIPTIONS: Record<DocType, string> = {
+  ID_DOC: "South African ID or passport",
+  CV: "Your CV / résumé",
+  PORTFOLIO: "Photos or examples of your dishes and work",
+  CERTIFICATE: "Culinary or training certificates",
+  FOOD_SAFETY: "Food safety / hygiene certificate",
+  FIRST_AID: "First aid certificate",
+  BACKGROUND_CHECK: "Existing background check, if you have one",
+  OTHER: "Any other supporting document",
+};
+
 const ACCEPTED_DOC_EXTENSIONS: readonly string[] = ["pdf", "jpg", "jpeg", "png", "webp"];
 
 // ── Types ──────────────────────────────────────────────────────
@@ -66,6 +77,8 @@ interface FormState {
   documents: Partial<Record<DocType, UploadedApplicationDocument>>;
 }
 
+const STORAGE_KEY = "chefmate.chef-application.v1";
+
 const initialForm: FormState = {
   fullName: "",
   email: "",
@@ -94,6 +107,49 @@ const initialForm: FormState = {
   documents: {},
 };
 
+type PersistedState = {
+  readonly step: StepId;
+  readonly form: FormState;
+};
+
+function isPersistedState(value: unknown): value is PersistedState {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<PersistedState>;
+  return (
+    typeof candidate.step === "string" &&
+    typeof candidate.form === "object" &&
+    candidate.form !== null
+  );
+}
+
+function loadPersistedState(): PersistedState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isPersistedState(parsed)) return null;
+    // Only restore if the current page actually owns the step, otherwise
+    // an in-memory submission or a fresh landing should start clean.
+    const stepIndex = STEPS.findIndex((s) => s.id === parsed.step);
+    if (stepIndex === -1) return null;
+    return {
+      step: parsed.step,
+      form: { ...initialForm, ...parsed.form },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function clearPersistedState(): void {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore storage write failures
+  }
+}
+
 const NATIONALITIES = [
   "South African",
   "Zimbabwean",
@@ -108,6 +164,7 @@ const NATIONALITIES = [
 
 const CUISINE_SUGGESTIONS = [
   "South African",
+  "African",
   "Italian",
   "Asian",
   "Mediterranean",
@@ -119,6 +176,30 @@ const CUISINE_SUGGESTIONS = [
   "Seafood",
   "BBQ/Grilling",
   "Baking & Pastries",
+  "Portuguese",
+  "Greek",
+  "Japanese",
+  "Thai",
+  "Chinese",
+];
+
+const LANGUAGE_SUGGESTIONS = [
+  "English",
+  "Afrikaans",
+  "isiZulu",
+  "isiXhosa",
+  "Sesotho",
+  "Sepedi",
+  "Setswana",
+  "Xitsonga",
+  "siSwati",
+  "Tshivenda",
+  "isiNdebele",
+  "Portuguese",
+  "Shona",
+  "French",
+  "German",
+  "Other",
 ];
 
 const STEPS = [
@@ -134,15 +215,13 @@ type StepId = (typeof STEPS)[number]["id"];
 
 // ── Component ──────────────────────────────────────────────────
 export function ChefApplicationPage() {
-  const [step, setStep] = useState<StepId>("personal");
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [persisted] = useState<PersistedState | null>(loadPersistedState);
+  const [step, setStep] = useState<StepId>(persisted?.step ?? "personal");
+  const [form, setForm] = useState<FormState>(persisted?.form ?? initialForm);
   const [submitted, setSubmitted] = useState<ChefApplication | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [docType, setDocType] = useState<DocType>("ID_DOC");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === step);
   const documentsList: UploadedApplicationDocument[] = DOC_TYPES.flatMap((t) => {
@@ -150,8 +229,31 @@ export function ChefApplicationPage() {
     return doc ? [doc] : [];
   });
 
+  // Persist the draft as the applicant moves through the steps so an
+  // accidental navigation or refresh mid-flow (e.g. while uploading documents)
+  // returns them straight to where they left off instead of the landing page.
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (submitted) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form }));
+      }
+    } catch {
+      // ignore storage write failures
+    }
+  }, [hydrated, step, form, submitted]);
+
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [field]: value }));
+
+  const addDocument = (type: DocType, doc: UploadedApplicationDocument) =>
+    setForm((f) => ({ ...f, documents: { ...f.documents, [type]: doc } }));
 
   const next = () => {
     const nextStep = STEPS[currentIndex + 1];
@@ -161,40 +263,11 @@ export function ChefApplicationPage() {
     const prevStep = STEPS[currentIndex - 1];
     if (prevStep) setStep(prevStep.id);
   };
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) {
-      setSelectedFile(null);
-      return;
-    }
-    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-    if (!ACCEPTED_DOC_EXTENSIONS.includes(extension)) {
-      setSelectedFile(null);
-      setUploadError("Only PDF, JPEG, PNG and WebP files are accepted.");
-      e.target.value = "";
-      return;
-    }
-    setUploadError(null);
-    setSelectedFile(file);
-  };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadError("Choose a file to upload first.");
-      return;
-    }
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const uploaded = await uploadApplicationDocument(docType, selectedFile);
-      setForm((f) => ({ ...f, documents: { ...f.documents, [docType]: uploaded } }));
-      setSelectedFile(null);
-    } catch (caught) {
-      setUploadError(caught instanceof Error ? caught.message : "Upload failed. Please try again.");
-    } finally {
-      setUploading(false);
-    }
-  };
+  const toggleCuisine = (cuisine: string) =>
+    update("cuisines", toggleListItem(form.cuisines, cuisine));
+  const toggleLanguage = (language: string) =>
+    update("languages", toggleListItem(form.languages, language));
 
   const removeDocument = (type: DocType) => {
     setForm((f) => {
@@ -217,7 +290,12 @@ export function ChefApplicationPage() {
       case "skills":
         return true; // all optional
       case "service":
-        return form.serviceAreas.trim().length > 0 && form.experience.trim().length >= 20;
+        return (
+          form.serviceAreas.trim().length > 0 &&
+          form.experience.trim().length >= 20 &&
+          // Claiming a food safety certificate requires actually providing it.
+          (!form.hasFoodSafetyCert || Boolean(form.documents.FOOD_SAFETY))
+        );
       case "references":
         return true; // at least one is encouraged but not forced
       default:
@@ -275,6 +353,7 @@ export function ChefApplicationPage() {
       });
       setSubmitted(app);
       setForm(initialForm);
+      clearPersistedState();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not submit.");
     } finally {
@@ -320,7 +399,7 @@ export function ChefApplicationPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             {STEPS.map((s, i) => (
-              <div key={s.id} className="flex items-center">
+              <div key={s.id} className="flex flex-1 items-center" data-testid="apply-step">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition ${
                     i < currentIndex
@@ -343,7 +422,7 @@ export function ChefApplicationPage() {
                 </span>
                 {i < STEPS.length - 1 && (
                   <div
-                    className={`mx-2 hidden h-0.5 w-8 rounded sm:block ${
+                    className={`mx-1 h-0.5 w-4 shrink-0 rounded sm:mx-2 sm:w-8 ${
                       i < currentIndex ? "bg-emerald-500" : "bg-[var(--color-charcoal)]/10"
                     }`}
                   />
@@ -424,83 +503,20 @@ export function ChefApplicationPage() {
             <div>
               <h2 className="text-xl font-black text-[var(--color-oxblood)]">Documents</h2>
               <p className="mb-5 mt-1 text-sm text-[var(--color-charcoal)]/50">
-                Upload supporting documents (optional). PDF, JPEG, PNG and WebP files only.
+                Each document has its own slot — just tap a section and upload the file. PDF, JPEG,
+                PNG and WebP files only.
               </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm font-bold text-[var(--color-charcoal)]">
-                  Document type
-                  <select
-                    value={docType}
-                    onChange={(e) => setDocType(e.target.value as DocType)}
-                    className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 bg-white px-4 text-base outline-none focus:border-[var(--color-terracotta)]"
-                  >
-                    {DOC_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {DOC_TYPE_LABELS[t]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-sm font-bold text-[var(--color-charcoal)]">
-                  File
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={handleFileChange}
-                    className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 bg-white px-4 text-base outline-none file:mr-3 file:rounded-xl file:border-0 file:bg-[var(--color-oxblood)]/10 file:px-4 file:py-2 file:text-sm file:font-bold file:text-[var(--color-oxblood)]"
+              <div className="space-y-4">
+                {DOC_TYPES.map((t) => (
+                  <DocumentUploadRow
+                    key={t}
+                    docType={t}
+                    uploaded={form.documents[t]}
+                    onUploaded={(doc) => addDocument(t, doc)}
+                    onRemove={() => removeDocument(t)}
                   />
-                </label>
+                ))}
               </div>
-              {selectedFile ? (
-                <p className="mt-3 text-sm text-[var(--color-charcoal)]/70">
-                  Selected: {selectedFile.name} ({formatBytes(selectedFile.size)})
-                </p>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void handleUpload()}
-                disabled={uploading || !selectedFile}
-                className="mt-4 min-h-12 rounded-2xl bg-[var(--color-oxblood)] px-6 text-sm font-bold text-white disabled:opacity-40"
-              >
-                {uploading ? "Uploading..." : "Upload document"}
-              </button>
-              {uploadError ? (
-                <p
-                  className="mt-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900"
-                  role="alert"
-                >
-                  {uploadError}
-                </p>
-              ) : null}
-              {documentsList.length > 0 && (
-                <div className="mt-5 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-charcoal)]/50">
-                    Uploaded documents
-                  </p>
-                  {documentsList.map((doc) => (
-                    <div
-                      key={doc.docType}
-                      className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--color-warm-cream)] p-3 text-sm"
-                    >
-                      <div>
-                        <p className="font-bold text-[var(--color-charcoal)]">
-                          {DOC_TYPE_LABELS[doc.docType]}
-                        </p>
-                        <p className="text-[var(--color-charcoal)]/60">
-                          {doc.originalName} ({formatBytes(doc.sizeBytes)})
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeDocument(doc.docType)}
-                        className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm font-bold text-[var(--color-oxblood)]"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 
@@ -511,7 +527,7 @@ export function ChefApplicationPage() {
                 Experience & Skills
               </h2>
               <p className="mb-5 mt-1 text-sm text-[var(--color-charcoal)]/50">
-                Tell us about your cooking background.
+                Tell us about your cooking background — tap the options that fit you.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input
@@ -528,25 +544,24 @@ export function ChefApplicationPage() {
                   placeholder="Self-taught, culinary school..."
                 />
               </div>
-              <label className="mt-4 block text-sm font-bold text-[var(--color-charcoal)]">
-                Cuisines you specialise in
-                <input
+              <div className="mt-6">
+                <ChipSelect
+                  label="Cuisines you specialise in"
+                  hint="Tap all that apply — you can add or remove cuisines any time."
+                  options={CUISINE_SUGGESTIONS}
                   value={form.cuisines}
-                  onChange={(e) => update("cuisines", e.target.value)}
-                  placeholder="South African, Italian, Asian..."
-                  className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 px-4 text-base outline-none focus:border-[var(--color-terracotta)]"
+                  onToggle={toggleCuisine}
                 />
-              </label>
-              <p className="mt-1 text-xs text-[var(--color-charcoal)]/40">
-                Suggestions: {CUISINE_SUGGESTIONS.join(", ")}
-              </p>
-              <Input
-                label="Languages spoken"
-                value={form.languages}
-                onChange={(v) => update("languages", v)}
-                placeholder="English, Zulu, Afrikaans..."
-                outerClass="mt-4"
-              />
+              </div>
+              <div className="mt-6">
+                <ChipSelect
+                  label="Languages spoken"
+                  hint="Select every language you can cook and communicate in."
+                  options={LANGUAGE_SUGGESTIONS}
+                  value={form.languages}
+                  onToggle={toggleLanguage}
+                />
+              </div>
             </div>
           )}
 
@@ -576,6 +591,22 @@ export function ChefApplicationPage() {
                   onChange={(v) => update("hasOwnTransport", v)}
                 />
               </div>
+              {form.hasFoodSafetyCert && (
+                <div className="mt-5">
+                  <DocumentUploadRow
+                    docType="FOOD_SAFETY"
+                    required
+                    uploaded={form.documents.FOOD_SAFETY}
+                    onUploaded={(doc) => addDocument("FOOD_SAFETY", doc)}
+                    onRemove={() => removeDocument("FOOD_SAFETY")}
+                  />
+                  {!form.documents.FOOD_SAFETY && (
+                    <p className="mt-2 text-xs font-semibold text-[var(--color-oxblood)]">
+                      Upload your food safety certificate to continue.
+                    </p>
+                  )}
+                </div>
+              )}
               <label className="mt-5 block text-sm font-bold text-[var(--color-charcoal)]">
                 Cooking experience
                 <textarea
@@ -856,6 +887,198 @@ export function ChefApplicationPage() {
 }
 
 // ── Sub-components ─────────────────────────────────────────────
+function ChipSelect({
+  label,
+  hint,
+  options,
+  value,
+  onToggle,
+}: {
+  label: string;
+  hint?: string;
+  options: readonly string[];
+  value: string;
+  onToggle: (item: string) => void;
+}) {
+  const selected = splitCsv(value);
+  return (
+    <fieldset>
+      <legend className="text-sm font-bold text-[var(--color-charcoal)]">{label}</legend>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {options.map((option) => {
+          const isSelected = selected.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onToggle(option)}
+              className={`min-h-10 rounded-2xl px-4 text-sm font-bold transition ${
+                isSelected
+                  ? "bg-[var(--color-oxblood)] text-white shadow-sm"
+                  : "border border-[var(--color-oxblood)]/15 bg-white text-[var(--color-oxblood)] hover:bg-[var(--color-oxblood)]/5"
+              }`}
+            >
+              {isSelected ? "✓ " : "+ "}
+              {option}
+            </button>
+          );
+        })}
+      </div>
+      {hint ? <p className="mt-2 text-xs text-[var(--color-charcoal)]/40">{hint}</p> : null}
+    </fieldset>
+  );
+}
+
+function DocumentUploadRow({
+  docType,
+  uploaded,
+  required = false,
+  onUploaded,
+  onRemove,
+}: {
+  docType: DocType;
+  uploaded: UploadedApplicationDocument | undefined;
+  required?: boolean;
+  onUploaded: (doc: UploadedApplicationDocument) => void;
+  onRemove: () => void;
+}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const inputId = `doc-upload-${docType}`;
+  const label = DOC_TYPE_LABELS[docType];
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ACCEPTED_DOC_EXTENSIONS.includes(extension)) {
+      setSelectedFile(null);
+      setUploadError("Only PDF, JPEG, PNG and WebP files are accepted.");
+      e.target.value = "";
+      return;
+    }
+    setUploadError(null);
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setUploadError("Choose a file to upload first.");
+      return;
+    }
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const doc = await uploadApplicationDocument(docType, selectedFile);
+      onUploaded(doc);
+      setSelectedFile(null);
+    } catch (caught) {
+      setUploadError(caught instanceof Error ? caught.message : "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-black text-[var(--color-charcoal)]">
+            {label}
+            {required ? (
+              <span className="ml-1 font-bold text-[var(--color-oxblood)]">*</span>
+            ) : null}
+          </p>
+          <p className="mt-0.5 text-xs text-[var(--color-charcoal)]/50">
+            {DOC_TYPE_DESCRIPTIONS[docType]}
+          </p>
+        </div>
+        {uploaded && !selectedFile ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+            ✓ Uploaded
+          </span>
+        ) : null}
+      </div>
+
+      {uploaded && !selectedFile ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-3">
+          <div className="min-w-0 text-sm">
+            <p className="truncate font-bold text-[var(--color-charcoal)]">
+              {uploaded.originalName}
+            </p>
+            <p className="text-xs text-[var(--color-charcoal)]/50">
+              {formatBytes(uploaded.sizeBytes)}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <label
+              htmlFor={inputId}
+              className="min-h-9 cursor-pointer rounded-xl border border-[var(--color-oxblood)]/20 px-3 py-2 text-sm font-bold text-[var(--color-oxblood)]"
+            >
+              Replace
+            </label>
+            <input
+              id={inputId}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+            <button
+              type="button"
+              onClick={onRemove}
+              className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm font-bold text-[var(--color-oxblood)]"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <label
+            htmlFor={inputId}
+            className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-oxblood)]/25 bg-white px-4 text-center text-sm font-bold text-[var(--color-oxblood)] transition hover:border-[var(--color-oxblood)]/50"
+          >
+            {selectedFile
+              ? `Selected: ${selectedFile.name}`
+              : `Choose ${label} file (PDF, JPEG, PNG, WebP)`}
+          </label>
+          <input
+            id={inputId}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            onChange={handleFileChange}
+            className="sr-only"
+          />
+          {selectedFile ? (
+            <button
+              type="button"
+              onClick={() => void handleUpload()}
+              disabled={uploading}
+              className="mt-3 min-h-10 rounded-2xl bg-[var(--color-oxblood)] px-6 text-sm font-bold text-white disabled:opacity-40"
+            >
+              {uploading ? "Uploading..." : `Upload ${label}`}
+            </button>
+          ) : null}
+          {uploadError ? (
+            <p
+              className="mt-2 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-900"
+              role="alert"
+            >
+              {uploadError}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Input({
   label,
   value,
@@ -930,6 +1153,12 @@ function splitCsv(v: string): string[] {
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
+}
+
+function toggleListItem(current: string, item: string): string {
+  const list = splitCsv(current);
+  const next = list.includes(item) ? list.filter((entry) => entry !== item) : [...list, item];
+  return next.join(", ");
 }
 
 function formatBytes(bytes: number): string {
