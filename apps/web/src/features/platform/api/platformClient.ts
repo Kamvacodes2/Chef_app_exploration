@@ -461,6 +461,34 @@ export async function consumeChefMagicLink(
   });
 }
 
+export async function consumeChefImportActivation(
+  token: string,
+  options: PlatformRequestOptions = {},
+): Promise<z.infer<typeof authUserSchema>> {
+  return requestData({
+    path: "/api/v1/chef/import-activation",
+    method: "POST",
+    body: { token },
+    schema: envelope(z.object({ user: authUserSchema })),
+    options,
+    select: (data) => data.user,
+  });
+}
+
+export async function setAccountPassword(
+  password: string,
+  options: PlatformRequestOptions = {},
+): Promise<z.infer<typeof authUserSchema>> {
+  return requestData({
+    path: "/api/v1/auth/password",
+    method: "POST",
+    body: { password },
+    schema: envelope(z.object({ user: authUserSchema })),
+    options,
+    select: (data) => data.user,
+  });
+}
+
 export async function fetchChefProfile(options: PlatformRequestOptions = {}): Promise<ChefProfile> {
   return requestData({
     path: "/api/v1/chef/profile",
