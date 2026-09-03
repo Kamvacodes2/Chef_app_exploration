@@ -117,6 +117,11 @@ export function ChefBookingsPage() {
                     {formatDate(booking.scheduledDate)} at {booking.timeSlot} ·{" "}
                     {booking.serviceArea ?? "Area pending"}
                   </p>
+                  {booking.chefPayoutCents != null ? (
+                    <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                      You receive {formatZar(booking.chefPayoutCents)}
+                    </p>
+                  ) : null}
                   {booking.street ? (
                     <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
                       {booking.estate ? `${booking.estate}, ` : ""}

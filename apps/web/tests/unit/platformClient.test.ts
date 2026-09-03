@@ -103,6 +103,7 @@ const booking = {
   idempotencyKey: "idem-1",
   idempotencyPayloadHash: "hash-1",
   customerId: "customer-1",
+  chefPayoutCents: 45685,
   mainMealSlug: "chicken-peri-peri",
   mainName: "Chicken peri-peri",
   customRequest: null,
@@ -364,7 +365,7 @@ describe("platformClient", () => {
       fetchChefProfile({ baseUrl: "http://api.test/", fetchImpl }),
     ).resolves.toMatchObject({ userId: "chef-1" });
     await expect(fetchChefBookings({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual([
-      expect.objectContaining({ reference: "CM-0001" }),
+      expect.objectContaining({ reference: "CM-0001", chefPayoutCents: 45685 }),
     ]);
 
     expect(fetchImpl).toHaveBeenNthCalledWith(

@@ -240,6 +240,7 @@ const chefBookingSchema = z.object({
   reference: z.string().min(1),
   status: bookingStatusSchema,
   type: z.string().min(1),
+  chefPayoutCents: z.number().int().nonnegative().nullish(),
   source: z.literal("LANDING_ORDER_FLOW"),
   idempotencyKey: z.string(),
   idempotencyPayloadHash: z.string(),

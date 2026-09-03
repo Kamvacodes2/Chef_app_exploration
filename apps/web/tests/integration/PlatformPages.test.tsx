@@ -837,4 +837,11 @@ describe("ChefOverview", () => {
     render(<ChefOverview />);
     await expect(screen.findByText(/Good morning/)).resolves.toBeInTheDocument();
   });
+
+  it("shows the accepted rand payout on assigned bookings", async () => {
+    api.fetchChefBookings.mockResolvedValue([{ ...booking, chefPayoutCents: 45685 }]);
+    render(<ChefOverview />);
+    await screen.findByText(/You receive/);
+    expect(screen.getByText(/You receive/)).toHaveTextContent("456");
+  });
 });
