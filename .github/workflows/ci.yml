@@ -112,16 +112,35 @@ jobs:
       # recover.
       - name: Install Playwright browsers
         run: |
-          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' \
+          # GitHub's default Ubuntu mirrors can accept a connection but stop
+          # delivering package metadata for several minutes. Without explicit
+          # acquire limits, Playwright's `--with-deps` leaves apt-get holding
+          # the dpkg lock until the outer retry timeout expires. Use a separate
+          # Ubuntu mirror over HTTPS, disable HTTP pipelining, retry individual
+          # downloads, and fail a stalled fetch in 45s so the next attempt can
+          # recover instead of burning 5+ minutes on one dead mirror.
+          sudo sed -i -E \
+            's#https?://(azure\.archive|archive|security)\.ubuntu\.com/ubuntu#https://mirrors.edge.kernel.org/ubuntu#g' \
             /etc/apt/sources.list \
             /etc/apt/sources.list.d/ubuntu.sources \
             /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo tee /etc/apt/apt.conf.d/99-chefmate-ci-retries >/dev/null <<'EOF'
+          Acquire::Retries "5";
+          Acquire::http::Timeout "45";
+          Acquire::https::Timeout "45";
+          Acquire::http::Pipeline-Depth "0";
+          EOF
+
           for attempt in 1 2 3; do
-            if timeout 300 pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit; then
+            if timeout 600 pnpm --filter @chefmate/web exec playwright install --with-deps chromium webkit; then
               exit 0
             fi
+            # A timed-out apt process can leave a lock or a half-configured
+            # package behind; clean only those CI-local processes before retrying.
             sudo pkill -9 apt-get || true
+            sudo pkill -9 apt || true
             sudo pkill -9 dpkg || true
+            sudo dpkg --configure -a || true
             sleep 5
             echo "playwright install attempt ${attempt} failed; retrying"
           done
