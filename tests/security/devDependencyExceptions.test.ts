@@ -97,12 +97,30 @@ const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest
  * transient advisory-registry slowness does not hang the suite for 120s.
  * Only a run that returns no parseable JSON after all retries fails; a real
  * advisory finding still flows through to the enforcement assertions.
- */ const auditJson = (): AuditReport => {
-  // Hard budget per invocation so a stalled `pnpm audit` cannot hang this
-  // test for the full 120s vitest timeout. 4 attempts at the cap stays well
-  // under 120s.
-  const perAttemptTimeoutMs = 35_000;
-  const maxAttempts = 4;
+ */
+
+// The audit is memoized so this file hits the network at most once. A
+// completed scan (even one with findings) is cached and judged by the
+// enforcement assertions; a failure is cached too so later tests fail fast
+// instead of re-running the scan.
+let cachedAudit: { ok: true; report: AuditReport } | { ok: false; error: Error } | undefined;
+
+const auditJson = (): AuditReport => {
+  if (cachedAudit !== undefined) {
+    if (!cachedAudit.ok) throw cachedAudit.error;
+    return cachedAudit.report;
+  }
+
+  // Hard budget per invocation: a stalled `pnpm audit` (npm advisory endpoint
+  // slow/unreachable) blocks the event loop, which would otherwise hang the
+  // whole suite until the job timeout. Two attempts at the cap stay well
+  // inside the raised per-test timeout on the audit tests below.
+  // 115s per attempt: a healthy-but-slow audit has been observed to take
+  // ~105s, so the cap must clear that while still bounding a stall. Two
+  // attempts at the cap stay inside the raised per-test timeout below.
+  const perAttemptTimeoutMs = 115_000;
+  const maxAttempts = 2;
+  const retryDelayMs = 10_000;
   let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -118,36 +136,37 @@ const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest
       if (raw.trim().length === 0) {
         throw new Error("pnpm audit produced empty output");
       }
-      return JSON.parse(raw) as AuditReport;
+      const report = JSON.parse(raw) as AuditReport;
+      cachedAudit = { ok: true, report };
+      return report;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      // Retry only on transport / timeout / empty-output / parse failures,
-      // not on a real advisory finding (which parses fine and reaches the
-      // enforcement assertions below).
-      if (
-        error instanceof Error &&
-        !String(error.message).includes("pnpm audit produced") &&
-        !String(error.message).includes("ExecFileSync") &&
-        !String(error.message).includes("timed out")
-      ) {
-        throw error;
+      // A non-zero exit with a JSON body is a completed scan (usually one that
+      // found advisories). Parse it and let the assertions judge; retrying
+      // would only re-fetch the same findings.
+      const stdout = (error as { stdout?: string }).stdout;
+      if (typeof stdout === "string" && stdout.trim().length > 0) {
+        try {
+          const report = JSON.parse(stdout) as AuditReport;
+          cachedAudit = { ok: true, report };
+          return report;
+        } catch {
+          // Not JSON after all; fall through and treat as a transport failure.
+        }
       }
 
+      lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < maxAttempts) {
-        const waited = 15 * attempt;
-        const deadline = Date.now() + waited;
-        while (Date.now() < deadline) {
-          // eslint-disable-next-line no-empty
-        }
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, retryDelayMs);
       }
     }
   }
 
-  throw new Error(
+  const failure = new Error(
     `pnpm audit failed after ${maxAttempts} attempts (last error: ${lastError?.message}). ` +
       "The dev-dependency exception register cannot be verified.",
   );
+  cachedAudit = { ok: false, error: failure };
+  throw failure;
 };
 
 const advisories = (report: AuditReport): readonly AuditAdvisory[] =>
@@ -208,7 +227,7 @@ describe("dev-only advisory exception register: enforcement", () => {
       .filter((advisory) => excused.has(idOf(advisory)) && !isDevOnly(advisory))
       .map(idOf);
     expect(productionButExcused).toEqual([]);
-  });
+  }, 300_000);
 
   it("leaves no dev-only advisory unnamed", () => {
     const excused = new Set(manifest.exceptions.map((entry) => entry.advisoryId));
@@ -222,7 +241,7 @@ describe("dev-only advisory exception register: enforcement", () => {
         "dev-dependency-exceptions.json. Upgrade the dependency, or add a dated, owned, " +
         "justified entry — do not widen the register without one.",
     ).toEqual([]);
-  });
+  }, 300_000);
 
   it("carries no stale entry for an advisory that no longer appears", () => {
     const reported = new Set(advisories(auditJson()).map(idOf));
@@ -233,5 +252,5 @@ describe("dev-only advisory exception register: enforcement", () => {
       stale,
       "These advisories are no longer reported by `pnpm audit`; delete their entries.",
     ).toEqual([]);
-  });
+  }, 300_000);
 });
