@@ -49,35 +49,40 @@ describe("legacy contract: availability is advisory, not authoritative", () => {
     vi.stubGlobal("fetch", vi.fn(fetchImpl));
   }
 
-  it("keeps the local same-day rule when the availability request fails", async () => {
+  it("keeps the local 24h lead-time fallback when the availability request fails", async () => {
+    // Use a booking date that clears the local 24h lead-time window so the
+    // afternoon period button is enabled and the fallback can be observed.
+    // Frozen now = 2026-08-15T13:19Z (15:19 JHB) → tomorrow 16:00 is
+    // 24h41m away and the only afternoon slot that clears the window.
     freezeAndStub(async () => {
       throw new TypeError("Failed to fetch");
     });
 
-    renderScheduleAtDate("2026-08-15");
+    renderScheduleAtDate("2026-08-16");
     fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "16:00" })).toBeEnabled();
     });
     expect(screen.getByRole("button", { name: "15:00" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "14:00" })).toBeDisabled();
     // The swallowed failure surfaces no error text to the customer.
     expect(screen.queryByText(/availability request failed/i)).not.toBeInTheDocument();
   });
 
-  it("lets a successful availability response overwrite the local rule", async () => {
+  it("lets a successful availability response overwrite the local fallback", async () => {
     freezeAndStub(async () =>
       fakeResponse({
         body: {
           data: {
-            date: "2026-08-15",
+            date: "2026-08-16",
             slots: [{ period: "afternoon", time: "16:00", label: "4:00 PM", available: false }],
           },
         },
       }),
     );
 
-    renderScheduleAtDate("2026-08-15");
+    renderScheduleAtDate("2026-08-16");
     fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
 
     await waitFor(() => {
