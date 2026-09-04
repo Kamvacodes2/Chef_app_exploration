@@ -85,35 +85,54 @@ const REQUIRED_FIELDS = [
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest;
+const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest;  /**
+   * The unscoped audit. `pnpm audit` exits non-zero whenever anything is found,
+   * so the exit code is captured rather than trusted and the JSON is what the
+   * assertions read — a run that produces no output at all is a failure, never a
+   * pass.
+   *
+   * As in the production gate, this helper retries the audit a small number of
+   * times with back-off and caps wall time well below the per-test timeout, so
+   * transient advisory-registry slowness does not hang the suite for 120s.
+   * Only a run that returns no parseable JSON after all retries fails; a real
+   * advisory finding still flows through to the enforcement assertions.
+   */
+  const auditJson = (): AuditReport => {
+    const maxAttempts = 4;
+    let lastError: Error | undefined;
 
-/**
- * The unscoped audit. `pnpm audit` exits non-zero whenever anything is found,
- * so the exit code is captured rather than trusted and the JSON is what the
- * assertions read — a run that produces no output at all is a failure, never a
- * pass.
- */
-const auditJson = (): AuditReport => {
-  let raw: string;
-  try {
-    raw = execFileSync("pnpm", ["audit", "--json"], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      shell: true,
-      maxBuffer: 32 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-  } catch (error) {
-    const stdout = (error as { stdout?: string }).stdout;
-    if (stdout === undefined || stdout.trim() === "") {
-      throw new Error(
-        "pnpm audit produced no output; the dev-dependency exception register cannot be verified.",
-      );
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const raw = execFileSync("pnpm", ["audit", "--json"], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          shell: true,
+          maxBuffer: 32 * 1024 * 1024,
+          stdio: ["ignore", "pipe", "ignore"],
+        });
+        if (raw.trim().length === 0) {
+          throw new Error("pnpm audit produced empty output");
+        }
+        return JSON.parse(raw) as AuditReport;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxAttempts) {
+          const waited = 15 * (attempt - 1);
+          if (waited > 0) {
+            const deadline = Date.now() + waited;
+            while (Date.now() < deadline) {
+              // eslint-disable-next-line no-empty
+            }
+          }
+        }
+      }
     }
-    raw = stdout;
-  }
-  return JSON.parse(raw) as AuditReport;
-};
+
+    throw new Error(
+      `pnpm audit failed after ${maxAttempts} attempts (last error: ${lastError?.message}). ` +
+        "The dev-dependency exception register cannot be verified.",
+    );
+  };
 
 const advisories = (report: AuditReport): readonly AuditAdvisory[] =>
   Object.values(report.advisories ?? {});

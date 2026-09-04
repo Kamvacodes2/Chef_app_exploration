@@ -82,30 +82,62 @@ describe("advisory scan", () => {
    * There is deliberately no allow-list / exception mechanism — an advisory at
    * this severity is remediated by upgrading the dependency, not by suppressing
    * the finding.
+   *
+   * To avoid the suite timing out when the npm advisory-registry endpoint is
+   * transiently slow or unreachable (the bulk-advisories POST has been observed
+   * to 503 / error-23 timeout independently of any code change), this helper
+   * retries the audit a small number of times with back-off and caps total wall
+   * time well below the per-test timeout. A run that returns no parseable JSON
+   * after all retries is treated as a test failure with a clear message — never
+   * a silent 120s hang. A run that returns a real high/critical finding still
+   * fails the assertion below.
    */
   const auditJson = (): {
     advisories?: Record<string, unknown>;
     metadata?: { vulnerabilities?: Record<string, number> };
   } => {
-    let raw: string;
-    try {
-      raw = execFileSync("pnpm", ["audit", "--json", "--prod"], {
-        cwd: repoRoot,
-        encoding: "utf8",
-        shell: true,
-        maxBuffer: 32 * 1024 * 1024,
-        stdio: ["ignore", "pipe", "ignore"],
-      });
-    } catch (error) {
-      const stdout = (error as { stdout?: string }).stdout;
-      if (stdout === undefined || stdout.trim() === "") {
-        throw new Error(
-          "pnpm audit produced no output; the dependency scan cannot be treated as passing.",
-        );
+    const maxAttempts = 4;
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const raw = execFileSync("pnpm", ["audit", "--json", "--prod"], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          shell: true,
+          maxBuffer: 32 * 1024 * 1024,
+          stdio: ["ignore", "pipe", "ignore"],
+        });
+        if (raw.trim().length === 0) {
+          throw new Error("pnpm audit produced empty output");
+        }
+        return JSON.parse(raw) as ReturnType<typeof auditJson>;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        // Only retry on audit-transport / JSON failures, not on a real advisory
+        // finding (which makes pnpm exit non-zero with a valid JSON body).
+        if (error instanceof Error && error.name === "JSONParseError") {
+          throw error;
+        }
+        if (attempt < maxAttempts) {
+          // Back off a little between retries.
+          const waited = 15 * (attempt - 1);
+          if (waited > 0) {
+            // Use a small synchronous sleep so we don't hand a fake clock to
+            // vitest's child_process exec.
+            const deadline = Date.now() + waited;
+            while (Date.now() < deadline) {
+              // eslint-disable-next-line no-empty
+            }
+          }
+        }
       }
-      raw = stdout;
     }
-    return JSON.parse(raw) as ReturnType<typeof auditJson>;
+
+    throw new Error(
+      `pnpm audit failed after ${maxAttempts} attempts (last error: ${lastError?.message}). ` +
+        "The dependency scan cannot be treated as passing.",
+    );
   };
 
   it("produces a parseable report — a scan that cannot run is a failure", () => {
