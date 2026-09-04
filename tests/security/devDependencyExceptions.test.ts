@@ -85,7 +85,8 @@ const REQUIRED_FIELDS = [
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest; /**
+const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest;
+/**
  * The unscoped audit. `pnpm audit` exits non-zero whenever anything is found,
  * so the exit code is captured rather than trusted and the JSON is what the
  * assertions read — a run that produces no output at all is a failure, never a
@@ -96,56 +97,58 @@ const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as ExceptionManifest
  * transient advisory-registry slowness does not hang the suite for 120s.
  * Only a run that returns no parseable JSON after all retries fails; a real
  * advisory finding still flows through to the enforcement assertions.
- */  const auditJson = (): AuditReport => {
-    // Hard budget per invocation so a stalled `pnpm audit` cannot hang this
-    // test for the full 120s vitest timeout. 4 attempts at the cap stays well
-    // under 120s.
-    const perAttemptTimeoutMs = 35_000;
-    const maxAttempts = 4;
-    let lastError: Error | undefined;
+ */ const auditJson = (): AuditReport => {
+  // Hard budget per invocation so a stalled `pnpm audit` cannot hang this
+  // test for the full 120s vitest timeout. 4 attempts at the cap stays well
+  // under 120s.
+  const perAttemptTimeoutMs = 35_000;
+  const maxAttempts = 4;
+  let lastError: Error | undefined;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        const raw = execFileSync("pnpm", ["audit", "--json"], {
-          cwd: repoRoot,
-          encoding: "utf8",
-          shell: true,
-          maxBuffer: 32 * 1024 * 1024,
-          stdio: ["ignore", "pipe", "ignore"],
-          timeout: perAttemptTimeoutMs,
-        });
-        if (raw.trim().length === 0) {
-          throw new Error("pnpm audit produced empty output");
-        }
-        return JSON.parse(raw) as AuditReport;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const raw = execFileSync("pnpm", ["audit", "--json"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        shell: true,
+        maxBuffer: 32 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: perAttemptTimeoutMs,
+      });
+      if (raw.trim().length === 0) {
+        throw new Error("pnpm audit produced empty output");
+      }
+      return JSON.parse(raw) as AuditReport;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
 
-        // Retry only on transport / timeout / empty-output / parse failures,
-        // not on a real advisory finding (which parses fine and reaches the
-        // enforcement assertions below).
-        if (error instanceof Error &&
-            !String(error.message).includes("pnpm audit produced") &&
-            !String(error.message).includes("ExecFileSync") &&
-            !String(error.message).includes("timed out")) {
-          throw error;
-        }
+      // Retry only on transport / timeout / empty-output / parse failures,
+      // not on a real advisory finding (which parses fine and reaches the
+      // enforcement assertions below).
+      if (
+        error instanceof Error &&
+        !String(error.message).includes("pnpm audit produced") &&
+        !String(error.message).includes("ExecFileSync") &&
+        !String(error.message).includes("timed out")
+      ) {
+        throw error;
+      }
 
-        if (attempt < maxAttempts) {
-          const waited = 15 * attempt;
-          const deadline = Date.now() + waited;
-          while (Date.now() < deadline) {
-            // eslint-disable-next-line no-empty
-          }
+      if (attempt < maxAttempts) {
+        const waited = 15 * attempt;
+        const deadline = Date.now() + waited;
+        while (Date.now() < deadline) {
+          // eslint-disable-next-line no-empty
         }
       }
     }
+  }
 
-    throw new Error(
-      `pnpm audit failed after ${maxAttempts} attempts (last error: ${lastError?.message}). ` +
-        "The dev-dependency exception register cannot be verified.",
-    );
-  };
+  throw new Error(
+    `pnpm audit failed after ${maxAttempts} attempts (last error: ${lastError?.message}). ` +
+      "The dev-dependency exception register cannot be verified.",
+  );
+};
 
 const advisories = (report: AuditReport): readonly AuditAdvisory[] =>
   Object.values(report.advisories ?? {});

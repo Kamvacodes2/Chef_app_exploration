@@ -129,10 +129,12 @@ describe("advisory scan", () => {
         //
         // Skip the remaining retries when the failure already looks like a
         // real advisory finding in a (partially) parsed body.
-        if (error instanceof Error &&
-            !String(error.message).includes("pnpm audit produced") &&
-            !String(error.message).includes("ExecFileSync") &&
-            !String(error.message).includes("timed out")) {
+        if (
+          error instanceof Error &&
+          !String(error.message).includes("pnpm audit produced") &&
+          !String(error.message).includes("ExecFileSync") &&
+          !String(error.message).includes("timed out")
+        ) {
           // Probably a real advisory run that threw for an unexpected reason;
           // re-throw rather than retry and risk masking a real finding.
           throw error;
