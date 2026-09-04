@@ -96,6 +96,12 @@ describe("advisory scan", () => {
     advisories?: Record<string, unknown>;
     metadata?: { vulnerabilities?: Record<string, number> };
   } => {
+    // Each invocation gets a hard wall-time budget so a single stalled
+    // `pnpm audit` (registry.npmjs.org advisory endpoint slow/unreachable)
+    // cannot block this test for the full 120s vitest timeout. The retry cap
+    // is bounded by that budget: even 4 attempts at the cap stays well under
+    // 120s, leaving margin for vitest's own overhead.
+    const perAttemptTimeoutMs = 35_000;
     const maxAttempts = 4;
     let lastError: Error | undefined;
 
@@ -107,6 +113,7 @@ describe("advisory scan", () => {
           shell: true,
           maxBuffer: 32 * 1024 * 1024,
           stdio: ["ignore", "pipe", "ignore"],
+          timeout: perAttemptTimeoutMs,
         });
         if (raw.trim().length === 0) {
           throw new Error("pnpm audit produced empty output");
@@ -114,21 +121,28 @@ describe("advisory scan", () => {
         return JSON.parse(raw) as ReturnType<typeof auditJson>;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        // Only retry on audit-transport / JSON failures, not on a real advisory
-        // finding (which makes pnpm exit non-zero with a valid JSON body).
-        if (error instanceof Error && error.name === "JSONParseError") {
+
+        // Only retry on transport / timeout / empty-output / parse failures,
+        // not on a real advisory finding. A real finding makes pnpm exit
+        // non-zero *with a valid JSON body*, so `execFileSync` does not throw
+        // here — the JSON parses and the finding reaches the assertion below.
+        //
+        // Skip the remaining retries when the failure already looks like a
+        // real advisory finding in a (partially) parsed body.
+        if (error instanceof Error &&
+            !String(error.message).includes("pnpm audit produced") &&
+            !String(error.message).includes("ExecFileSync") &&
+            !String(error.message).includes("timed out")) {
+          // Probably a real advisory run that threw for an unexpected reason;
+          // re-throw rather than retry and risk masking a real finding.
           throw error;
         }
+
         if (attempt < maxAttempts) {
-          // Back off a little between retries.
-          const waited = 15 * (attempt - 1);
-          if (waited > 0) {
-            // Use a small synchronous sleep so we don't hand a fake clock to
-            // vitest's child_process exec.
-            const deadline = Date.now() + waited;
-            while (Date.now() < deadline) {
-              // eslint-disable-next-line no-empty
-            }
+          const waited = 15 * attempt;
+          const deadline = Date.now() + waited;
+          while (Date.now() < deadline) {
+            // eslint-disable-next-line no-empty
           }
         }
       }
