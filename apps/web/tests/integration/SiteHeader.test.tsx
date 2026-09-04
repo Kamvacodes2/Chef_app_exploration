@@ -7,10 +7,7 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-let mockAuth: AuthState = {
-  user: null,
-  logout: vi.fn(async () => {}),
-};
+let mockAuth: AuthState;
 
 vi.mock("@/features/auth/AuthContext", () => ({
   useAuth: () => mockAuth,
@@ -18,7 +15,10 @@ vi.mock("@/features/auth/AuthContext", () => ({
 
 describe("SiteHeader", () => {
   beforeEach(() => {
-    mockAuth.user = null;
+    mockAuth = {
+      user: null,
+      logout: vi.fn(async () => {}),
+    };
   });
 
   it("renders the brand mark, primary navigation, booking action, and login action", () => {

@@ -136,7 +136,7 @@ describe("order flow end-to-end", () => {
     const second = MAINS.find((item) => item.id === "sa-oxtail-seven-colours")!;
 
     // Once-off (no plan): the second meal adds R175 to the tonight base.
-    let s: OrderState = {
+    const s: OrderState = {
       ...INITIAL_ORDER_STATE,
       step: "second-meal",
       planId: null,
