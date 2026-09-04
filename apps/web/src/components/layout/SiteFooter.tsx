@@ -15,7 +15,7 @@ export function SiteFooter() {
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <nav className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-[var(--color-charcoal)]/50 md:grid-cols-4 lg:flex lg:flex-wrap lg:gap-x-6">
+            <nav className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-[var(--color-charcoal)]/70 md:grid-cols-4 lg:flex lg:flex-wrap lg:gap-x-6">
               <Link
                 href="/apply"
                 className="font-bold text-[var(--color-oxblood)] transition-colors hover:text-[var(--color-charcoal)]"

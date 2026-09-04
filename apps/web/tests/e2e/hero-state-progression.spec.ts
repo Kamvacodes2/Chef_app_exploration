@@ -7,7 +7,7 @@ test("landing page uses the requested section order and live CTA destinations", 
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /Dinner's handled\.\s+Your evening\s+is yours\./ }),
+    page.getByRole("heading", { name: /It's handled\.\s+Your evening\s+is yours\./ }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your evening, made simple." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Real meals, cooked at home." })).toBeVisible();

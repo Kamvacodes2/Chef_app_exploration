@@ -225,7 +225,10 @@ describe("HURU application operations", () => {
     render(<AdminApplications />);
     await screen.findByRole("heading", { name: "Cleared summary" });
 
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "REVIEW_REQUIRED" } });
+    await waitFor(() => expect(screen.getByLabelText("Status")).toHaveValue("PASSED"));
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "REVIEW_REQUIRED" },
+    });
     await waitFor(() => expect(screen.getByLabelText("Status")).toHaveValue("REVIEW_REQUIRED"));
     fireEvent.change(screen.getByLabelText("Provider reference"), { target: { value: "   " } });
     fireEvent.change(screen.getByLabelText("Provider outcome"), { target: { value: "" } });
