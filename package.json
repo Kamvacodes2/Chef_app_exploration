@@ -33,6 +33,13 @@
     "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage && pnpm --filter @chefmate/web test:coverage",
     "test:e2e": "pnpm --filter @chefmate/web test:e2e",
     "test:a11y": "pnpm --filter @chefmate/web test:a11y",
+    "test:ci:quality": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm db:migrate:check && pnpm test:unit && pnpm test:contract && pnpm test:db && pnpm test:integration",
+    "test:ci:security": "vitest run --config vitest.security.config.ts --exclude tests/security/dependencies.test.ts --exclude tests/security/devDependencyExceptions.test.ts",
+    "test:ci:dependency-audit": "vitest run --config vitest.security.config.ts tests/security/dependencies.test.ts tests/security/devDependencyExceptions.test.ts",
+    "test:ci:coverage": "pnpm test:coverage",
+    "test:ci:build": "pnpm build",
+    "test:ci:playwright": "pnpm test:e2e",
+    "test:ci:a11y": "pnpm test:a11y",
     "test:ci": "tsx scripts/ci.ts"
   },
   "devDependencies": {

@@ -31,15 +31,27 @@ const MANIFESTS = [
   "packages/testkit/package.json",
 ];
 
-/** Root scripts the CI pipeline (`scripts/ci.ts`) actually executes. */
+/** Root scripts used by the isolated CI test workflows. */
 const CI_TEST_SCRIPTS = [
   "test:unit",
   "test:contract",
   "test:db",
   "test:integration",
   "test:security",
+  "test:ci:security",
+  "test:ci:dependency-audit",
   "test:coverage",
 ];
+
+const CI_WORKFLOW_FILES = [
+  ".github/workflows/quality.yml",
+  ".github/workflows/security.yml",
+  ".github/workflows/dependency-audit.yml",
+  ".github/workflows/coverage.yml",
+  ".github/workflows/build.yml",
+  ".github/workflows/playwright.yml",
+  ".github/workflows/a11y.yml",
+] as const;
 
 interface Manifest {
   readonly scripts?: Record<string, string>;
@@ -116,11 +128,18 @@ describe("no Vitest UI or API server is ever started", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("CI runs the gate script and never a bare vitest command", () => {
-    const workflow = readText(".github/workflows/ci.yml");
-    expect(workflow).toContain("pnpm test:ci");
-    expect(/run:\s*.*vitest/.test(workflow)).toBe(false);
-    expect(workflow).not.toContain("--ui");
+  it("CI runs each targeted gate and never a bare vitest command", () => {
+    const workflows = CI_WORKFLOW_FILES.map(readText).join("\n");
+    expect(workflows).toContain("pnpm test:ci:quality");
+    expect(workflows).toContain("pnpm test:ci:security");
+    expect(workflows).toContain("pnpm test:ci:dependency-audit");
+    expect(workflows).toContain("pnpm test:ci:coverage");
+    expect(workflows).toContain("pnpm test:ci:build");
+    expect(workflows).toContain("pnpm test:ci:playwright");
+    expect(workflows).toContain("pnpm test:ci:a11y");
+    expect(workflows).not.toMatch(/run:\s*pnpm test:ci\s*$/m);
+    expect(/run:\s*.*vitest/.test(workflows)).toBe(false);
+    expect(workflows).not.toContain("--ui");
   });
 });
 

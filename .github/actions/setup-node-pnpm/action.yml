@@ -1,0 +1,40 @@
+name: Setup Node and pnpm
+description: Install the pinned Node and pnpm versions, restore the pnpm store, and install the workspace.
+inputs:
+  node-version:
+    description: Node.js version to install
+    required: false
+    default: "22.20.0"
+runs:
+  using: composite
+  steps:
+    - name: Set up Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install pnpm
+      shell: bash
+      run: |
+        set -euo pipefail
+        for attempt in 1 2 3; do
+          if timeout 120 corepack enable && timeout 120 corepack install --global pnpm@11.5.3; then
+            pnpm --version
+            exit 0
+          fi
+          echo "Corepack pnpm setup attempt ${attempt} failed; retrying"
+          sleep 5
+        done
+        echo "::error::Unable to install pnpm through Corepack after 3 attempts"
+        exit 1
+
+    - name: Cache pnpm store
+      uses: actions/cache@v6
+      with:
+        path: ~/.local/share/pnpm/store
+        key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

@@ -1,0 +1,61 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: coverage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  DEPLOY_ENV: ci
+  POSTGRES_USER: chefmate_ci
+  POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
+  POSTGRES_DB: chefmate_ci
+  DATABASE_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/chefmate_ci
+  CHEFMATE_TEST_PG_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/postgres
+  KMS_LOCAL_DEV_KEY: ci-only-not-a-real-key-value
+
+jobs:
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: chefmate_ci
+          POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
+          POSTGRES_DB: chefmate_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chefmate_ci -d chefmate_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node-pnpm
+      - name: Apply migrations from empty
+        run: pnpm db:migrate
+      - name: Run coverage gate
+        run: pnpm test:ci:coverage
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage
+          path: |
+            coverage
+            apps/web/coverage
+          retention-days: 14
+          if-no-files-found: ignore

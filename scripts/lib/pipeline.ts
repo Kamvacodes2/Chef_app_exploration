@@ -1,5 +1,5 @@
 /**
- * The `pnpm test:ci` pipeline: which suites run, in what order, and with which
+ * The full local `pnpm test:ci` pipeline: which suites run, in what order, and with which
  * environment (see `scripts/ci.ts`).
  *
  * The gate runs two very different kinds of suite from one parent process:

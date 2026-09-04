@@ -183,15 +183,19 @@ describe("test:ci pipeline environment scoping", () => {
 
   it("keeps the workflow free of a job-wide public API URL", async () => {
     const { readFile } = await import("node:fs/promises");
-    const workflow = await readFile(
-      new URL("../../.github/workflows/ci.yml", import.meta.url),
-      "utf8",
+    const workflowFiles = ["quality.yml", "security.yml", "coverage.yml", "dependency-audit.yml"];
+    const workflows = await Promise.all(
+      workflowFiles.map((file) =>
+        readFile(new URL(`../../.github/workflows/${file}`, import.meta.url), "utf8"),
+      ),
     );
 
-    // Only comments may mention these names; no YAML key may assign one.
+    // Default-sensitive workflows must not assign these URLs job-wide. The
+    // build/browser workflows are intentionally app-facing and are checked by
+    // the positive assertions above instead.
     for (const name of PUBLIC_API_URL_VARS) {
-      const assignments = workflow
-        .split("\n")
+      const assignments = workflows
+        .flatMap((workflow) => workflow.split("\n"))
         .filter((line) => new RegExp(`^\\s*${name}\\s*:`).test(line));
       expect(assignments).toStrictEqual([]);
     }

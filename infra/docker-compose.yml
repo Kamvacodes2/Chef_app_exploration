@@ -5,7 +5,8 @@
 # PostgreSQL and PostGIS versions. Changing it is a reviewable change.
 #
 # This file provisions LOCAL DEVELOPMENT ONLY. CI attaches the same pinned image
-# as a service container (see .github/workflows/ci.yml); nothing here is used
+# as a service container in the isolated quality and coverage workflows;
+# nothing here is used
 # for staging or production.
 
 services:

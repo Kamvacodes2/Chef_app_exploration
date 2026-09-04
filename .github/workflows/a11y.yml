@@ -1,0 +1,44 @@
+name: Accessibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: a11y-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  NEXT_PUBLIC_CHEFMATE_API_URL: http://127.0.0.1:4000
+
+jobs:
+  a11y:
+    name: Accessibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-node-pnpm
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+      - name: Run accessibility gate
+        run: pnpm test:ci:a11y
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: accessibility-playwright-report
+          path: apps/web/playwright-report
+          retention-days: 14
+          if-no-files-found: ignore

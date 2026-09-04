@@ -1,0 +1,45 @@
+name: Setup Playwright
+description: Install Playwright browsers and Linux dependencies with bounded mirror retries.
+inputs:
+  browsers:
+    description: Space-separated Playwright browser names
+    required: false
+    default: "chromium webkit"
+runs:
+  using: composite
+  steps:
+    - name: Configure apt reliability
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo sed -i -E \
+          's#https?://(azure\\.archive|archive|security)\\.ubuntu\\.com/ubuntu#https://mirrors.edge.kernel.org/ubuntu#g' \
+          /etc/apt/sources.list \
+          /etc/apt/sources.list.d/ubuntu.sources \
+          /etc/apt/apt-mirrors.txt 2>/dev/null || true
+        sudo tee /etc/apt/apt.conf.d/99-chefmate-ci-retries >/dev/null <<'EOF'
+        Acquire::Retries "5";
+        Acquire::http::Timeout "45";
+        Acquire::https::Timeout "45";
+        Acquire::http::Pipeline-Depth "0";
+        EOF
+
+    - name: Install Playwright browsers
+      shell: bash
+      env:
+        PLAYWRIGHT_BROWSERS: ${{ inputs.browsers }}
+      run: |
+        set -euo pipefail
+        for attempt in 1 2 3; do
+          if timeout 600 pnpm --filter @chefmate/web exec playwright install --with-deps ${PLAYWRIGHT_BROWSERS}; then
+            exit 0
+          fi
+          sudo pkill -9 apt-get || true
+          sudo pkill -9 apt || true
+          sudo pkill -9 dpkg || true
+          sudo dpkg --configure -a || true
+          sleep 5
+          echo "Playwright install attempt ${attempt} failed; retrying"
+        done
+        echo "::error::Unable to install Playwright browsers after 3 attempts"
+        exit 1

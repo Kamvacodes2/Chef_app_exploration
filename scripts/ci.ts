@@ -11,7 +11,8 @@ import { repoRoot } from "./lib/dotenv.js";
 import { buildSuiteEnv, CI_PIPELINE as PIPELINE } from "./lib/pipeline.js";
 
 /**
- * `pnpm test:ci` — the single command CI runs.
+ * `pnpm test:ci` — the full local verification command. GitHub Actions uses
+ * the targeted `test:ci:*` scripts in the isolated workflow files.
  *
  * Blueprint section 19.1: it "orchestrates all deterministic checks except
  * scheduled load and restore drills, starts disposable PostgreSQL/PostGIS,
@@ -19,7 +20,8 @@ import { buildSuiteEnv, CI_PIPELINE as PIPELINE } from "./lib/pipeline.js";
  * down", and "CI fails if a script is absent or silently skips its intended
  * suite".
  *
- * That last clause is enforced literally, before anything runs:
+ * The full local gate still enforces that clause literally, before anything
+ * runs:
  *
  * 1. every required root script must exist in `package.json`;
  * 2. every suite's config file must exist;
@@ -46,6 +48,13 @@ const REQUIRED_SCRIPTS = [
   "test:coverage",
   "test:e2e",
   "test:a11y",
+  "test:ci:quality",
+  "test:ci:security",
+  "test:ci:dependency-audit",
+  "test:ci:coverage",
+  "test:ci:build",
+  "test:ci:playwright",
+  "test:ci:a11y",
   "build",
   "test:ci",
 ] as const;
