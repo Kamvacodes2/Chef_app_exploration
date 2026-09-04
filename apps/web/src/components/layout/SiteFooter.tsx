@@ -10,7 +10,7 @@ export function SiteFooter() {
             <Link href="/" className="font-brand text-lg text-[var(--color-oxblood)]">
               ChefMate
             </Link>
-            <span className="text-xs text-[var(--color-charcoal)]/40">
+            <span className="text-xs text-[var(--color-charcoal)]/70">
               &copy; {new Date().getFullYear()}
             </span>
           </div>
@@ -83,7 +83,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="ChefMate on Instagram"
-                className="text-[var(--color-charcoal)]/40 transition-colors hover:text-[var(--color-oxblood)]"
+                className="text-[var(--color-charcoal)]/70 transition-colors hover:text-[var(--color-oxblood)]"
               >
                 <IconInstagram width={18} height={18} />
               </a>
@@ -92,7 +92,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="ChefMate on TikTok"
-                className="text-[var(--color-charcoal)]/40 transition-colors hover:text-[var(--color-oxblood)]"
+                className="text-[var(--color-charcoal)]/70 transition-colors hover:text-[var(--color-oxblood)]"
               >
                 <IconTikTok width={18} height={18} />
               </a>
