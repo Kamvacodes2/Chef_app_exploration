@@ -5,12 +5,13 @@ import { coverageThresholds, workspaceAlias } from "./vitest.shared.mjs";
 /**
  * Coverage run for the platform code.
  *
- * It executes **every** platform suite — unit, database, integration and
- * security — rather than the unit tests alone. Measuring coverage against a
- * subset of the suites would report an artificially low number for code that is
- * genuinely tested (the migration runner, the HTTP surface), and the natural fix
- * for that is to exclude those files, which is exactly the gaming this project
- * forbids. Running everything keeps the number honest in both directions.
+ * It executes the platform unit, database, integration and static security
+ * suites rather than the unit tests alone. The two dependency-audit policy
+ * files are deliberately excluded from this coverage-only pass: they launch
+ * live npm advisory-registry requests and are already enforced by the dedicated
+ * `test:security` stage. Running them again here doubled registry traffic and
+ * caused CI to spend another 240s timing out after the security stage had
+ * passed; they do not contribute application-source coverage.
  *
  * The web application measures its own coverage through
  * `apps/web/vitest.config.ts`.
@@ -25,6 +26,10 @@ export default defineConfig({
       "tests/db/**/*.test.ts",
       "tests/integration/**/*.test.ts",
       "tests/security/**/*.test.ts",
+    ],
+    exclude: [
+      "tests/security/dependencies.test.ts",
+      "tests/security/devDependencyExceptions.test.ts",
     ],
     testTimeout: 180_000,
     hookTimeout: 240_000,
