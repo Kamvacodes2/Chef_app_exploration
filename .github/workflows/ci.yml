@@ -76,17 +76,28 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # Caches the pnpm store keyed on the lockfile.
-          cache: pnpm
+
+      - name: Install pnpm
+        # pnpm/action-setup can hang before Node is initialized while fetching
+        # the package-manager tarball. Corepack is bundled with Node 22; bound
+        # its registry fetch and retry it explicitly so a transient npm outage
+        # cannot leave the job stuck indefinitely.
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if timeout 120 corepack enable && timeout 120 corepack install --global pnpm@11.5.3; then
+              pnpm --version
+              exit 0
+            fi
+            echo "Corepack pnpm setup attempt ${attempt} failed; retrying"
+            sleep 5
+          done
+          echo "::error::Unable to install pnpm through Corepack after 3 attempts"
+          exit 1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
