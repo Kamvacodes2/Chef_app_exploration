@@ -67,6 +67,7 @@ function controller(overrides: Partial<OrderController> = {}): OrderController {
     skipDessert: vi.fn(),
     setCustomRequest: vi.fn(),
     clearCustomRequest: vi.fn(),
+    setBreakfastAddOn: vi.fn(),
     setDate: vi.fn(),
     setTime: vi.fn(),
     setAddressField: vi.fn(),
@@ -170,5 +171,19 @@ describe("ReviewStep — main dish never shows an individual price", () => {
       screen.getByText(/send the plan request once the confirmed quote is ready/i),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Checkout will unlock/)).not.toBeInTheDocument();
+  });
+
+  it("shows the free overnight oats breakfast add-on when the customer accepted it", () => {
+    const base = controller();
+    renderWith(controller({ state: { ...base.state, breakfastAddOn: true } }));
+
+    expect(screen.getByText("Overnight Oats Trio")).toBeInTheDocument();
+    expect(screen.getByText(/Breakfast add-on · free with your subscription/)).toBeInTheDocument();
+  });
+
+  it("omits the breakfast add-on when the customer declined or was never asked", () => {
+    renderWith(controller({ state: { ...controller().state, breakfastAddOn: false } }));
+
+    expect(screen.queryByText("Overnight Oats Trio")).not.toBeInTheDocument();
   });
 });

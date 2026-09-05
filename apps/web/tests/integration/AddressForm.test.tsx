@@ -35,6 +35,7 @@ function createController(overrides: Partial<OrderController> = {}): OrderContro
     skipDessert: vi.fn(),
     setCustomRequest: vi.fn(),
     clearCustomRequest: vi.fn(),
+    setBreakfastAddOn: vi.fn(),
     setDate: vi.fn(),
     setTime: vi.fn(),
     setAddressField: vi.fn(),

@@ -7,7 +7,7 @@ import {
   isRecurringChefmatePlan,
   PREFERRED_DAYS,
 } from "@/features/plans/planCatalog";
-import { INCLUDED_SIDE_COUNT, SECOND_MEAL_PRICE_ZAR } from "../constants/menu";
+import { INCLUDED_SIDE_COUNT, OVERNIGHT_OATS_NAME, SECOND_MEAL_PRICE_ZAR } from "../constants/menu";
 import { findItem } from "../state/orderReducer";
 import { useOrder } from "../state/OrderContext";
 import { GiftCodeForm } from "./GiftCodeForm";
@@ -244,6 +244,24 @@ export function ReviewStep(): ReactElement {
               kind="dessert"
               priceCents={priceFor(state.dessert, "dessert")}
             />
+          ) : null}
+          {state.breakfastAddOn ? (
+            <div className="flex items-center justify-between gap-3 rounded-3xl bg-white/[0.04] p-4 ring-1 ring-white/10">
+              <div className="flex items-center gap-3">
+                <span aria-hidden="true" className="text-xl">
+                  🌾
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-bone)]">
+                    {OVERNIGHT_OATS_NAME}
+                  </p>
+                  <p className="text-xs text-[var(--color-bone)]/70">
+                    Breakfast add-on · free with your subscription
+                  </p>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-[var(--color-bone)]/80">Included</span>
+            </div>
           ) : null}
 
           {plan ? (

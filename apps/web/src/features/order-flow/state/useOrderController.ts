@@ -67,6 +67,7 @@ export interface OrderController {
   readonly skipDessert: () => void;
   readonly setCustomRequest: (text: string) => void;
   readonly clearCustomRequest: () => void;
+  readonly setBreakfastAddOn: (value: boolean) => void;
   readonly setDate: (date: string) => void;
   readonly setTime: (time: string | null) => void;
   readonly setAddressField: (field: keyof Address, value: string) => void;
@@ -192,9 +193,11 @@ export function useOrderController(): OrderController {
         secondFavoriteMealId: state.secondFavoriteMealId,
         secondFavoriteMealLink: state.secondFavoriteMealLink,
         favoriteMealDeferred: state.favoriteMealDeferred,
+        breakfastAddOn: state.breakfastAddOn,
       }),
     [
       state.appliedGift,
+      state.breakfastAddOn,
       state.customRequest,
       state.dessert,
       state.favoriteMealId,
@@ -361,6 +364,10 @@ export function useOrderController(): OrderController {
     skipDessert: useCallback(() => dispatch({ type: "SKIP_DESSERT" }), []),
     setCustomRequest: useCallback((text) => dispatch({ type: "SET_CUSTOM_REQUEST", text }), []),
     clearCustomRequest: useCallback(() => dispatch({ type: "CLEAR_CUSTOM_REQUEST" }), []),
+    setBreakfastAddOn: useCallback(
+      (value) => dispatch({ type: "SET_BREAKFAST_ADD_ON", value }),
+      [],
+    ),
     setDate: useCallback((date) => dispatch({ type: "SET_DATE", date }), []),
     setTime: useCallback((time) => dispatch({ type: "SET_TIME", time }), []),
     setAddressField: useCallback(

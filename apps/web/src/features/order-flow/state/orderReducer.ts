@@ -52,6 +52,8 @@ export interface OrderState {
   readonly sides: readonly OrderMenuItem[];
   readonly dessert: OrderMenuItem | null;
   readonly customRequest: string | null;
+  /** Free breakfast add-on (overnight oats) offered to subscription plans: null = not asked, true = yes, false = no thanks. */
+  readonly breakfastAddOn: boolean | null;
   readonly date: string | null;
   readonly time: string | null;
   readonly address: Address;
@@ -77,6 +79,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   sides: Object.freeze([]),
   dessert: null,
   customRequest: null,
+  breakfastAddOn: null,
   date: null,
   time: null,
   address: Object.freeze({
@@ -113,6 +116,7 @@ export type OrderAction =
   | { type: "SKIP_DESSERT" }
   | { type: "SET_CUSTOM_REQUEST"; text: string }
   | { type: "CLEAR_CUSTOM_REQUEST" }
+  | { type: "SET_BREAKFAST_ADD_ON"; value: boolean }
   | { type: "SET_DATE"; date: string }
   | { type: "SET_TIME"; time: string | null }
   | { type: "SET_ADDRESS_FIELD"; field: keyof Address; value: string }
@@ -341,6 +345,8 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     }
     case "CLEAR_CUSTOM_REQUEST":
       return { ...state, customRequest: null, main: null };
+    case "SET_BREAKFAST_ADD_ON":
+      return { ...state, breakfastAddOn: action.value };
     case "SET_DATE":
       return { ...state, date: action.date };
     case "SET_TIME":

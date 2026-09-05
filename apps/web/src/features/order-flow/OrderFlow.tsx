@@ -13,6 +13,7 @@ import { GoalSelect } from "./components/GoalSelect";
 import { MealSelect } from "./components/MealSelect";
 import { SecondMealSelect } from "./components/SecondMealSelect";
 import { SidesSelect } from "./components/SidesSelect";
+import { BreakfastAddOnModal } from "./components/BreakfastAddOnModal";
 import { DessertSelect } from "./components/DessertSelect";
 import { ScheduleSelect } from "./components/ScheduleSelect";
 import { AddressForm } from "./components/AddressForm";
@@ -100,6 +101,7 @@ export function OrderFlow(): ReactElement {
     pricingQuote,
     setGiftInput,
     applyGift,
+    setBreakfastAddOn,
   } = controller;
   const reducedMotion = usePrefersReducedMotion();
 
@@ -111,6 +113,10 @@ export function OrderFlow(): ReactElement {
   const isCustomRequest = state.main?.id === "custom-request";
   const isPlanRequest = state.planId ? isRecurringChefmatePlan(state.planId) : false;
   const showNav = !isGoal && !isConfirmed;
+  // The free overnight oats breakfast add-on is offered once, right after a
+  // subscription customer has picked their meal(s) and reached the sides step.
+  const showBreakfastAddOn =
+    state.step === "sides" && isPlanRequest && state.breakfastAddOn === null;
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -332,6 +338,13 @@ export function OrderFlow(): ReactElement {
             </>
           )}
         </div>
+
+        {showBreakfastAddOn && (
+          <BreakfastAddOnModal
+            onAccept={() => setBreakfastAddOn(true)}
+            onDecline={() => setBreakfastAddOn(false)}
+          />
+        )}
       </section>
     </OrderContext.Provider>
   );

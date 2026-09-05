@@ -10,6 +10,13 @@ export const DESSERT_PRICE_ZAR = 90;
  * `second_meal_cents` pricing rule.
  */
 export const SECOND_MEAL_PRICE_ZAR = 175;
+/**
+ * Free breakfast add-on offered to subscription (recurring) plans. The meal
+ * exists in the catalog at a zero price; this slug keeps frontend/backend in
+ * sync with the one and only breakfast perk.
+ */
+export const OVERNIGHT_OATS_SLUG = "overnight-oats-trio";
+export const OVERNIGHT_OATS_NAME = "Overnight Oats Trio";
 
 const INCLUDED_MAIN_PRICE_DISPLAY = "Included in package";
 const EXTRA_SIDE_PRICE_DISPLAY = `First ${INCLUDED_SIDE_COUNT} included, then R${EXTRA_SIDE_PRICE_ZAR}`;

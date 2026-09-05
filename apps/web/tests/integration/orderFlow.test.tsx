@@ -379,6 +379,74 @@ describe("order flow end-to-end", () => {
     expect(buildBookingRequestPayload(s)).toMatchObject({ planSelection: expectedPlanSelection });
   });
 
+  it("records the free breakfast add-on answer in state (unasked -> yes -> no)", () => {
+    expect(INITIAL_ORDER_STATE.breakfastAddOn).toBeNull();
+
+    const answered = orderReducer(INITIAL_ORDER_STATE, {
+      type: "SET_BREAKFAST_ADD_ON",
+      value: true,
+    });
+    expect(answered.breakfastAddOn).toBe(true);
+
+    const declined = orderReducer(answered, { type: "SET_BREAKFAST_ADD_ON", value: false });
+    expect(declined.breakfastAddOn).toBe(false);
+
+    const reset = orderReducer(declined, { type: "RESET" });
+    expect(reset.breakfastAddOn).toBeNull();
+  });
+
+  it("sends the free overnight oats add-on slug when the customer accepts it", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "rhythm" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_DAYS" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_FAVORITE" });
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "SET_BREAKFAST_ADD_ON", value: true });
+    s = orderReducer(s, { type: "SET_DATE", date: "2026-08-15" });
+    s = orderReducer(s, { type: "SET_TIME", time: "18:30" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "street", value: "12 Jacaranda Ave" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "area", value: "Fourways" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "name", value: "Test Customer" });
+    s = orderReducer(s, {
+      type: "SET_CONTACT_FIELD",
+      field: "email",
+      value: "customer@example.test",
+    });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "phone", value: "082 123 4567" });
+
+    expect(buildPricingQuotePayload(s)).toMatchObject({
+      breakfastAddOnSlug: "overnight-oats-trio",
+      planSelection: expect.objectContaining({ planId: "rhythm" }),
+    });
+    expect(buildBookingRequestPayload(s)).toMatchObject({
+      breakfastAddOnSlug: "overnight-oats-trio",
+      planSelection: expect.objectContaining({ planId: "rhythm" }),
+    });
+  });
+
+  it("omits the breakfast add-on when the customer declines it", () => {
+    let s: OrderState = INITIAL_ORDER_STATE;
+    s = orderReducer(s, { type: "START_PLAN_SETUP", planId: "rhythm" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_DAYS" });
+    s = orderReducer(s, { type: "DECIDE_PLAN_FAVORITE" });
+    s = orderReducer(s, { type: "SELECT_MAIN", item: main });
+    s = orderReducer(s, { type: "SET_BREAKFAST_ADD_ON", value: false });
+    s = orderReducer(s, { type: "SET_DATE", date: "2026-08-15" });
+    s = orderReducer(s, { type: "SET_TIME", time: "18:30" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "street", value: "12 Jacaranda Ave" });
+    s = orderReducer(s, { type: "SET_ADDRESS_FIELD", field: "area", value: "Fourways" });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "name", value: "Test Customer" });
+    s = orderReducer(s, {
+      type: "SET_CONTACT_FIELD",
+      field: "email",
+      value: "customer@example.test",
+    });
+    s = orderReducer(s, { type: "SET_CONTACT_FIELD", field: "phone", value: "082 123 4567" });
+
+    expect(buildPricingQuotePayload(s)).not.toHaveProperty("breakfastAddOnSlug");
+    expect(buildBookingRequestPayload(s)).not.toHaveProperty("breakfastAddOnSlug");
+  });
+
   it("rejects incomplete booking payloads before sending a request", () => {
     const validState: OrderState = {
       ...INITIAL_ORDER_STATE,

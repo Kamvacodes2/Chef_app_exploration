@@ -53,6 +53,7 @@ function Harness(): React.ReactElement {
     skipDessert: () => {},
     setCustomRequest: () => {},
     clearCustomRequest: () => {},
+    setBreakfastAddOn: () => {},
     setDate: () => {},
     setTime: () => {},
     setAddressField: () => {},

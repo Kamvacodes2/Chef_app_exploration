@@ -3,9 +3,10 @@ import { buildPlanSelection } from "@/features/plans/planSelection";
 import type { ChefmatePlanSelection } from "@/features/plans/planCatalog";
 import { getChefmateApiUrl } from "@/lib/env";
 import type { OrderState } from "../state/orderReducer";
+import { OVERNIGHT_OATS_SLUG } from "../constants/menu";
 
 const pricingItemSchema = z.object({
-  kind: z.enum(["main", "side", "dessert"]),
+  kind: z.enum(["main", "side", "dessert", "addon"]),
   slug: z.string().min(1),
   name: z.string().min(1),
   priceCents: z.number().int().nonnegative(),
@@ -43,6 +44,8 @@ export interface PricingQuotePayload {
    * flows). Plan bookings carry it in planSelection.secondFavoriteMealSlug.
    */
   readonly secondMainSlug?: string | null;
+  /** Free breakfast add-on (overnight oats) for subscription plans. */
+  readonly breakfastAddOnSlug?: string | null;
 }
 
 export interface PricingQuote {
@@ -50,7 +53,7 @@ export interface PricingQuote {
   readonly discountCents: number;
   readonly totalCents: number;
   readonly items: readonly {
-    readonly kind: "main" | "side" | "dessert";
+    readonly kind: "main" | "side" | "dessert" | "addon";
     readonly slug: string;
     readonly name: string;
     readonly priceCents: number;
@@ -81,6 +84,7 @@ export function buildPricingQuotePayload(
     | "secondFavoriteMealId"
     | "secondFavoriteMealLink"
     | "favoriteMealDeferred"
+    | "breakfastAddOn"
   >,
 ): PricingQuotePayload | null {
   if (!state.main) return null;
@@ -92,6 +96,7 @@ export function buildPricingQuotePayload(
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
     giftCode: state.appliedGift?.code ?? null,
+    ...(state.breakfastAddOn ? { breakfastAddOnSlug: OVERNIGHT_OATS_SLUG } : {}),
     ...(planSelection
       ? { planSelection }
       : state.secondFavoriteMealId

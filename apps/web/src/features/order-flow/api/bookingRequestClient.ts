@@ -3,6 +3,7 @@ import { getChefmateApiUrl } from "@/lib/env";
 import { ChefmateApiError, readApiErrorDetails } from "@/lib/apiError";
 import type { Address, ContactDetails, GoalId } from "../types";
 import type { OrderState } from "../state/orderReducer";
+import { OVERNIGHT_OATS_SLUG } from "../constants/menu";
 import { buildPlanSelection } from "@/features/plans/planSelection";
 import type { ChefmatePlanSelection } from "@/features/plans/planCatalog";
 
@@ -35,6 +36,8 @@ export interface BookingRequestPayload {
    * flows). Plan bookings carry it in planSelection.secondFavoriteMealSlug.
    */
   readonly secondMainSlug?: string | null;
+  /** Free breakfast add-on (overnight oats) for subscription plans. */
+  readonly breakfastAddOnSlug?: string | null;
 }
 
 export interface BuildBookingRequestOptions {
@@ -185,6 +188,7 @@ export function buildBookingRequestPayload(
     },
     ...(contact ? { contact } : {}),
     giftCode: state.appliedGift?.code ?? null,
+    ...(state.breakfastAddOn ? { breakfastAddOnSlug: OVERNIGHT_OATS_SLUG } : {}),
     ...(planSelection
       ? { planSelection }
       : state.secondFavoriteMealId
