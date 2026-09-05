@@ -84,6 +84,7 @@ export function ChefImportActivationPage({
 
   const requiredPending =
     policyStatus?.filter((policy) => policy.required && !policy.accepted) ?? [];
+  const passwordSaved = passwordMessage !== null;
 
   const savePassword = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -155,8 +156,8 @@ export function ChefImportActivationPage({
               </p>
               <p className="mt-1 text-sm text-[var(--color-charcoal)]/75">
                 Your chef profile has been brought across from the easychefapp system and your
-                account is now active. Review and accept the current Chefmate chef terms above to
-                unlock your chef portal.
+                account is now active. Review and accept the current Chefmate chef terms above, then
+                set a password below so you can sign in from any device.
               </p>
             </div>
 
@@ -250,12 +251,22 @@ export function ChefImportActivationPage({
               </button>
             </form>
 
-            <Link
-              href="/chef/portal"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--color-oxblood)]/25 px-5 text-sm font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)]"
-            >
-              Open my chef portal
-            </Link>
+            {passwordSaved ? (
+              <Link
+                href="/chef/portal"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white transition hover:bg-[var(--color-oxblood)]/90"
+              >
+                Open my chef portal
+              </Link>
+            ) : (
+              <p
+                className="rounded-lg border border-[var(--color-terracotta)]/35 bg-[var(--color-terracotta)]/10 px-4 py-3 text-sm font-medium text-[var(--color-oxblood)]"
+                role="status"
+              >
+                Save your password above to finish activating your account. Your chef portal will
+                unlock as soon as it&apos;s saved.
+              </p>
+            )}
           </div>
         ) : null}
       </section>

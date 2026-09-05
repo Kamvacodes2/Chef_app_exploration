@@ -68,6 +68,43 @@ export async function getCurrentUser(
   return authResponseSchema.parse(await response.json()).data.user;
 }
 
+export async function requestPasswordReset(
+  email: string,
+  options: AuthRequestOptions = {},
+): Promise<void> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchWithTimeout(
+    fetchImpl,
+    apiUrl(options.baseUrl ?? getChefmateApiUrl(), "/api/v1/auth/forgot-password"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    },
+  );
+
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+  options: AuthRequestOptions = {},
+): Promise<void> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchWithTimeout(
+    fetchImpl,
+    apiUrl(options.baseUrl ?? getChefmateApiUrl(), "/api/v1/auth/reset-password"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    },
+  );
+
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+}
+
 export async function logout(options: AuthRequestOptions = {}): Promise<void> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const response = await fetchWithTimeout(

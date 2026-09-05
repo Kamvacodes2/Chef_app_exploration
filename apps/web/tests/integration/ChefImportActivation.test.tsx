@@ -34,10 +34,11 @@ describe("ChefImportActivationPage", () => {
       await screen.findByRole("heading", { name: "Your Chefmate chef account is ready." }),
     ).toBeInTheDocument();
     expect(screen.getByText(/signed in as Dineo Lucia Lepedi/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open my chef portal" })).toHaveAttribute(
-      "href",
-      "/chef/portal",
-    );
+    // The portal stays locked until a password has been saved.
+    expect(screen.queryByRole("link", { name: "Open my chef portal" })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Save your password above to finish activating your account/i),
+    ).toBeInTheDocument();
   });
 
   it("reports a clear error when the token is missing", async () => {
@@ -79,6 +80,11 @@ describe("ChefImportActivationPage", () => {
         /Password saved\. You can use your email and password on any device\./,
       ),
     ).toBeInTheDocument();
+    // Once the password is saved the portal link unlocks.
+    expect(await screen.findByRole("link", { name: "Open my chef portal" })).toHaveAttribute(
+      "href",
+      "/chef/portal",
+    );
   });
 
   it("rejects mismatched passwords without calling the API", async () => {

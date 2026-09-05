@@ -190,6 +190,17 @@ export function AuthPage() {
               >
                 {isSubmitting ? "Please wait" : isRegistering ? "Create account" : "Sign in"}
               </button>
+
+              {!isRegistering ? (
+                <p className="text-center text-sm">
+                  <Link
+                    href="/account/forgot-password"
+                    className="font-semibold text-[var(--color-oxblood)] underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </p>
+              ) : null}
             </form>
           )}
         </section>

@@ -152,6 +152,19 @@ describe("AuthPage", () => {
     );
   });
 
+  it("offers a forgot-password link from the sign-in form", () => {
+    render(<AuthPage />);
+
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute(
+      "href",
+      "/account/forgot-password",
+    );
+
+    // The link is a sign-in affordance only — hidden on the register tab.
+    fireEvent.click(screen.getByRole("tab", { name: "Create account" }));
+    expect(screen.queryByRole("link", { name: "Forgot password?" })).not.toBeInTheDocument();
+  });
+
   it("shows useful backend auth errors", async () => {
     authApi.signIn.mockRejectedValue(new Error("Invalid email or password."));
     render(<AuthPage />);
