@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from "react";
 import { getChefmateApiUrl } from "@/lib/env";
+import { AvailabilityConfirmModal } from "./AvailabilityConfirmModal";
 
 interface OfferClaimOffer {
   readonly id: string;
@@ -58,6 +59,7 @@ export function OfferClaimPage({ token }: { readonly token: string | null }): Re
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState<ClaimResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -140,6 +142,11 @@ export function OfferClaimPage({ token }: { readonly token: string | null }): Re
   }
 
   const offer = claimed?.offer ?? details.offer;
+
+  const runClaim = async (): Promise<void> => {
+    setConfirmOpen(false);
+    await claim();
+  };
 
   if (claimedOutcome && offer) {
     return (
@@ -228,7 +235,7 @@ export function OfferClaimPage({ token }: { readonly token: string | null }): Re
           </p>
           <button
             type="button"
-            onClick={() => void claim()}
+            onClick={() => setConfirmOpen(true)}
             disabled={claiming}
             className="mt-6 w-full rounded-xl bg-[var(--color-oxblood)] px-6 py-3 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
@@ -236,6 +243,22 @@ export function OfferClaimPage({ token }: { readonly token: string | null }): Re
           </button>
         </div>
       </div>
+
+      {confirmOpen ? (
+        <AvailabilityConfirmModal
+          busy={claiming}
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={() => void runClaim()}
+          session={{
+            reference: offer.booking.reference,
+            mainName: offer.booking.mainName,
+            scheduledDate: formatDate(offer.booking.scheduledDate),
+            timeSlot: offer.booking.timeSlot,
+            chefPayoutCents: offer.chefPayoutCents,
+            outsideAvailability: false,
+          }}
+        />
+      ) : null}
     </main>
   );
 }

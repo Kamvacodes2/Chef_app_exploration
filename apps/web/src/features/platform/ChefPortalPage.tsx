@@ -1,41 +1,50 @@
 "use client";
 
-import { FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   acceptChefOffer,
+  availabilityFromRecord,
   completeChefBooking,
   declineChefOffer,
+  fetchAvailableSessions,
   fetchChefBookings,
   fetchChefOffers,
   fetchChefProfile,
   markChefEnRoute,
   updateChefBankDetails,
-  updateChefProfile,
+  type AvailableSession,
   type ChefBooking,
   type ChefEarning,
   type ChefOffer,
   type ChefProfile,
 } from "./api/platformClient";
+import { AvailableSessionsPanel } from "./AvailableSessionsPanel";
+import { AvailabilityConfirmModal, sessionFallsOutside } from "./AvailabilityConfirmModal";
+import { ChefProfileEditor } from "./ChefProfileEditor";
 
 export function ChefPortalPage() {
   const [profile, setProfile] = useState<ChefProfile | null>(null);
   const [offers, setOffers] = useState<ChefOffer[]>([]);
+  const [sessions, setSessions] = useState<AvailableSession[]>([]);
   const [bookings, setBookings] = useState<ChefBooking[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [offerConfirm, setOfferConfirm] = useState<ChefOffer | null>(null);
 
   const load = async (): Promise<void> => {
     setBusy("load");
     setError(null);
     try {
-      const [nextProfile, nextOffers, nextBookings] = await Promise.all([
+      const [nextProfile, nextOffers, nextSessions, nextBookings] = await Promise.all([
         fetchChefProfile(),
         fetchChefOffers(),
+        fetchAvailableSessions(),
         fetchChefBookings(),
       ]);
       setProfile(nextProfile);
       setOffers(nextOffers);
+      setSessions(nextSessions);
       setBookings(nextBookings);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not load the chef portal.");
@@ -61,28 +70,7 @@ export function ChefPortalPage() {
     }
   };
 
-  const saveProfile = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    await run("profile", async () => {
-      const updated = await updateChefProfile({
-        isAvailable: formData.get("isAvailable") === "on",
-        serviceArea: nullableText(formData, "serviceArea"),
-        serviceAreas: splitCsv(text(formData, "serviceAreas")),
-        bio: nullableText(formData, "bio"),
-        latitude: null,
-        longitude: null,
-        maxTravelKm: Math.max(1, Number(formData.get("maxTravelKm") ?? 30)),
-        availability: nullableText(formData, "availabilityNotes")
-          ? { notes: nullableText(formData, "availabilityNotes") }
-          : null,
-      });
-      setProfile(updated);
-      setNotice("Chef profile and availability saved.");
-    });
-  };
-
-  const saveBank = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const saveBank = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     await run("bank", async () => {
@@ -98,7 +86,10 @@ export function ChefPortalPage() {
     });
   };
 
+  const confirmOfferAccept = (offer: ChefOffer): void => setOfferConfirm(offer);
+
   const accept = (offer: ChefOffer): void => {
+    setOfferConfirm(null);
     void run("accept-" + offer.id, async () => {
       await acceptChefOffer(offer.id);
       setNotice(
@@ -132,6 +123,8 @@ export function ChefPortalPage() {
     });
   };
 
+  const availability = availabilityFromRecord(profile?.availability);
+
   return (
     <main className="bg-[var(--color-warm-cream)] px-4 py-10 text-[var(--color-charcoal)] sm:px-6">
       <section className="mx-auto max-w-[1180px]">
@@ -139,8 +132,8 @@ export function ChefPortalPage() {
           <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/70">Chef portal</p>
           <h1 className="mt-3 text-4xl font-black">Your ChefMate workbench.</h1>
           <p className="mt-3 max-w-3xl text-white/75">
-            Manage profile, banking, availability, incoming job offers, and active sessions. Offer
-            cards show only the Rand value you receive.
+            Grab an open session, manage personal job offers, and keep your availability, service
+            areas and banking up to date. Offer cards show only the Rand value you receive.
           </p>
         </div>
 
@@ -149,8 +142,23 @@ export function ChefPortalPage() {
         {error ? <Status tone="error">{error}</Status> : null}
 
         <div className="mt-8 grid gap-6 xl:grid-cols-2">
+          <Panel title="Sessions up for grabs">
+            <AvailableSessionsPanel
+              busyKey={busy}
+              onClaimed={(reference, payoutCents) => {
+                setNotice(
+                  `Session ${reference} claimed. Your payout is ${formatZar(payoutCents)}.`,
+                );
+                void load();
+              }}
+              profile={profile}
+              run={(name, action) => void run(name, action)}
+              sessions={sessions}
+            />
+          </Panel>
+
           <Panel title="Incoming session offers">
-            {offers.length === 0 ? <Empty>No incoming offers right now.</Empty> : null}
+            {offers.length === 0 ? <Empty>No personal offers right now.</Empty> : null}
             {offers.map((offer) => (
               <article
                 className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
@@ -166,112 +174,90 @@ export function ChefPortalPage() {
                   You receive {formatZar(offer.chefPayoutCents)}
                 </p>
                 <div className="mt-4 flex gap-2">
-                  <Button disabled={busy === "accept-" + offer.id} onClick={() => accept(offer)}>
+                  <button
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
+                    disabled={busy === "accept-" + offer.id}
+                    onClick={() => confirmOfferAccept(offer)}
+                    type="button"
+                  >
                     Accept
-                  </Button>
-                  <Button
-                    kind="secondary"
+                  </button>
+                  <button
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
                     disabled={busy === "decline-" + offer.id}
                     onClick={() => decline(offer)}
+                    type="button"
                   >
                     Decline
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </Panel>
-
-          <Panel title="Assigned bookings">
-            {bookings.length === 0 ? <Empty>No active assigned bookings yet.</Empty> : null}
-            {bookings.map((booking) => (
-              <article
-                className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
-                key={booking.id}
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
-                  {booking.reference} · {booking.status.replaceAll("_", " ")}
-                </p>
-                <h3 className="mt-2 text-xl font-black">{booking.mainName}</h3>
-                <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-                  {formatDate(booking.scheduledDate)} at {booking.timeSlot} ·{" "}
-                  {booking.serviceArea ?? "Area pending"}
-                </p>
-                {booking.chefPayoutCents != null ? (
-                  <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                    You receive {formatZar(booking.chefPayoutCents)}
-                  </p>
-                ) : null}
-                <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-                  {booking.estate ? `${booking.estate}, ` : ""}
-                  {booking.street}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    kind="secondary"
-                    disabled={
-                      booking.status !== "CHEF_MATCHED" || busy === "en-route-" + booking.id
-                    }
-                    onClick={() => enRoute(booking)}
-                  >
-                    Mark en route
-                  </Button>
-                  <Button
-                    disabled={
-                      !["CHEF_MATCHED", "EN_ROUTE"].includes(booking.status) ||
-                      busy === "complete-" + booking.id
-                    }
-                    onClick={() => complete(booking)}
-                  >
-                    Complete booking
-                  </Button>
+                  </button>
                 </div>
               </article>
             ))}
           </Panel>
         </div>
 
+        <Panel title="Assigned bookings">
+          {bookings.length === 0 ? <Empty>No active assigned bookings yet.</Empty> : null}
+          {bookings.map((booking) => (
+            <article
+              className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
+              key={booking.id}
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
+                {booking.reference} · {booking.status.replaceAll("_", " ")}
+              </p>
+              <h3 className="mt-2 text-xl font-black">{booking.mainName}</h3>
+              <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
+                {formatDate(booking.scheduledDate)} at {booking.timeSlot} ·{" "}
+                {booking.serviceArea ?? "Area pending"}
+              </p>
+              {booking.chefPayoutCents != null ? (
+                <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                  You receive {formatZar(booking.chefPayoutCents)}
+                </p>
+              ) : null}
+              <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
+                {booking.estate ? `${booking.estate}, ` : ""}
+                {booking.street}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
+                  disabled={booking.status !== "CHEF_MATCHED" || busy === "en-route-" + booking.id}
+                  onClick={() => enRoute(booking)}
+                  type="button"
+                >
+                  Mark en route
+                </button>
+                <button
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
+                  disabled={
+                    !["CHEF_MATCHED", "EN_ROUTE"].includes(booking.status) ||
+                    busy === "complete-" + booking.id
+                  }
+                  onClick={() => complete(booking)}
+                  type="button"
+                >
+                  Complete booking
+                </button>
+              </div>
+            </article>
+          ))}
+        </Panel>
+
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Panel title="Profile and availability">
-            <form
-              className="mt-5 grid gap-4"
-              key={profile?.updatedAt ?? "profile"}
-              onSubmit={saveProfile}
-            >
-              <label className="flex items-center gap-3 text-sm font-bold">
-                <input
-                  defaultChecked={profile?.isAvailable ?? false}
-                  name="isAvailable"
-                  type="checkbox"
-                />
-                Available for new bookings
-              </label>
-              <Input
-                label="Primary service area"
-                name="serviceArea"
-                defaultValue={profile?.serviceArea ?? ""}
+            {profile ? (
+              <ChefProfileEditor
+                onSaved={(updated) => {
+                  setProfile(updated);
+                  setNotice("Chef profile and availability saved.");
+                }}
+                profile={profile}
               />
-              <Input
-                label="Service areas"
-                name="serviceAreas"
-                defaultValue={(profile?.serviceAreas ?? []).join(", ")}
-              />
-              <Input
-                label="Max travel distance (km)"
-                min={1}
-                name="maxTravelKm"
-                type="number"
-                defaultValue={profile?.maxTravelKm ?? 30}
-              />
-              <TextArea label="Bio" name="bio" defaultValue={profile?.bio ?? ""} />
-              <TextArea
-                label="Availability notes"
-                name="availabilityNotes"
-                defaultValue={profile?.availability ? String(profile.availability.notes ?? "") : ""}
-              />
-              <Button disabled={busy === "profile"} submit>
-                Save profile
-              </Button>
-            </form>
+            ) : (
+              <Empty>Profile loading...</Empty>
+            )}
           </Panel>
 
           <Panel title="Bank details">
@@ -284,7 +270,7 @@ export function ChefPortalPage() {
             <form
               className="mt-5 grid gap-4"
               key={profile?.bankAccount?.updatedAt ?? "bank"}
-              onSubmit={saveBank}
+              onSubmit={(event) => void saveBank(event)}
             >
               <Input
                 label="Account holder"
@@ -310,13 +296,37 @@ export function ChefPortalPage() {
                 name="accountType"
                 defaultValue={profile?.bankAccount?.accountType ?? ""}
               />
-              <Button disabled={busy === "bank"} submit>
+              <button
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:opacity-60"
+                disabled={busy === "bank"}
+                type="submit"
+              >
                 Save bank details
-              </Button>
+              </button>
             </form>
           </Panel>
         </div>
       </section>
+
+      {offerConfirm ? (
+        <AvailabilityConfirmModal
+          busy={busy === "accept-" + offerConfirm.id}
+          onCancel={() => setOfferConfirm(null)}
+          onConfirm={() => accept(offerConfirm)}
+          session={{
+            reference: offerConfirm.booking.reference,
+            mainName: offerConfirm.booking.mainName,
+            scheduledDate: formatDate(offerConfirm.booking.scheduledDate),
+            timeSlot: offerConfirm.booking.timeSlot,
+            chefPayoutCents: offerConfirm.chefPayoutCents,
+            outsideAvailability: sessionFallsOutside(
+              offerConfirm.booking.scheduledDate,
+              offerConfirm.booking.timeSlot,
+              availability,
+            ),
+          }}
+        />
+      ) : null}
     </main>
   );
 }
@@ -364,74 +374,21 @@ interface InputProps {
   readonly label: string;
   readonly name: string;
   readonly defaultValue?: string | number;
-  readonly type?: string;
-  readonly min?: number;
   readonly required?: boolean;
 }
 
-function Input({ label, name, defaultValue, type = "text", min, required = false }: InputProps) {
+function Input({ label, name, defaultValue, required = false }: InputProps) {
   return (
     <label className="block text-sm font-bold">
       {label}
       <input
         className="mt-2 min-h-12 w-full rounded-2xl border border-[var(--color-oxblood)]/15 px-4 text-base"
         defaultValue={defaultValue}
-        min={min}
         name={name}
         required={required}
-        type={type}
+        type="text"
       />
     </label>
-  );
-}
-
-function TextArea({
-  label,
-  name,
-  defaultValue,
-}: {
-  readonly label: string;
-  readonly name: string;
-  readonly defaultValue?: string;
-}) {
-  return (
-    <label className="block text-sm font-bold">
-      {label}
-      <textarea
-        className="mt-2 min-h-28 w-full rounded-2xl border border-[var(--color-oxblood)]/15 px-4 py-3 text-base"
-        defaultValue={defaultValue}
-        name={name}
-      />
-    </label>
-  );
-}
-
-function Button({
-  children,
-  disabled = false,
-  kind = "primary",
-  onClick,
-  submit = false,
-}: {
-  readonly children: ReactNode;
-  readonly disabled?: boolean;
-  readonly kind?: "primary" | "secondary";
-  readonly onClick?: () => void;
-  readonly submit?: boolean;
-}) {
-  const className =
-    kind === "primary"
-      ? "bg-[var(--color-oxblood)] text-white"
-      : "border border-[var(--color-oxblood)]/20 text-[var(--color-oxblood)]";
-  return (
-    <button
-      className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-50 ${className}`}
-      disabled={disabled}
-      onClick={onClick}
-      type={submit ? "submit" : "button"}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -445,19 +402,14 @@ function nullableText(formData: FormData, name: string): string | null {
   return value ? value : null;
 }
 
-function splitCsv(value: string): string[] {
-  return value
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(cents / 100);
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(
+    new Date(`${value}T12:00:00`),
+  );
 }
 
 function earnedMessage(earning: ChefEarning, surveysIssued: number): string {

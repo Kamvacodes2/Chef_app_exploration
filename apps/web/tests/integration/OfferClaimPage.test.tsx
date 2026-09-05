@@ -46,9 +46,11 @@ describe("OfferClaimPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/CM00365/)).toBeInTheDocument();
     expect(screen.getByText(/R343/i)).toBeInTheDocument();
-
     fireEvent.click(screen.getByRole("button", { name: /Accept this session/i }));
-
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /I confirm I am available to cook this session/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yes, I confirm — take the session" }));
     expect(await screen.findByRole("heading", { name: /Session claimed!/i })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]![0]).toContain(
@@ -110,6 +112,10 @@ describe("OfferClaimPage", () => {
       expect(screen.getByRole("button", { name: /Accept this session/i })).toBeInTheDocument(),
     );
     fireEvent.click(screen.getByRole("button", { name: /Accept this session/i }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /I confirm I am available to cook this session/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yes, I confirm — take the session" }));
     expect(await screen.findByRole("heading", { name: /Session claimed!/i })).toBeInTheDocument();
   });
 });

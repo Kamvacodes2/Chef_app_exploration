@@ -17,6 +17,8 @@ const api = vi.hoisted(() => ({
   fetchChefBookings: vi.fn(),
   fetchChefOffers: vi.fn(),
   fetchChefProfile: vi.fn(),
+  fetchAvailableSessions: vi.fn(),
+  claimAvailableSession: vi.fn(),
   fetchChefs: vi.fn(),
   fetchCommunicationLogs: vi.fn(),
   fetchCustomers: vi.fn(),
@@ -32,6 +34,33 @@ const api = vi.hoisted(() => ({
   updateChefProfile: vi.fn(),
   uploadApplicationDocument: vi.fn(),
   fetchPolicyStatus: vi.fn(),
+  availabilityDays: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+  availabilityFromRecord: (record: Record<string, unknown> | null | undefined) => {
+    const rawWindows = Array.isArray(record?.windows) ? record.windows : [];
+    const windows = rawWindows.flatMap((candidate) => {
+      if (!candidate || typeof candidate !== "object") return [];
+      const entry = candidate as Record<string, unknown>;
+      const days = Array.isArray(entry.days) ? entry.days : [];
+      if (days.length === 0) return [];
+      return [
+        {
+          days,
+          from: typeof entry.from === "string" ? entry.from : "09:00",
+          to: typeof entry.to === "string" ? entry.to : "17:00",
+        },
+      ];
+    });
+    const notes = typeof record?.notes === "string" ? record.notes : "";
+    return { notes, windows };
+  },
+  isWithinAvailability: (
+    weekday: string,
+    time: string,
+    availability: { windows: readonly { days: readonly string[]; from: string; to: string }[] },
+  ): boolean =>
+    availability.windows.some(
+      (window) => window.days.includes(weekday) && window.from <= time && time <= window.to,
+    ),
 }));
 
 const authApi = vi.hoisted(() => ({
@@ -465,6 +494,7 @@ describe("platform pages", () => {
   it("connects chef portal offers, bank details, and session actions", async () => {
     api.fetchChefProfile.mockResolvedValue(chefProfile);
     api.fetchChefOffers.mockResolvedValue([offer]);
+    api.fetchAvailableSessions.mockResolvedValue([]);
     api.fetchChefBookings.mockResolvedValue([booking]);
     api.acceptChefOffer.mockResolvedValue({ booking, offer: { ...offer, status: "ACCEPTED" } });
     api.updateChefBankDetails.mockResolvedValue({
@@ -486,7 +516,17 @@ describe("platform pages", () => {
     await waitFor(() => expect(screen.getAllByText("Chicken peri-peri").length).toBeGreaterThan(0));
     expect(screen.getByText(/You receive/)).toHaveTextContent("646");
 
+    // Accepting a targeted offer first asks the chef to confirm availability.
     fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    const confirmCheckbox = screen.getByRole("checkbox", {
+      name: /I confirm I am available to cook this session/,
+    });
+    const confirmButton = screen.getByRole("button", {
+      name: "Yes, I confirm — take the session",
+    });
+    expect(confirmButton).toBeDisabled();
+    fireEvent.click(confirmCheckbox);
+    fireEvent.click(confirmButton);
     await waitFor(() => expect(api.acceptChefOffer).toHaveBeenCalledWith("offer-1"));
 
     fireEvent.change(screen.getByLabelText("Account holder"), {

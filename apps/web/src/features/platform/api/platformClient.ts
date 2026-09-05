@@ -558,6 +558,93 @@ export async function declineChefOffer(
   });
 }
 
+export const availabilityDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+export type AvailabilityDay = (typeof availabilityDays)[number];
+
+export interface AvailabilityWindow {
+  readonly days: readonly AvailabilityDay[];
+  readonly from: string;
+  readonly to: string;
+}
+
+export interface AvailabilityData {
+  readonly notes: string;
+  readonly windows: readonly AvailabilityWindow[];
+}
+
+export function availabilityFromRecord(
+  record: Record<string, unknown> | null | undefined,
+): AvailabilityData {
+  if (!record || typeof record !== "object") return { notes: "", windows: [] };
+  const rawWindows = Array.isArray(record.windows) ? record.windows : [];
+  const windows = rawWindows.flatMap((candidate): AvailabilityWindow[] => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const entry = candidate as Record<string, unknown>;
+    const days = Array.isArray(entry.days)
+      ? entry.days.filter((day): day is AvailabilityDay =>
+          availabilityDays.includes(day as AvailabilityDay),
+        )
+      : [];
+    if (days.length === 0) return [];
+    const from = typeof entry.from === "string" ? entry.from : "09:00";
+    const to = typeof entry.to === "string" ? entry.to : "17:00";
+    return [{ days, from, to }];
+  });
+  const notes = typeof record.notes === "string" ? record.notes : "";
+  return { notes, windows };
+}
+
+/** True when the given weekday/time falls inside at least one declared window. */
+export function isWithinAvailability(
+  weekday: AvailabilityDay,
+  time: string,
+  availability: AvailabilityData,
+): boolean {
+  return availability.windows.some(
+    (window) => window.days.includes(weekday) && window.from <= time && time <= window.to,
+  );
+}
+
+const availableSessionSchema = z.object({
+  id: z.string().min(1),
+  reference: z.string().min(1),
+  status: z.string().min(1),
+  mainName: z.string().min(1),
+  scheduledDate: z.string().min(1),
+  timeSlot: z.string().min(1),
+  serviceArea: z.string().nullable(),
+  estate: z.string().nullable(),
+  unit: z.string().nullable(),
+  street: z.string().nullable(),
+  chefPayoutCents: z.number().int().nonnegative().nullish(),
+});
+
+export type AvailableSession = z.infer<typeof availableSessionSchema>;
+
+export async function fetchAvailableSessions(
+  options: PlatformRequestOptions = {},
+): Promise<AvailableSession[]> {
+  return requestData({
+    path: "/api/v1/chef/sessions",
+    method: "GET",
+    schema: itemsEnvelope(availableSessionSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function claimAvailableSession(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{ status: string; booking: AvailableSession }> {
+  return requestData({
+    path: `/api/v1/chef/sessions/${encodeURIComponent(bookingId)}/claim`,
+    method: "POST",
+    schema: envelope(z.object({ status: z.string().min(1), booking: availableSessionSchema })),
+    options,
+  });
+}
+
 export async function fetchChefBookings(
   options: PlatformRequestOptions = {},
 ): Promise<ChefBooking[]> {
