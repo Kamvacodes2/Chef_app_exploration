@@ -23,6 +23,7 @@ vi.mock("@/features/platform/api/platformClient", async () => {
 
 vi.mock("@/features/customer/api/customerBookingsClient", () => ({
   fetchCustomerBookings: vi.fn(async () => []),
+  fetchCustomerSubscription: vi.fn(async () => null),
 }));
 
 const pendingCustomerTerms: PolicyStatusItem = {
