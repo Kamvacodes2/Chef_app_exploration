@@ -9,6 +9,7 @@ import {
   fetchChefBookings,
   fetchChefOffers,
   fetchChefProfile,
+  fetchAvailableSessions,
   acceptChefOffer,
   declineChefOffer,
   markChefEnRoute,
@@ -16,7 +17,9 @@ import {
   type ChefProfile,
   type ChefOffer,
   type ChefBooking,
+  type AvailableSession,
 } from "@/features/platform/api/platformClient";
+import { ChefUnassignedSessionsPanel } from "./ChefUnassignedSessionsPanel";
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -33,6 +36,7 @@ export function ChefOverview() {
   const [profile, setProfile] = useState<ChefProfile | null>(null);
   const [offers, setOffers] = useState<ChefOffer[]>([]);
   const [bookings, setBookings] = useState<ChefBooking[]>([]);
+  const [sessions, setSessions] = useState<AvailableSession[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,14 +45,16 @@ export function ChefOverview() {
     setBusy("load");
     setError(null);
     try {
-      const [p, o, b] = await Promise.all([
+      const [p, o, b, s] = await Promise.all([
         fetchChefProfile(),
         fetchChefOffers(),
         fetchChefBookings(),
+        fetchAvailableSessions(),
       ]);
       setProfile(p);
       setOffers(o);
       setBookings(b);
+      setSessions(s);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Load failed");
     } finally {
@@ -135,6 +141,17 @@ export function ChefOverview() {
       {error ? (
         <p className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900">{error}</p>
       ) : null}
+
+      {/* Unassigned sessions */}
+      <ChefUnassignedSessionsPanel
+        busyKey={busy}
+        onClaimed={(reference, payoutCents) => {
+          setNotice(`Session ${reference} claimed. Your payout is ${formatZar(payoutCents)}.`);
+          void load();
+        }}
+        profile={profile}
+        sessions={sessions}
+      />
 
       {/* Incoming offers alert */}
       {offers.length > 0 ? (
