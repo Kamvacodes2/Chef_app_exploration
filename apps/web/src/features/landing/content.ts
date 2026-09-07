@@ -45,7 +45,7 @@ export const HOW_IT_WORKS = [
   },
   {
     title: "Get Your Shopping List",
-    body: "We send the ingredients you need before the session.",
+    body: "We send a list of ingredients for you to buy or have on hand before your chef arrives.",
     image: "/images/chefmate/how-it-works/shopping.jpg",
     alt: "Fresh ingredients being selected during grocery shopping",
     imagePosition: "center top",
