@@ -58,17 +58,8 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   };
 
   return (
-    <form className="mt-5 grid gap-5" onSubmit={save}>
-      <label className="flex items-center gap-3 rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-4 text-sm font-bold">
-        <input
-          checked={isAvailable}
-          className="h-5 w-5 accent-[var(--color-oxblood)]"
-          onChange={(event) => setIsAvailable(event.target.checked)}
-          type="checkbox"
-        />
-        Available for new bookings
-      </label>
-
+    <div className="space-y-6">
+      <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Profile & Availability</h2>
       <div>
         <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Service areas</p>
         <ServiceAreaPicker error={null} onChange={setServiceAreas} selected={serviceAreas} />
@@ -138,6 +129,6 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
       >
         {busy ? "Saving..." : "Save profile & availability"}
       </button>
-    </form>
+    </div>
   );
 }
