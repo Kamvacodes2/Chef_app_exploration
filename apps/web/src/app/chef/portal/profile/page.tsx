@@ -1,3 +1,5 @@
+"use client";
+
 import { ChefProfileEditor } from "@/features/platform/ChefProfileEditor";
 import { useEffect, useState } from "react";
 import { fetchChefProfile, type ChefProfile } from "@/features/platform/api/platformClient";
