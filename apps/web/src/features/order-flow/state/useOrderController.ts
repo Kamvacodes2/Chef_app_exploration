@@ -54,6 +54,13 @@ export interface OrderController {
   readonly selectPlanFavorite: (item: OrderMenuItem) => void;
   /** Optional second meal for meal-prep packs (option 2). */
   readonly selectPlanSecondFavorite: (item: OrderMenuItem) => void;
+  /** Weekly mains beyond options 1 & 2 (8- and 12-session plans). */
+  readonly togglePlanExtraMeal: (item: OrderMenuItem) => void;
+  readonly setPlanExtraMealLink: (source: MealLinkSource, url: string) => void;
+  readonly removePlanExtraMealLink: (url: string) => void;
+  /** Optional day-matching step: assign a named meal to a preferred day (or clear it). */
+  readonly assignDayMeal: (day: PreferredDayId, mealId: string | null) => void;
+  readonly decideDayMeals: () => void;
   readonly decidePlanFavorite: () => void;
   readonly setPlanFavoriteLink: (source: MealLinkSource, url: string) => void;
   readonly setPlanSecondFavoriteLink: (source: MealLinkSource, url: string) => void;
@@ -193,6 +200,10 @@ export function useOrderController(): OrderController {
         secondFavoriteMealId: state.secondFavoriteMealId,
         secondFavoriteMealLink: state.secondFavoriteMealLink,
         favoriteMealDeferred: state.favoriteMealDeferred,
+        extraMealIds: state.extraMealIds,
+        extraMealLinks: state.extraMealLinks,
+        dayMealAssignments: state.dayMealAssignments,
+        dayMealsDeferred: state.dayMealsDeferred,
         breakfastAddOn: state.breakfastAddOn,
       }),
     [
@@ -200,6 +211,10 @@ export function useOrderController(): OrderController {
       state.breakfastAddOn,
       state.customRequest,
       state.dessert,
+      state.dayMealsDeferred,
+      state.dayMealAssignments,
+      state.extraMealIds,
+      state.extraMealLinks,
       state.favoriteMealId,
       state.favoriteMealLink,
       state.secondFavoriteMealId,
@@ -208,6 +223,7 @@ export function useOrderController(): OrderController {
       state.planScheduleDeferred,
       state.preferredDays,
       state.sides,
+      state.favoriteMealDeferred,
     ],
   );
 
@@ -335,10 +351,27 @@ export function useOrderController(): OrderController {
     isSessionLoading,
     selectGoal: useCallback((goalId) => dispatch({ type: "SELECT_GOAL", goalId }), []),
     startMealDiscovery: useCallback(() => dispatch({ type: "START_MEAL_DISCOVERY" }), []),
-    selectPlanSecondFavorite: useCallback(
-      (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
-      [],
-    ),
+  selectPlanSecondFavorite: useCallback(
+    (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
+    [],
+  ),
+  togglePlanExtraMeal: useCallback(
+    (item) => dispatch({ type: "TOGGLE_PLAN_EXTRA_MEAL", item }),
+    [],
+  ),
+  setPlanExtraMealLink: useCallback(
+    (source, url) => dispatch({ type: "SET_PLAN_EXTRA_MEAL_LINK", source, url }),
+    [],
+  ),
+  removePlanExtraMealLink: useCallback(
+    (url) => dispatch({ type: "REMOVE_PLAN_EXTRA_MEAL_LINK", url }),
+    [],
+  ),
+  assignDayMeal: useCallback(
+    (day, mealId) => dispatch({ type: "ASSIGN_DAY_MEAL", day, mealId }),
+    [],
+  ),
+  decideDayMeals: useCallback(() => dispatch({ type: "DECIDE_DAY_MEALS" }), []),
     setPlanFavoriteLink: useCallback(
       (source, url) => dispatch({ type: "SET_PLAN_FAVORITE_LINK", source, url }),
       [],

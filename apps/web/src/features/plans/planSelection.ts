@@ -2,6 +2,7 @@ import {
   isRecurringChefmatePlan,
   type ChefmatePlanId,
   type ChefmatePlanSelection,
+  type PlanDayMealAssignments,
   type PreferredDayId,
 } from "./planCatalog";
 import type { MealLinkSource, PlanMealLink } from "../order-flow/state/orderReducer";
@@ -15,6 +16,10 @@ export interface PlanSelectionInput {
   readonly favoriteMealLink: PlanMealLink | null;
   readonly secondFavoriteMealLink: PlanMealLink | null;
   readonly favoriteMealDeferred: boolean;
+  readonly extraMealIds: readonly string[];
+  readonly extraMealLinks: readonly PlanMealLink[];
+  readonly dayMealAssignments: PlanDayMealAssignments;
+  readonly dayMealsDeferred: boolean;
 }
 
 const SOURCE_LABELS: Readonly<Record<MealLinkSource, string>> = Object.freeze({
@@ -35,6 +40,16 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
 
   const recurring = isRecurringChefmatePlan(input.planId);
   const deferred = input.favoriteMealDeferred;
+  // Extras and day assignments only exist when the weekly menu itself was named
+  // now (not deferred).
+  const extraMealSlugs = deferred ? [] : [...input.extraMealIds];
+  const extraMealLinks = deferred
+    ? []
+    : input.extraMealLinks.map((link) => formatMealLink(link)).filter((v) => v !== null);
+  const assignments = deferred ? {} : { ...input.dayMealAssignments };
+  const hasExtras = extraMealSlugs.length > 0 || extraMealLinks.length > 0;
+  const hasAssignments = Object.keys(assignments).length > 0;
+
   return {
     planId: input.planId,
     preferredDays: recurring && !input.planScheduleDeferred ? [...input.preferredDays] : [],
@@ -50,5 +65,8 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
     // the favourite is deferred but the second meal is a real choice.
     secondFavoriteMealSlug: input.secondFavoriteMealId,
     secondFavoriteMealLink: deferred ? null : formatMealLink(input.secondFavoriteMealLink),
+    ...(hasExtras ? { extraMealSlugs, extraMealLinks } : {}),
+    ...(hasAssignments ? { dayMealAssignments: assignments } : {}),
+    ...(input.dayMealsDeferred && recurring ? { dayMealsDeferred: true } : {}),
   };
 }

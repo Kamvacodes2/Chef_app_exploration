@@ -85,6 +85,10 @@ export function buildPricingQuotePayload(
     | "secondFavoriteMealLink"
     | "favoriteMealDeferred"
     | "breakfastAddOn"
+    | "extraMealIds"
+    | "extraMealLinks"
+    | "dayMealAssignments"
+    | "dayMealsDeferred"
   >,
 ): PricingQuotePayload | null {
   if (!state.main) return null;

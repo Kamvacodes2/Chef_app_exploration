@@ -125,6 +125,25 @@ function parsePricingPayload(body: unknown): PricingPayload {
         schedulePreference:
           nullableStringField(body.planSelection, "schedulePreference") ?? undefined,
         favoriteMealSlug: nullableStringField(body.planSelection, "favoriteMealSlug"),
+        extraMealSlugs: Array.isArray(body.planSelection.extraMealSlugs)
+          ? body.planSelection.extraMealSlugs.filter(
+              (entry): entry is string => typeof entry === "string",
+            )
+          : [],
+        extraMealLinks: Array.isArray(body.planSelection.extraMealLinks)
+          ? body.planSelection.extraMealLinks.filter(
+              (entry): entry is string => typeof entry === "string",
+            )
+          : [],
+        dayMealAssignments:
+          isRecord(body.planSelection.dayMealAssignments)
+            ? Object.fromEntries(
+                Object.entries(body.planSelection.dayMealAssignments).filter(
+                  (entry): entry is [string, string] => typeof entry[1] === "string",
+                ),
+              )
+            : {},
+        dayMealsDeferred: body.planSelection.dayMealsDeferred === true,
       }
     : undefined;
 

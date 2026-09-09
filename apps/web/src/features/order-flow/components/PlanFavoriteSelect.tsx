@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
-import { findChefmatePlan } from "@/features/plans/planCatalog";
+import { findChefmatePlan, weeklyMainCapacity } from "@/features/plans/planCatalog";
 import { fetchMeals, type BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
 import { mealImage } from "@/features/meal-browser/mealPresentation";
 import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
@@ -14,8 +14,12 @@ import type { MealLinkSource } from "../state/orderReducer";
 const SEARCH_DEBOUNCE_MS = 250;
 
 /**
- * "What would you like most often?" — a subscriber names a go-to dish, and can
- * optionally add a second meal for meal-prep packs (option 1 & 2).
+ * "What would you like most often?" — the subscriber names their weekly menu.
+ * Option 1 is the go-to favourite; option 2 is the meal-prep pack; the 8- and
+ * 12-session plans can name up to six mains so the weekly rota can cycle
+ * through more variety (the 4-session plan keeps the original two options).
+ * Any slot can also be a pasted TikTok / Instagram / Pinterest link instead of
+ * a catalog meal. A meal fills exactly one slot.
  *
  * This step reads the real catalog (the same endpoint the meal browser uses)
  * rather than a hardcoded shortlist, so the stored favourites are always slugs
@@ -27,19 +31,26 @@ export function PlanFavoriteSelect(): ReactElement {
     state,
     selectPlanFavorite,
     selectPlanSecondFavorite,
+    togglePlanExtraMeal,
     setPlanFavoriteLink,
     setPlanSecondFavoriteLink,
+    setPlanExtraMealLink,
     clearPlanFavoriteLink,
     clearPlanSecondFavoriteLink,
+    removePlanExtraMealLink,
     decidePlanFavorite,
     reset,
   } = useOrder();
   const plan = findChefmatePlan(state.planId);
+  const capacity = weeklyMainCapacity(state.planId);
+  const extraCapacity = Math.max(0, capacity - 2);
+  const extrasUsed = state.extraMealIds.length + state.extraMealLinks.length;
+  const extrasFull = extrasUsed >= extraCapacity;
 
   const [linkPanelOpen, setLinkPanelOpen] = useState(false);
   const [linkSource, setLinkSource] = useState<MealLinkSource>("TIKTOK");
   const [linkUrl, setLinkUrl] = useState("");
-  const [linkSlot, setLinkSlot] = useState<"one" | "two">("one");
+  const [linkSlot, setLinkSlot] = useState<"one" | "two" | "extra">("one");
 
   const [meals, setMeals] = useState<readonly BrowserMeal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,17 +109,55 @@ export function PlanFavoriteSelect(): ReactElement {
   const secondMeal = state.secondFavoriteMealId
     ? (meals.find((meal) => meal.slug === state.secondFavoriteMealId) ?? null)
     : null;
+  const extraMeals = state.extraMealIds
+    .map((slug) => meals.find((meal) => meal.slug === slug) ?? null)
+    .filter((meal): meal is BrowserMeal => meal !== null);
+
+  /** Which slot a tapped meal would fill (or is already filling). */
+  const slotFor = (meal: BrowserMeal): 1 | 2 | "extra" | "full" => {
+    if (state.favoriteMealId === meal.slug) return 1;
+    if (state.secondFavoriteMealId === meal.slug) return 2;
+    if (state.extraMealIds.includes(meal.slug)) return "extra";
+    if (!state.favoriteMealId) return 1;
+    if (!state.secondFavoriteMealId) return 2;
+    return extrasFull ? "full" : "extra";
+  };
 
   const handleMealClick = (meal: BrowserMeal): void => {
-    if (state.favoriteMealId === meal.slug) {
-      selectPlanFavorite(toOrderMenuItem(meal)); // toggles option 1 off
+    const slot = slotFor(meal);
+    const item = toOrderMenuItem(meal);
+    if (slot === 1) {
+      selectPlanFavorite(item); // toggles option 1 off
       return;
     }
-    if (!state.favoriteMealId) {
-      selectPlanFavorite(toOrderMenuItem(meal));
+    if (slot === 2) {
+      selectPlanSecondFavorite(item); // toggles option 2 off
       return;
     }
-    selectPlanSecondFavorite(toOrderMenuItem(meal));
+    if (slot === "extra") {
+      togglePlanExtraMeal(item);
+    }
+    // "full": every slot is taken — no-op, matching the disabled semantics.
+  };
+
+  const submitLink = (): void => {
+    if (linkUrl.trim().length < 5) return;
+    if (linkSlot === "one") {
+      setPlanFavoriteLink(linkSource, linkUrl.trim());
+      setLinkSlot("two");
+    } else if (linkSlot === "two") {
+      setPlanSecondFavoriteLink(linkSource, linkUrl.trim());
+      if (extraCapacity > 0) setLinkSlot("extra");
+    } else if (!extrasFull) {
+      setPlanExtraMealLink(linkSource, linkUrl.trim());
+    }
+    setLinkUrl("");
+  };
+
+  const linkSlotAvailable = (slot: "one" | "two" | "extra"): boolean => {
+    if (slot === "one") return !state.favoriteMealId && !state.favoriteMealLink;
+    if (slot === "two") return !state.secondFavoriteMealId && !state.secondFavoriteMealLink;
+    return !extrasFull;
   };
 
   return (
@@ -121,8 +170,9 @@ export function PlanFavoriteSelect(): ReactElement {
           What would you like most often?
         </h2>
         <p className="max-w-2xl text-sm leading-6 text-[var(--color-bone)]/72">
-          Pick a favourite for your first Chefmate menu. You can change things up with every visit —
-          or add a second meal for meal-prep packs.
+          {capacity > 2
+            ? `Name your weekly menu — up to ${capacity} mains your chef can cycle through. You can change things up with every visit.`
+            : "Pick a favourite for your first Chefmate menu. You can change things up with every visit — or add a second meal for meal-prep packs."}
         </p>
       </div>
 
@@ -161,7 +211,7 @@ export function PlanFavoriteSelect(): ReactElement {
           </p>
         ) : null}
 
-        {firstMeal || secondMeal || state.favoriteMealLink || state.secondFavoriteMealLink ? (
+        {firstMeal || secondMeal || extraMeals.length > 0 || state.favoriteMealLink || state.secondFavoriteMealLink || state.extraMealLinks.length > 0 ? (
           <div
             className="flex max-w-xl flex-wrap items-center gap-2"
             aria-label="Your chosen meals"
@@ -232,36 +282,80 @@ export function PlanFavoriteSelect(): ReactElement {
                 </button>
               </span>
             ) : null}
+            {extraMeals.map((meal) => (
+              <span
+                key={meal.slug}
+                className="inline-flex items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
+              >
+                <Image
+                  src={mealImage(meal).src}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-7 w-7 rounded-full object-cover"
+                />
+                {meal.name}
+                <button
+                  type="button"
+                  aria-label={`Remove ${meal.name}`}
+                  onClick={() => togglePlanExtraMeal(toOrderMenuItem(meal))}
+                  className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[var(--color-bone)] hover:bg-white/30"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {state.extraMealLinks.map((link) => (
+              <span
+                key={link.url}
+                className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
+              >
+                {link.source.toLowerCase()} link
+                <button
+                  type="button"
+                  aria-label={`Remove ${link.source.toLowerCase()} link`}
+                  onClick={() => removePlanExtraMealLink(link.url)}
+                  className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[var(--color-bone)] hover:bg-white/30"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
             <span className="text-xs text-[var(--color-bone)]/62">
-              Option 2 is for meal-prep packs — optional.
+              {capacity > 2
+                ? `${extrasUsed}/${extraCapacity} extra mains · option 2 is for meal-prep packs.`
+                : "Option 2 is for meal-prep packs — optional."}
             </span>
           </div>
         ) : null}
 
         {visibleMeals.length > 0 ? (
           <ul
-            aria-label="Meals you can pick as your favourite"
+            aria-label="Meals you can pick as your favourites"
             data-testid="plan-favourite-options"
             className="grid max-h-[26rem] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
           >
             {visibleMeals.map((meal) => {
-              const isOptionOne = state.favoriteMealId === meal.slug;
-              const isOptionTwo = state.secondFavoriteMealId === meal.slug;
+              const slot = slotFor(meal);
+              const isSelected = slot === 1 || slot === 2 || slot === "extra";
+              const isFull = slot === "full" && !isSelected;
               const image = mealImage(meal);
               return (
                 <li key={meal.slug}>
                   <button
                     type="button"
-                    aria-pressed={isOptionOne || isOptionTwo}
+                    aria-pressed={isSelected}
+                    aria-disabled={isFull}
                     data-testid={`plan-favourite-${meal.slug}`}
                     onClick={() => handleMealClick(meal)}
                     className={cn(
                       "flex min-h-[4.5rem] w-full items-center gap-3 rounded-2xl px-3 py-2 text-left ring-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
-                      isOptionOne
+                      slot === 1
                         ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
-                        : isOptionTwo
+                        : isSelected
                           ? "bg-white/[0.13] text-[var(--color-bone)] ring-[var(--color-bone)]/70"
                           : "bg-white/[0.07] text-[var(--color-bone)] ring-white/15 hover:bg-white/[0.13]",
+                      isFull && "cursor-not-allowed opacity-45 hover:bg-white/[0.07]",
                     )}
                   >
                     <Image
@@ -274,21 +368,26 @@ export function PlanFavoriteSelect(): ReactElement {
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="flex items-center gap-2 text-sm font-bold">
                         <span className="truncate">{meal.name}</span>
-                        {isOptionOne ? (
+                        {slot === 1 ? (
                           <span className="shrink-0 rounded-full bg-[var(--color-oxblood)]/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-oxblood)]">
                             Option 1
                           </span>
                         ) : null}
-                        {isOptionTwo ? (
+                        {slot === 2 ? (
                           <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-bone)]">
                             Option 2
+                          </span>
+                        ) : null}
+                        {slot === "extra" ? (
+                          <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-bone)]">
+                            Weekly main
                           </span>
                         ) : null}
                       </span>
                       <span
                         className={cn(
                           "text-xs",
-                          isOptionOne
+                          slot === 1
                             ? "text-[var(--color-oxblood)]/70"
                             : "text-[var(--color-bone)]/62",
                         )}
@@ -361,6 +460,31 @@ export function PlanFavoriteSelect(): ReactElement {
                 </button>
               ))}
             </div>
+            <div
+              className="flex flex-wrap gap-2"
+              role="radiogroup"
+              aria-label="Which option does this link fill?"
+            >
+              {(["one", "two", ...(extraCapacity > 0 ? (["extra"] as const) : [])] as const).map(
+                (slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    aria-pressed={linkSlot === slot}
+                    disabled={!linkSlotAvailable(slot)}
+                    onClick={() => setLinkSlot(slot)}
+                    className={
+                      "min-h-9 rounded-full px-4 text-xs font-extrabold uppercase tracking-wide ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
+                      (linkSlot === slot
+                        ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                        : "bg-white/[0.07] text-[var(--color-bone)] ring-white/20 hover:bg-white/[0.13]")
+                    }
+                  >
+                    {slot === "one" ? "Option 1" : slot === "two" ? "Option 2" : "Extra main"}
+                  </button>
+                ),
+              )}
+            </div>
             <input
               type="url"
               value={linkUrl}
@@ -372,26 +496,15 @@ export function PlanFavoriteSelect(): ReactElement {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={linkUrl.trim().length < 5}
-                onClick={() => {
-                  setPlanFavoriteLink(linkSource, linkUrl.trim());
-                  setLinkUrl("");
-                  setLinkSlot("two");
-                }}
+                disabled={linkUrl.trim().length < 5 || !linkSlotAvailable(linkSlot)}
+                onClick={submitLink}
                 className="min-h-10 rounded-xl bg-[var(--color-bone)] px-4 text-sm font-bold text-[var(--color-oxblood)] transition disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Use as option 1
-              </button>
-              <button
-                type="button"
-                disabled={linkUrl.trim().length < 5}
-                onClick={() => {
-                  setPlanSecondFavoriteLink(linkSource, linkUrl.trim());
-                  setLinkUrl("");
-                }}
-                className="min-h-10 rounded-xl bg-white/[0.13] px-4 text-sm font-bold text-[var(--color-bone)] ring-1 ring-white/20 transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Use as option 2
+                {linkSlot === "one"
+                  ? "Use as option 1"
+                  : linkSlot === "two"
+                    ? "Use as option 2"
+                    : "Add as extra main"}
               </button>
             </div>
           </div>

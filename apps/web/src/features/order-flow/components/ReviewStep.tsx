@@ -204,6 +204,14 @@ export function ReviewStep(): ReactElement {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
     return day ? [day.label] : [];
   });
+  // Weekly menu: option 1, option 2, then the extra mains (8- and 12-session
+  // plans), with pasted links rendered as their own entries.
+  const weeklyMenuNames = [
+    favourite,
+    secondFavourite,
+    ...state.extraMealIds.map((slug) => findItem(slug)?.name ?? slug),
+    ...state.extraMealLinks.map((link) => `Linked meal (${link.source.toLowerCase()})`),
+  ].filter((name): name is string => name !== null);
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -305,6 +313,29 @@ export function ReviewStep(): ReactElement {
                       view link
                     </a>
                   ) : null}
+                </p>
+              ) : null}
+              {weeklyMenuNames.length > 2 ? (
+                <p className="text-sm text-[var(--color-bone)]/80">
+                  Weekly menu: {weeklyMenuNames.slice(2).join(", ")}
+                </p>
+              ) : null}
+              {state.preferredDays.length > 0 &&
+              !state.planScheduleDeferred &&
+              Object.keys(state.dayMealAssignments).length > 0 ? (
+                <p className="text-sm text-[var(--color-bone)]/80">
+                  Day matches:{" "}
+                  {state.preferredDays
+                    .filter((dayId) => state.dayMealAssignments[dayId])
+                    .map((dayId) => {
+                      const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
+                      const mealName =
+                        state.dayMealAssignments[dayId] === state.favoriteMealId
+                          ? (favourite ?? state.dayMealAssignments[dayId])
+                          : (state.dayMealAssignments[dayId] ?? "");
+                      return `${day?.label ?? dayId}: ${mealName}`;
+                    })
+                    .join(" · ")}
                 </p>
               ) : null}
             </div>

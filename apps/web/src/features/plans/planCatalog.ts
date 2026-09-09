@@ -84,6 +84,22 @@ export type PreferredDayId = (typeof PREFERRED_DAYS)[number]["id"];
 export type PlanSchedulePreference = "SELECTED_DAYS" | "DECIDE_LATER" | "NOT_APPLICABLE";
 
 /**
+ * How many weekly main-meal options a subscriber may name at signup.
+ * The 4-session plan (rhythm) keeps the original two-option menu (favourite +
+ * meal-prep second); the 8- and 12-session plans may name up to six weekly
+ * mains so their rota can cycle through more variety. Once-off sessions do not
+ * name weekly meals at all.
+ */
+export function weeklyMainCapacity(planId: ChefmatePlanId | null): number {
+  if (planId === "family" || planId === "premium") return 6;
+  if (planId === "rhythm") return 2;
+  return 0;
+}
+
+/** Day -> meal slug, for customers who assign their named meals to preferred days at signup. */
+export type PlanDayMealAssignments = Readonly<Partial<Record<PreferredDayId, string>>>;
+
+/**
  * The durable package-selection contract sent with a package booking.
  * It deliberately describes preferences, not confirmed recurring dates.
  */
@@ -97,6 +113,14 @@ export interface ChefmatePlanSelection {
   /** Optional second meal for meal-prep packs. */
   readonly secondFavoriteMealSlug: string | null;
   readonly secondFavoriteMealLink: string | null;
+  /** Weekly mains beyond options 1 & 2 (8- and 12-session plans may name up to six). */
+  readonly extraMealSlugs?: readonly string[];
+  /** Pasted-link references for extra slots (any slot may be a link instead of a catalog meal). */
+  readonly extraMealLinks?: readonly string[];
+  /** Day -> named-meal assignments made at signup; omitted when the customer defers or matches nothing. */
+  readonly dayMealAssignments?: PlanDayMealAssignments | null;
+  /** True when the customer explicitly chose to match meals to days later. */
+  readonly dayMealsDeferred?: boolean;
 }
 
 export function isChefmatePlanId(value: string): value is ChefmatePlanId {

@@ -21,12 +21,14 @@ import { ReviewStep } from "./components/ReviewStep";
 import { Confirmation } from "./components/Confirmation";
 import { PlanDaysSelect } from "./components/PlanDaysSelect";
 import { PlanFavoriteSelect } from "./components/PlanFavoriteSelect";
+import { PlanMealDaysSelect } from "./components/PlanMealDaysSelect";
 import { isRecurringChefmatePlan, normalizeChefmatePlanId } from "@/features/plans/planCatalog";
 
 const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
   goal: GoalSelect,
   "plan-days": PlanDaysSelect,
   "plan-favorite": PlanFavoriteSelect,
+  "plan-meal-days": PlanMealDaysSelect,
   meal: MealSelect,
   "second-meal": SecondMealSelect,
   sides: SidesSelect,
@@ -40,7 +42,8 @@ const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
 const STEP_LABELS: Record<OrderStep, string> = {
   goal: "Choose your Chefmate goal",
   "plan-days": "Choose suitable Chefmate days",
-  "plan-favorite": "Choose your Chefmate favourite",
+  "plan-favorite": "Choose your Chefmate favourites",
+  "plan-meal-days": "Match your Chefmate meals to your days",
   meal: "Find your Chefmate meal",
   "second-meal": "Add another Chefmate meal",
   sides: "Choose Chefmate sides",

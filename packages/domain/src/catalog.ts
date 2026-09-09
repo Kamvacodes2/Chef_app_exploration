@@ -40,6 +40,14 @@ export interface PlanSelection {
   readonly preferredDays?: readonly string[];
   readonly schedulePreference?: string;
   readonly favoriteMealSlug?: string | null;
+  /** Weekly mains beyond options 1 & 2 (8- and 12-session plans). */
+  readonly extraMealSlugs?: readonly string[];
+  /** Pasted-link references for extra slots. */
+  readonly extraMealLinks?: readonly string[];
+  /** Day -> named-meal assignments made at signup. */
+  readonly dayMealAssignments?: Readonly<Record<string, string>>;
+  /** True when the customer explicitly chose to settle day matching later. */
+  readonly dayMealsDeferred?: boolean;
 }
 
 export interface PricingPayload {
