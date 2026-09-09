@@ -135,14 +135,13 @@ function parsePricingPayload(body: unknown): PricingPayload {
               (entry): entry is string => typeof entry === "string",
             )
           : [],
-        dayMealAssignments:
-          isRecord(body.planSelection.dayMealAssignments)
-            ? Object.fromEntries(
-                Object.entries(body.planSelection.dayMealAssignments).filter(
-                  (entry): entry is [string, string] => typeof entry[1] === "string",
-                ),
-              )
-            : {},
+        dayMealAssignments: isRecord(body.planSelection.dayMealAssignments)
+          ? Object.fromEntries(
+              Object.entries(body.planSelection.dayMealAssignments).filter(
+                (entry): entry is [string, string] => typeof entry[1] === "string",
+              ),
+            )
+          : {},
         dayMealsDeferred: body.planSelection.dayMealsDeferred === true,
       }
     : undefined;

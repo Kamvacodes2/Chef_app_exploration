@@ -351,27 +351,27 @@ export function useOrderController(): OrderController {
     isSessionLoading,
     selectGoal: useCallback((goalId) => dispatch({ type: "SELECT_GOAL", goalId }), []),
     startMealDiscovery: useCallback(() => dispatch({ type: "START_MEAL_DISCOVERY" }), []),
-  selectPlanSecondFavorite: useCallback(
-    (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
-    [],
-  ),
-  togglePlanExtraMeal: useCallback(
-    (item) => dispatch({ type: "TOGGLE_PLAN_EXTRA_MEAL", item }),
-    [],
-  ),
-  setPlanExtraMealLink: useCallback(
-    (source, url) => dispatch({ type: "SET_PLAN_EXTRA_MEAL_LINK", source, url }),
-    [],
-  ),
-  removePlanExtraMealLink: useCallback(
-    (url) => dispatch({ type: "REMOVE_PLAN_EXTRA_MEAL_LINK", url }),
-    [],
-  ),
-  assignDayMeal: useCallback(
-    (day, mealId) => dispatch({ type: "ASSIGN_DAY_MEAL", day, mealId }),
-    [],
-  ),
-  decideDayMeals: useCallback(() => dispatch({ type: "DECIDE_DAY_MEALS" }), []),
+    selectPlanSecondFavorite: useCallback(
+      (item) => dispatch({ type: "SELECT_PLAN_SECOND_FAVORITE", item }),
+      [],
+    ),
+    togglePlanExtraMeal: useCallback(
+      (item) => dispatch({ type: "TOGGLE_PLAN_EXTRA_MEAL", item }),
+      [],
+    ),
+    setPlanExtraMealLink: useCallback(
+      (source, url) => dispatch({ type: "SET_PLAN_EXTRA_MEAL_LINK", source, url }),
+      [],
+    ),
+    removePlanExtraMealLink: useCallback(
+      (url) => dispatch({ type: "REMOVE_PLAN_EXTRA_MEAL_LINK", url }),
+      [],
+    ),
+    assignDayMeal: useCallback(
+      (day, mealId) => dispatch({ type: "ASSIGN_DAY_MEAL", day, mealId }),
+      [],
+    ),
+    decideDayMeals: useCallback(() => dispatch({ type: "DECIDE_DAY_MEALS" }), []),
     setPlanFavoriteLink: useCallback(
       (source, url) => dispatch({ type: "SET_PLAN_FAVORITE_LINK", source, url }),
       [],

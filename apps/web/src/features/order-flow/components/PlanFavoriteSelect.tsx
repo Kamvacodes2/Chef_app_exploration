@@ -211,7 +211,12 @@ export function PlanFavoriteSelect(): ReactElement {
           </p>
         ) : null}
 
-        {firstMeal || secondMeal || extraMeals.length > 0 || state.favoriteMealLink || state.secondFavoriteMealLink || state.extraMealLinks.length > 0 ? (
+        {firstMeal ||
+        secondMeal ||
+        extraMeals.length > 0 ||
+        state.favoriteMealLink ||
+        state.secondFavoriteMealLink ||
+        state.extraMealLinks.length > 0 ? (
           <div
             className="flex max-w-xl flex-wrap items-center gap-2"
             aria-label="Your chosen meals"

@@ -62,8 +62,11 @@ export function PlanMealDaysSelect(): ReactElement {
   }
 
   /** Named weekly meals that can be pinned to a day, in slot order. */
-  const namedMeals = [state.favoriteMealId, state.secondFavoriteMealId, ...state.extraMealIds]
-    .filter((slug): slug is string => typeof slug === "string" && slug.length > 0);
+  const namedMeals = [
+    state.favoriteMealId,
+    state.secondFavoriteMealId,
+    ...state.extraMealIds,
+  ].filter((slug): slug is string => typeof slug === "string" && slug.length > 0);
   const assignments = state.dayMealAssignments as PlanDayMealAssignments;
   const assignedCount = Object.keys(assignments).length;
 
@@ -79,16 +82,15 @@ export function PlanMealDaysSelect(): ReactElement {
           Match meals to your days?
         </h2>
         <p className="max-w-2xl text-sm leading-6 text-[var(--color-bone)]/72">
-          If you already know what you want on each day, pin it here. Any day you leave open is
-          your chef&apos;s choice from your named meals — this is a preference, not a locked-in
-          plan.
+          If you already know what you want on each day, pin it here. Any day you leave open is your
+          chef&apos;s choice from your named meals — this is a preference, not a locked-in plan.
         </p>
       </div>
 
       {state.planScheduleDeferred || state.preferredDays.length === 0 ? (
         <p className="max-w-2xl rounded-2xl bg-white/[0.08] px-4 py-3 text-sm text-[var(--color-bone)] ring-1 ring-white/10">
-          You chose to settle your days later, so we&apos;ll match meals to days together then.
-          Your named meals are saved to your menu.
+          You chose to settle your days later, so we&apos;ll match meals to days together then. Your
+          named meals are saved to your menu.
         </p>
       ) : isLoading && !loadError ? (
         <p role="status" className="text-sm text-[var(--color-bone)]/70">
@@ -116,9 +118,7 @@ export function PlanMealDaysSelect(): ReactElement {
                 key={dayId}
                 className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.07] px-4 py-3 ring-1 ring-white/15"
               >
-                <span className="w-24 text-sm font-bold text-[var(--color-bone)]">
-                  {day.label}
-                </span>
+                <span className="w-24 text-sm font-bold text-[var(--color-bone)]">{day.label}</span>
                 <label className="sr-only" htmlFor={`day-meal-${dayId}`}>
                   Meal for {day.label}
                 </label>

@@ -169,9 +169,9 @@ export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
 function planMealDaysApplies(state: OrderState): boolean {
   return Boolean(
     state.planId &&
-      isRecurringChefmatePlan(state.planId) &&
-      !state.favoriteMealDeferred &&
-      (state.extraMealIds.length > 0 || state.extraMealLinks.length > 0),
+    isRecurringChefmatePlan(state.planId) &&
+    !state.favoriteMealDeferred &&
+    (state.extraMealIds.length > 0 || state.extraMealLinks.length > 0),
   );
 }
 
