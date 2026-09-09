@@ -236,11 +236,19 @@ describe("order flow end-to-end", () => {
     expect(selectCanContinue(s)).toBe(true);
 
     s = orderReducer(s, { type: "NEXT" });
-    expect(s.step).toBe("plan-favorite");
+    expect(s.step).toBe("plan-meals");
 
-    s = orderReducer(s, { type: "SELECT_PLAN_FAVORITE", item: main });
-    expect(s.favoriteMealId).toBe("chicken-peri-peri");
-    expect(s.main?.id).toBe("chicken-peri-peri");
+    s = orderReducer(s, {
+      type: "TOGGLE_DAY_MEAL",
+      day: "monday",
+      item: main,
+    });
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("plan-week2");
+
+    s = orderReducer(s, { type: "DEFER_WEEK2" });
+    s = orderReducer(s, { type: "NEXT" });
+    expect(s.step).toBe("plan-first-session");
 
     s = orderReducer(s, { type: "NEXT" });
     expect(s.step).toBe("sides");

@@ -143,6 +143,40 @@ function parsePricingPayload(body: unknown): PricingPayload {
             )
           : {},
         dayMealsDeferred: body.planSelection.dayMealsDeferred === true,
+        dayMealPlans: Array.isArray(body.planSelection.dayMealPlans)
+          ? body.planSelection.dayMealPlans.filter(isRecord).map((plan) => ({
+              day: typeof plan.day === "string" ? plan.day : "",
+              mainSlugs: Array.isArray(plan.mainSlugs)
+                ? plan.mainSlugs.filter((entry): entry is string => typeof entry === "string")
+                : [],
+              overnightOats: plan.overnightOats === true,
+              links: Array.isArray(plan.links)
+                ? plan.links.filter((entry): entry is string => typeof entry === "string")
+                : [],
+            }))
+          : [],
+        week2DayMealPlans: Array.isArray(body.planSelection.week2DayMealPlans)
+          ? body.planSelection.week2DayMealPlans.filter(isRecord).map((plan) => ({
+              day: typeof plan.day === "string" ? plan.day : "",
+              mainSlugs: Array.isArray(plan.mainSlugs)
+                ? plan.mainSlugs.filter((entry): entry is string => typeof entry === "string")
+                : [],
+              overnightOats: plan.overnightOats === true,
+              links: Array.isArray(plan.links)
+                ? plan.links.filter((entry): entry is string => typeof entry === "string")
+                : [],
+            }))
+          : [],
+        week2Deferred: body.planSelection.week2Deferred === true,
+        dayTimeWindows: isRecord(body.planSelection.dayTimeWindows)
+          ? Object.fromEntries(
+              Object.entries(body.planSelection.dayTimeWindows).filter(
+                (entry): entry is [string, string | null] =>
+                  entry[1] === null || typeof entry[1] === "string",
+              ),
+            )
+          : {},
+        firstSessionDate: nullableStringField(body.planSelection, "firstSessionDate"),
       }
     : undefined;
 

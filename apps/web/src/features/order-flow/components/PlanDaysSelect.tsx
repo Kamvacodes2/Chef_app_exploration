@@ -1,17 +1,20 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { PREFERRED_DAYS, findChefmatePlan } from "@/features/plans/planCatalog";
+import {
+  DAY_TIME_WINDOWS,
+  PREFERRED_DAYS,
+  findChefmatePlan,
+  type PreferredDayId,
+} from "@/features/plans/planCatalog";
 import { cn } from "@/lib/cn";
 import { useOrder } from "../state/OrderContext";
 
 export function PlanDaysSelect(): ReactElement {
-  const { state, togglePreferredDay, decidePlanDays, reset } = useOrder();
+  const { state, togglePreferredDay, decidePlanDays, setDayTimeWindow, reset } = useOrder();
   const plan = findChefmatePlan(state.planId);
 
-  if (!plan) {
-    return <div />;
-  }
+  if (!plan) return <div />;
 
   return (
     <div className="flex w-full flex-col gap-7">
@@ -20,11 +23,12 @@ export function PlanDaysSelect(): ReactElement {
           {plan.name}
         </p>
         <h2 className="font-display text-3xl font-semibold text-[var(--color-bone)] sm:text-4xl">
-          Which days suit your household?
+          Which days and times suit you?
         </h2>
-        <p className="max-w-2xl text-sm leading-6 text-[var(--color-bone)]/72">
-          Choose every day that usually works. We will use this as a scheduling preference, not a
-          locked-in booking.
+        <p className="max-w-3xl text-sm leading-6 text-[var(--color-bone)]/72">
+          Choose the weekdays that usually work and a preferred time window for each one. These are
+          flexible preferences — you can change the date or time for your first session before
+          checkout.
         </p>
       </div>
 
@@ -35,29 +39,65 @@ export function PlanDaysSelect(): ReactElement {
       >
         {PREFERRED_DAYS.map((day) => {
           const selected = state.preferredDays.includes(day.id);
+          const selectedWindow = state.dayTimeWindows[day.id] ?? null;
           return (
-            <button
-              key={day.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => togglePreferredDay(day.id)}
-              className={cn(
-                "min-h-16 rounded-xl px-5 text-left text-sm font-bold ring-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
-                selected
-                  ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
-                  : "bg-white/[0.07] text-[var(--color-bone)] ring-white/15 hover:bg-white/[0.13]",
-              )}
-            >
-              <span className="block">{day.label}</span>
-              <span
+            <div key={day.id} className="flex flex-col gap-2">
+              <button
+                type="button"
+                aria-pressed={selected}
+                onClick={() => togglePreferredDay(day.id)}
                 className={cn(
-                  "mt-1 block text-xs font-medium",
-                  selected ? "text-[var(--color-oxblood)]/65" : "text-[var(--color-bone)]/55",
+                  "min-h-16 rounded-xl px-5 text-left text-sm font-bold ring-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
+                  selected
+                    ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                    : "bg-white/[0.07] text-[var(--color-bone)] ring-white/15 hover:bg-white/[0.13]",
                 )}
               >
-                {selected ? "Selected" : "Available"}
-              </span>
-            </button>
+                <span className="block">{day.label}</span>
+                <span
+                  className={cn(
+                    "mt-1 block text-xs font-medium",
+                    selected ? "text-[var(--color-oxblood)]/65" : "text-[var(--color-bone)]/55",
+                  )}
+                >
+                  {selected ? "Selected" : "Available"}
+                </span>
+              </button>
+              {selected ? (
+                <div
+                  className="flex flex-col gap-2"
+                  role="group"
+                  aria-label={`Preferred time for ${day.label}`}
+                >
+                  <span className="text-xs font-bold text-[var(--color-bone)]/65">
+                    Preferred time
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {DAY_TIME_WINDOWS.map((window) => {
+                      const active = selectedWindow === window.id;
+                      return (
+                        <button
+                          key={window.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() =>
+                            setDayTimeWindow?.(day.id as PreferredDayId, active ? null : window.id)
+                          }
+                          className={cn(
+                            "min-h-10 rounded-lg px-2 text-xs font-bold ring-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-bone)]",
+                            active
+                              ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                              : "bg-white/[0.07] text-[var(--color-bone)] ring-white/15 hover:bg-white/[0.13]",
+                          )}
+                        >
+                          {window.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </div>

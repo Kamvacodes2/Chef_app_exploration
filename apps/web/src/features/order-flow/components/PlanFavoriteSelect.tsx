@@ -361,7 +361,10 @@ export function PlanFavoriteSelect(): ReactElement {
           >
             {visibleMeals.map((meal) => {
               const slot = slotFor(meal);
-              const isSelected = typeof slot === "number";
+              const isSelected =
+                state.favoriteMealId === meal.slug ||
+                state.secondFavoriteMealId === meal.slug ||
+                state.extraMeals.some((extra) => extra.id === meal.slug);
               const isFull = slot === "full";
               const image = mealImage(meal);
               return (

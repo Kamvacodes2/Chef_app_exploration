@@ -21,7 +21,7 @@ import {
   type OrderStep,
 } from "./orderReducer";
 import type { Address, ContactDetails, GoalId, OrderMenuItem } from "../types";
-import type { ChefmatePlanId, PreferredDayId } from "@/features/plans/planCatalog";
+import type { ChefmatePlanId, DayTimeWindowId, PreferredDayId } from "@/features/plans/planCatalog";
 import {
   bookingRequestFingerprint,
   buildBookingRequestPayload,
@@ -51,6 +51,21 @@ export interface OrderController {
   readonly startPlanSetup: (planId: ChefmatePlanId) => void;
   readonly togglePreferredDay: (day: PreferredDayId) => void;
   readonly decidePlanDays: () => void;
+  readonly setDayTimeWindow?: (day: PreferredDayId, window: DayTimeWindowId | null) => void;
+  /** Week-1 per-day planning: toggle a main / oats / link for a day. */
+  readonly toggleDayMeal?: (day: PreferredDayId, item: OrderMenuItem) => void;
+  readonly toggleWeek2DayMeal?: (day: PreferredDayId, item: OrderMenuItem) => void;
+  readonly toggleDayOats?: (day: PreferredDayId) => void;
+  readonly toggleWeek2DayOats?: (day: PreferredDayId) => void;
+  readonly setDayLink?: (day: PreferredDayId, source: MealLinkSource, url: string) => void;
+  readonly removeDayLink?: (day: PreferredDayId, url: string) => void;
+  readonly setWeek2DayLink?: (day: PreferredDayId, source: MealLinkSource, url: string) => void;
+  readonly removeWeek2DayLink?: (day: PreferredDayId, url: string) => void;
+  readonly startWeek2?: () => void;
+  readonly deferWeek2?: () => void;
+  readonly confirmFirstSession?: (date: string | null) => void;
+  /** Locks the SAST first-session suggestion when leaving the meal-planning step. */
+  readonly commitDayMeals?: () => void;
   readonly selectPlanFavorite: (item: OrderMenuItem) => void;
   /** Optional second meal for meal-prep packs (option 2). */
   readonly selectPlanSecondFavorite: (item: OrderMenuItem) => void;
@@ -93,7 +108,9 @@ export interface OrderController {
 const STEP_SEQUENCE: readonly OrderStep[] = Object.freeze([
   "goal",
   "plan-days",
-  "plan-favorite",
+  "plan-meals",
+  "plan-week2",
+  "plan-first-session",
   "meal",
   "second-meal",
   "sides",
@@ -204,6 +221,11 @@ export function useOrderController(): OrderController {
         extraMealLinks: state.extraMealLinks,
         dayMealAssignments: state.dayMealAssignments,
         dayMealsDeferred: state.dayMealsDeferred,
+        dayTimeWindows: state.dayTimeWindows,
+        dayMealPlans: state.dayMealPlans,
+        week2DayMealPlans: state.week2DayMealPlans,
+        week2Deferred: state.week2Deferred,
+        firstSessionDate: state.firstSessionDate,
         breakfastAddOn: state.breakfastAddOn,
       }),
     [
@@ -224,6 +246,11 @@ export function useOrderController(): OrderController {
       state.preferredDays,
       state.sides,
       state.favoriteMealDeferred,
+      state.dayTimeWindows,
+      state.dayMealPlans,
+      state.week2DayMealPlans,
+      state.week2Deferred,
+      state.firstSessionDate,
     ],
   );
 
@@ -273,6 +300,10 @@ export function useOrderController(): OrderController {
     setBookingConfirmation(null);
     dispatch({ type: "RESET" });
   }, []);
+
+  // Landing on the week-2 step the first time locks the first-session
+  // suggestion (nearest selected weekday in SAST) into state.
+  const commitDayMeals = useCallback(() => dispatch({ type: "COMMIT_DAY_MEALS" }), []);
 
   const confirm = useCallback(async () => {
     if (submittingRef.current) return;
@@ -386,10 +417,58 @@ export function useOrderController(): OrderController {
       [],
     ),
     decidePlanFavorite: useCallback(() => dispatch({ type: "DECIDE_PLAN_FAVORITE" }), []),
+    selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
     startPlanSetup: useCallback((planId) => dispatch({ type: "START_PLAN_SETUP", planId }), []),
     togglePreferredDay: useCallback((day) => dispatch({ type: "TOGGLE_PREFERRED_DAY", day }), []),
     decidePlanDays: useCallback(() => dispatch({ type: "DECIDE_PLAN_DAYS" }), []),
-    selectPlanFavorite: useCallback((item) => dispatch({ type: "SELECT_PLAN_FAVORITE", item }), []),
+    setDayTimeWindow: useCallback(
+      (day: PreferredDayId, window: DayTimeWindowId | null) =>
+        dispatch({ type: "SET_DAY_TIME_WINDOW", day, window }),
+      [],
+    ),
+    toggleDayMeal: useCallback(
+      (day: PreferredDayId, item: OrderMenuItem) =>
+        dispatch({ type: "TOGGLE_DAY_MEAL", day, item }),
+      [],
+    ),
+    toggleWeek2DayMeal: useCallback(
+      (day: PreferredDayId, item: OrderMenuItem) =>
+        dispatch({ type: "TOGGLE_WEEK2_DAY_MEAL", day, item }),
+      [],
+    ),
+    toggleDayOats: useCallback(
+      (day: PreferredDayId) => dispatch({ type: "TOGGLE_DAY_OATS", day }),
+      [],
+    ),
+    toggleWeek2DayOats: useCallback(
+      (day: PreferredDayId) => dispatch({ type: "TOGGLE_WEEK2_DAY_OATS", day }),
+      [],
+    ),
+    setDayLink: useCallback(
+      (day: PreferredDayId, source: MealLinkSource, url: string) =>
+        dispatch({ type: "SET_DAY_LINK", day, source, url }),
+      [],
+    ),
+    removeDayLink: useCallback(
+      (day: PreferredDayId, url: string) => dispatch({ type: "REMOVE_DAY_LINK", day, url }),
+      [],
+    ),
+    setWeek2DayLink: useCallback(
+      (day: PreferredDayId, source: MealLinkSource, url: string) =>
+        dispatch({ type: "SET_WEEK2_DAY_LINK", day, source, url }),
+      [],
+    ),
+    removeWeek2DayLink: useCallback(
+      (day: PreferredDayId, url: string) => dispatch({ type: "REMOVE_WEEK2_DAY_LINK", day, url }),
+      [],
+    ),
+    startWeek2: useCallback(() => dispatch({ type: "START_WEEK2" }), []),
+    deferWeek2: useCallback(() => dispatch({ type: "DEFER_WEEK2" }), []),
+    confirmFirstSession: useCallback(
+      (date: string | null) => dispatch({ type: "CONFIRM_FIRST_SESSION", date }),
+      [],
+    ),
+    commitDayMeals,
     selectMain: useCallback((item) => dispatch({ type: "SELECT_MAIN", item }), []),
     preselectMain: useCallback((item) => dispatch({ type: "PRESELECT_MAIN", item }), []),
     toggleSide: useCallback((item) => dispatch({ type: "TOGGLE_SIDE", item }), []),
@@ -415,7 +494,9 @@ export function useOrderController(): OrderController {
     applyGift: useCallback(() => dispatch({ type: "APPLY_GIFT" }), []),
     applyPromoCode: useCallback((code: string) => dispatch({ type: "APPLY_PROMO_CODE", code }), []),
     removeGift: useCallback(() => dispatch({ type: "REMOVE_GIFT" }), []),
-    next: useCallback(() => dispatch({ type: "NEXT" }), []),
+    next: useCallback(() => {
+      dispatch({ type: "NEXT" });
+    }, []),
     back: useCallback(() => dispatch({ type: "BACK" }), []),
     goTo: useCallback((step) => dispatch({ type: "GO_TO", step }), []),
     confirm,

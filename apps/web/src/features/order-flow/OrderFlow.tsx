@@ -22,11 +22,17 @@ import { Confirmation } from "./components/Confirmation";
 import { PlanDaysSelect } from "./components/PlanDaysSelect";
 import { PlanFavoriteSelect } from "./components/PlanFavoriteSelect";
 import { PlanMealDaysSelect } from "./components/PlanMealDaysSelect";
+import { PlanMealsSelect } from "./components/PlanMealsSelect";
+import { PlanWeek2Select } from "./components/PlanWeek2Select";
+import { PlanFirstSessionSelect } from "./components/PlanFirstSessionSelect";
 import { isRecurringChefmatePlan, normalizeChefmatePlanId } from "@/features/plans/planCatalog";
 
 const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
   goal: GoalSelect,
   "plan-days": PlanDaysSelect,
+  "plan-meals": () => <PlanMealsSelect />,
+  "plan-week2": () => <PlanWeek2Select />,
+  "plan-first-session": PlanFirstSessionSelect,
   "plan-favorite": PlanFavoriteSelect,
   "plan-meal-days": PlanMealDaysSelect,
   meal: MealSelect,
@@ -41,7 +47,10 @@ const STEP_COMPONENTS: Record<OrderStep, () => ReactElement> = {
 
 const STEP_LABELS: Record<OrderStep, string> = {
   goal: "Choose your Chefmate goal",
-  "plan-days": "Choose suitable Chefmate days",
+  "plan-days": "Choose your Chefmate days and preferred times",
+  "plan-meals": "Choose meals for each Chefmate day",
+  "plan-week2": "Plan your second Chefmate week",
+  "plan-first-session": "Choose your first Chefmate session",
   "plan-favorite": "Choose your Chefmate favourites",
   "plan-meal-days": "Match your Chefmate meals to your days",
   meal: "Find your Chefmate meal",
@@ -118,8 +127,11 @@ export function OrderFlow(): ReactElement {
   const showNav = !isGoal && !isConfirmed;
   // The free overnight oats breakfast add-on is offered once, right after a
   // subscription customer has picked their meal(s) and reached the sides step.
+  const hasPlannedOats =
+    state.dayMealPlans.some((dayPlan) => dayPlan.overnightOats) ||
+    (state.week2DayMealPlans ?? []).some((dayPlan) => dayPlan.overnightOats);
   const showBreakfastAddOn =
-    state.step === "sides" && isPlanRequest && state.breakfastAddOn === null;
+    state.step === "sides" && isPlanRequest && state.breakfastAddOn === null && !hasPlannedOats;
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -310,11 +322,7 @@ export function OrderFlow(): ReactElement {
                     disabled={isSubmittingRequest || isPricingLoading || !pricingQuote}
                     className="rounded-2xl bg-[var(--color-bone)] px-8 py-3 font-display text-base text-[var(--color-oxblood)] shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-bone)]"
                   >
-                    {isCustomRequest
-                      ? "Send request"
-                      : isPlanRequest
-                        ? "Send plan request"
-                        : "Checkout"}
+                    Checkout
                   </button>
                 ) : (
                   <button

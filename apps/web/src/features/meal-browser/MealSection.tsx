@@ -8,7 +8,7 @@ export interface MealSectionProps {
   readonly title: string;
   readonly slug: string;
   readonly meals: readonly BrowserMeal[];
-  readonly selectedSlug: string | null;
+  readonly selectedSlug: string | readonly string[] | null;
   readonly onOpenDetail: (meal: BrowserMeal) => void;
   readonly onSelect: (meal: BrowserMeal) => void;
 }
@@ -73,7 +73,11 @@ export function MealSection({
           <div key={meal.slug} className="w-[38vw] flex-none md:w-auto">
             <MealCard
               meal={meal}
-              selected={meal.slug === selectedSlug}
+              selected={
+                Array.isArray(selectedSlug)
+                  ? selectedSlug.includes(meal.slug)
+                  : meal.slug === selectedSlug
+              }
               onOpenDetail={() => onOpenDetail(meal)}
               onSelect={() => onSelect(meal)}
             />

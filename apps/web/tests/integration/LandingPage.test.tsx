@@ -202,7 +202,7 @@ describe("LandingPage", () => {
     fireEvent.click(screen.getByRole("link", { name: /chefmate family/i }));
 
     expect(
-      await screen.findByRole("heading", { name: "Which days suit your household?" }),
+      await screen.findByRole("heading", { name: "Which days and times suit you?" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-days");
 
@@ -210,9 +210,21 @@ describe("LandingPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(
-      await screen.findByRole("heading", { name: "What would you like most often?" }),
+      await screen.findByRole("heading", { name: "Choose meals for your days" }),
     ).toBeInTheDocument();
-    fireEvent.click(await screen.findByTestId("plan-favourite-wors-pap-chakalaka"));
+    fireEvent.click(await screen.findByRole("button", { name: "Choose Wors, Pap and Chakalaka" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Would you like to plan the following week too?",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /I'll do it later/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(
+      await screen.findByRole("heading", { name: "Order your first session now?" }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByRole("heading", { name: "Add some sides?" })).toBeInTheDocument();
@@ -229,7 +241,7 @@ describe("LandingPage", () => {
     document.body.removeChild(legacyLink);
 
     expect(
-      await screen.findByRole("heading", { name: "Which days suit your household?" }),
+      await screen.findByRole("heading", { name: "Which days and times suit you?" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "plan-days");
   });
@@ -260,7 +272,7 @@ describe("LandingPage", () => {
     fireEvent.click(screen.getByRole("link", { name: /chefmate rhythm/i }));
 
     expect(
-      await screen.findByRole("heading", { name: "Which days suit your household?" }),
+      await screen.findByRole("heading", { name: "Which days and times suit you?" }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Decide later" }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
@@ -282,7 +294,7 @@ describe("LandingPage", () => {
 
     fireEvent.click(screen.getByRole("link", { name: /chefmate family/i }));
     expect(
-      await screen.findByRole("heading", { name: "Which days suit your household?" }),
+      await screen.findByRole("heading", { name: "Which days and times suit you?" }),
     ).toBeInTheDocument();
 
     window.history.replaceState(null, "", "#plans");

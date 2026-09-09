@@ -153,7 +153,7 @@ describe("OrderFlow submit state", () => {
 
     render(<OrderFlow />);
 
-    expect(screen.getByRole("button", { name: "Send plan request" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Checkout" })).toBeEnabled();
     expect(screen.getByText(/confirm your recurring session schedule/i)).toBeInTheDocument();
   });
 });

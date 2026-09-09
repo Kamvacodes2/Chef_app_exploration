@@ -48,6 +48,23 @@ export interface PlanSelection {
   readonly dayMealAssignments?: Readonly<Record<string, string>>;
   /** True when the customer explicitly chose to settle day matching later. */
   readonly dayMealsDeferred?: boolean;
+  /** Per-day week 1 meal plans. */
+  readonly dayMealPlans?: readonly {
+    readonly day: string;
+    readonly mainSlugs: readonly string[];
+    readonly overnightOats: boolean;
+    readonly links: readonly string[];
+  }[];
+  /** Fresh per-day week 2 meal plans. */
+  readonly week2DayMealPlans?: readonly {
+    readonly day: string;
+    readonly mainSlugs: readonly string[];
+    readonly overnightOats: boolean;
+    readonly links: readonly string[];
+  }[];
+  readonly week2Deferred?: boolean;
+  readonly dayTimeWindows?: Readonly<Record<string, string | null>>;
+  readonly firstSessionDate?: string | null;
 }
 
 export interface PricingPayload {

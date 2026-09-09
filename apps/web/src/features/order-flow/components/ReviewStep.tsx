@@ -204,6 +204,60 @@ export function ReviewStep(): ReactElement {
     const day = PREFERRED_DAYS.find((candidate) => candidate.id === dayId);
     return day ? [day.label] : [];
   });
+  const mealNameBySlug = new Map<string, string>();
+  for (const planDay of [...state.dayMealPlans, ...(state.week2DayMealPlans ?? [])]) {
+    planDay.mainSlugs.forEach((slug, index) => {
+      const name = planDay.mainNames?.[index];
+      if (name) mealNameBySlug.set(slug, name);
+    });
+  }
+  const renderDayPlans = (
+    title: string,
+    plans: readonly {
+      readonly day: (typeof PREFERRED_DAYS)[number]["id"];
+      readonly mainSlugs: readonly string[];
+      readonly mainNames?: readonly string[];
+      readonly overnightOats: boolean;
+      readonly links: readonly string[];
+    }[],
+  ): ReactElement | null => {
+    const chosen = plans.filter(
+      (planDay) =>
+        planDay.mainSlugs.length > 0 || planDay.overnightOats || planDay.links.length > 0,
+    );
+    if (chosen.length === 0) return null;
+    return (
+      <div className="mt-3 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-bone)]/60">
+          {title}
+        </p>
+        <div className="mt-2 flex flex-col gap-2">
+          {chosen.map((planDay) => {
+            const day = PREFERRED_DAYS.find((candidate) => candidate.id === planDay.day);
+            const meals = planDay.mainSlugs.map(
+              (slug, index) => planDay.mainNames?.[index] ?? mealNameBySlug.get(slug) ?? slug,
+            );
+            const details = [
+              ...meals,
+              ...(planDay.overnightOats ? ["Overnight oats"] : []),
+              ...(planDay.links.length > 0
+                ? [`${planDay.links.length} recipe link${planDay.links.length === 1 ? "" : "s"}`]
+                : []),
+            ];
+            return (
+              <p key={planDay.day} className="text-sm text-[var(--color-bone)]/80">
+                <span className="font-bold text-[var(--color-bone)]">
+                  {day?.label ?? planDay.day}:
+                </span>{" "}
+                {details.join(" · ")}
+              </p>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Weekly menu: option 1, option 2, then the extra mains (8- and 12-session
   // plans), with pasted links rendered as their own entries.
   const weeklyMenuNames = [
@@ -313,6 +367,29 @@ export function ReviewStep(): ReactElement {
                       view link
                     </a>
                   ) : null}
+                </p>
+              ) : null}
+              {renderDayPlans("Week 1 meal plan", state.dayMealPlans)}
+              {state.week2DayMealPlans !== null ? (
+                renderDayPlans("Week 2 meal plan", state.week2DayMealPlans)
+              ) : state.week2Deferred ? (
+                <p className="mt-3 text-sm text-[var(--color-bone)]/70">
+                  Week 2 meals: We&apos;ll plan them later.
+                </p>
+              ) : null}
+              {state.firstSessionDate ? (
+                <p className="mt-3 text-sm text-[var(--color-bone)]/80">
+                  First session starting point:{" "}
+                  {friendlyDateTime(state.firstSessionDate, state.time)}
+                </p>
+              ) : null}
+              {state.dayTimeWindows && Object.keys(state.dayTimeWindows).length > 0 ? (
+                <p className="text-sm text-[var(--color-bone)]/70">
+                  Preferred windows:{" "}
+                  {Object.entries(state.dayTimeWindows)
+                    .filter(([, window]) => window)
+                    .map(([day, window]) => `${day} ${window}`)
+                    .join(" · ")}
                 </p>
               ) : null}
               {weeklyMenuNames.length > 2 ? (

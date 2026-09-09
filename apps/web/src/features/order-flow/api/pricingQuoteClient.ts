@@ -89,6 +89,11 @@ export function buildPricingQuotePayload(
     | "extraMealLinks"
     | "dayMealAssignments"
     | "dayMealsDeferred"
+    | "dayTimeWindows"
+    | "dayMealPlans"
+    | "week2DayMealPlans"
+    | "week2Deferred"
+    | "firstSessionDate"
   >,
 ): PricingQuotePayload | null {
   if (!state.main) return null;

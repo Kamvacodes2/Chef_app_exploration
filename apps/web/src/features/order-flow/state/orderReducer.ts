@@ -1,8 +1,14 @@
 import {
+  DAY_MAIN_CAPACITY,
+  DAY_TIME_WINDOWS,
   findChefmatePlan,
+  firstSessionDate,
   isRecurringChefmatePlan,
   weeklyMainCapacity,
   type ChefmatePlanId,
+  type DayTimeWindowId,
+  type PlanDayMealPlan,
+  type PlanDayTimeWindows,
   type PlanDayMealAssignments,
   type PreferredDayId,
 } from "@/features/plans/planCatalog";
@@ -26,6 +32,9 @@ export interface PlanMealLink {
 export type OrderStep =
   | "goal"
   | "plan-days"
+  | "plan-meals"
+  | "plan-week2"
+  | "plan-first-session"
   | "plan-favorite"
   | "plan-meal-days"
   | "meal"
@@ -58,6 +67,16 @@ export interface OrderState {
   readonly dayMealAssignments: PlanDayMealAssignments;
   /** True when the customer chose to match meals to days later on the match step. */
   readonly dayMealsDeferred: boolean;
+  /** Preferred time window per weekday ("morning" / "afternoon" / "evening"). */
+  readonly dayTimeWindows: PlanDayTimeWindows;
+  /** Week-1 per-day meal plans (day -> mains + oats + links), in preferred-day order. */
+  readonly dayMealPlans: readonly PlanDayMealPlan[];
+  /** Week-2 per-day meal plans, only when the customer opted to plan week 2 now. */
+  readonly week2DayMealPlans: readonly PlanDayMealPlan[] | null;
+  /** True when the customer chose to plan the second week later. */
+  readonly week2Deferred: boolean;
+  /** The date the customer confirmed (or edited) for their first session. */
+  readonly firstSessionDate: string | null;
   readonly goalId: GoalId | null;
   readonly main: OrderMenuItem | null;
   readonly sides: readonly OrderMenuItem[];
@@ -89,6 +108,11 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   extraMealLinks: Object.freeze([]),
   dayMealAssignments: Object.freeze({}),
   dayMealsDeferred: false,
+  dayTimeWindows: Object.freeze({}),
+  dayMealPlans: Object.freeze([]),
+  week2DayMealPlans: null,
+  week2Deferred: false,
+  firstSessionDate: null,
   goalId: null,
   main: null,
   sides: Object.freeze([]),
@@ -116,6 +140,20 @@ export type OrderAction =
   | { type: "START_PLAN_SETUP"; planId: ChefmatePlanId }
   | { type: "TOGGLE_PREFERRED_DAY"; day: PreferredDayId }
   | { type: "DECIDE_PLAN_DAYS" }
+  | { type: "SET_DAY_TIME_WINDOW"; day: PreferredDayId; window: DayTimeWindowId | null }
+  | { type: "TOGGLE_DAY_MEAL"; day: PreferredDayId; item: OrderMenuItem }
+  | { type: "TOGGLE_WEEK2_DAY_MEAL"; day: PreferredDayId; item: OrderMenuItem }
+  | { type: "TOGGLE_DAY_OATS"; day: PreferredDayId }
+  | { type: "TOGGLE_WEEK2_DAY_OATS"; day: PreferredDayId }
+  | { type: "SET_DAY_LINK"; day: PreferredDayId; source: MealLinkSource; url: string }
+  | { type: "REMOVE_DAY_LINK"; day: PreferredDayId; url: string }
+  | { type: "SET_WEEK2_DAY_LINK"; day: PreferredDayId; source: MealLinkSource; url: string }
+  | { type: "REMOVE_WEEK2_DAY_LINK"; day: PreferredDayId; url: string }
+  | { type: "START_WEEK2" }
+  | { type: "DEFER_WEEK2" }
+  | { type: "COPY_WEEK1_TO_WEEK2" }
+  | { type: "CONFIRM_FIRST_SESSION"; date: string | null }
+  | { type: "COMMIT_DAY_MEALS" }
   | { type: "START_MEAL_DISCOVERY" }
   | { type: "SELECT_PLAN_FAVORITE"; item: OrderMenuItem }
   | { type: "SELECT_PLAN_SECOND_FAVORITE"; item: OrderMenuItem }
@@ -154,6 +192,9 @@ export type OrderAction =
 export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
   "goal",
   "plan-days",
+  "plan-meals",
+  "plan-week2",
+  "plan-first-session",
   "plan-favorite",
   "plan-meal-days",
   "meal",
@@ -174,6 +215,131 @@ export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
     !state.favoriteMealDeferred &&
     (state.extraMeals.length > 0 || state.extraMealLinks.length > 0),
   );
+}
+
+/** True while the customer is inside the recurring-plan personalisation steps. */
+function isPlanFlowStep(step: OrderStep): boolean {
+  return (
+    step === "plan-days" ||
+    step === "plan-meals" ||
+    step === "plan-week2" ||
+    step === "plan-first-session" ||
+    step === "plan-favorite" ||
+    step === "plan-meal-days"
+  );
+}
+
+function dayTimeWindowCount(windows: PlanDayTimeWindows): number {
+  return Object.values(windows).filter((value) => value !== null && value !== undefined).length;
+}
+
+/** Mutable-safe plan lookup for a day within a week's plans. */
+function findDayPlan(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+): PlanDayMealPlan | undefined {
+  return plans.find((plan) => plan.day === day);
+}
+
+function updateDayPlan(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+  update: (plan: PlanDayMealPlan) => PlanDayMealPlan,
+): PlanDayMealPlan[] {
+  const existing = findDayPlan(plans, day);
+  const next = update(
+    existing ?? {
+      day,
+      mainSlugs: Object.freeze([]),
+      overnightOats: false,
+      links: Object.freeze([]),
+    },
+  );
+  const isEmpty = next.mainSlugs.length === 0 && !next.overnightOats && next.links.length === 0;
+  if (isEmpty && !existing) return [...plans];
+  if (isEmpty) return plans.filter((plan) => plan.day !== day);
+  return existing
+    ? plans.map((plan) => (plan.day === plan.day && plan.day === next.day ? next : plan))
+    : [...plans, next];
+}
+
+/** A day meal plan has meaningful content when any choice was made on it. */
+function dayPlanHasChoices(plan: PlanDayMealPlan | undefined): boolean {
+  return Boolean(
+    plan && (plan.mainSlugs.length > 0 || plan.overnightOats || plan.links.length > 0),
+  );
+}
+
+function togglePlanDayMeal(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+  item: OrderMenuItem,
+): PlanDayMealPlan[] {
+  const existingPlan = findDayPlan(plans, day);
+  const already = existingPlan?.mainSlugs.includes(item.id) ?? false;
+  return updateDayPlan(plans, day, (plan) => {
+    const index = plan.mainSlugs.indexOf(item.id);
+    if (already) {
+      return {
+        ...plan,
+        mainSlugs: plan.mainSlugs.filter((slug) => slug !== item.id),
+        mainNames: plan.mainNames?.filter((_, nameIndex) => nameIndex !== index),
+      };
+    }
+    if (plan.mainSlugs.length >= DAY_MAIN_CAPACITY) return plan;
+    return {
+      ...plan,
+      mainSlugs: Object.freeze([...plan.mainSlugs, item.id]),
+      mainNames: Object.freeze([...(plan.mainNames ?? []), item.name]),
+    };
+  });
+}
+
+function togglePlanDayOats(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+): PlanDayMealPlan[] {
+  return updateDayPlan(plans, day, (plan) => ({ ...plan, overnightOats: !plan.overnightOats }));
+}
+
+function setPlanDayLink(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+  source: MealLinkSource,
+  url: string,
+): PlanDayMealPlan[] {
+  const formatted = `[${source}] ${url.trim()}`;
+  return updateDayPlan(plans, day, (plan) => ({
+    ...plan,
+    links: plan.links.includes(formatted) ? plan.links : Object.freeze([...plan.links, formatted]),
+  }));
+}
+
+function removePlanDayLink(
+  plans: readonly PlanDayMealPlan[],
+  day: PreferredDayId,
+  url: string,
+): PlanDayMealPlan[] {
+  return updateDayPlan(plans, day, (plan) => ({
+    ...plan,
+    links: plan.links.filter((link) => link !== url),
+  }));
+}
+
+function commitDayMealsState(state: OrderState): OrderState {
+  const suggested = firstSessionDate(state.preferredDays, state.dayTimeWindows, new Date());
+  const firstDay = state.preferredDays[0];
+  const firstWindow = firstDay ? state.dayTimeWindows[firstDay] : null;
+  const firstSlot = firstWindow
+    ? (DAY_TIME_WINDOWS.find((window) => window.id === firstWindow)?.slots[0] ?? null)
+    : null;
+  return {
+    ...state,
+    firstSessionDate: state.firstSessionDate ?? suggested,
+    date: state.date ?? suggested,
+    time: state.time ?? firstSlot,
+    favoriteMealDeferred: false,
+  };
 }
 
 const NEUTRAL_DISCOVERY_GOAL_ID: GoalId = "just-good-food";
@@ -203,6 +369,22 @@ function extraSlotCapacity(state: OrderState): number {
 }
 
 function stepAfter(state: OrderState): OrderStep {
+  if (state.step === "plan-days") {
+    // Days chosen -> per-day meal planning; deferred days skip straight to
+    // the legacy favourite step so the flow still completes.
+    return state.planScheduleDeferred || state.preferredDays.length === 0
+      ? "plan-favorite"
+      : "plan-meals";
+  }
+  if (state.step === "plan-meals") {
+    return "plan-week2";
+  }
+  if (state.step === "plan-week2") {
+    return "plan-first-session";
+  }
+  if (state.step === "plan-first-session") {
+    return state.main ? "sides" : "meal";
+  }
   if (state.step === "plan-favorite" || state.step === "plan-meal-days") {
     if (state.step === "plan-favorite" && planMealDaysApplies(state)) {
       return "plan-meal-days";
@@ -215,6 +397,24 @@ function stepAfter(state: OrderState): OrderStep {
 }
 
 function stepBefore(state: OrderState): OrderStep {
+  if (state.step === "plan-favorite") {
+    // Coming back from the legacy favourite step lands on the last planning
+    // step the customer actually visited (week 2 when it was planned).
+    return state.week2DayMealPlans !== null ? "plan-week2" : "plan-meals";
+  }
+  if (state.step === "plan-meal-days") {
+    return "plan-favorite";
+  }
+  if (state.step === "plan-first-session") {
+    return "plan-week2";
+  }
+  if (state.step === "plan-week2") {
+    return "plan-meals";
+  }
+  if (state.step === "plan-meals") {
+    return "plan-days";
+  }
+
   if (
     state.step === "sides" &&
     state.planId &&
@@ -224,10 +424,6 @@ function stepBefore(state: OrderState): OrderStep {
     return planMealDaysApplies(state) ? "plan-meal-days" : "plan-favorite";
   }
 
-  if (state.step === "plan-meal-days") {
-    return "plan-favorite";
-  }
-
   if (state.step === "meal" && !state.planId) {
     return "goal";
   }
@@ -235,10 +431,6 @@ function stepBefore(state: OrderState): OrderStep {
   // Back from meal discovery for a one-off plan (tonight) returns to goal
   if (state.step === "meal" && state.planId && !isRecurringChefmatePlan(state.planId)) {
     return "goal";
-  }
-
-  if (state.step === "plan-favorite") {
-    return state.planId && isRecurringChefmatePlan(state.planId) ? "plan-days" : "goal";
   }
 
   const idx = STEP_ORDER.indexOf(state.step);
@@ -281,6 +473,99 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     }
     case "DECIDE_PLAN_DAYS":
       return { ...state, preferredDays: [], planScheduleDeferred: true };
+    case "SET_DAY_TIME_WINDOW": {
+      const windows: Record<string, DayTimeWindowId | null> = { ...state.dayTimeWindows };
+      windows[action.day] = action.window;
+      // Clearing a window for a day that is no longer preferred drops the key.
+      if (action.window === null && !state.preferredDays.includes(action.day))
+        delete windows[action.day];
+      return { ...state, dayTimeWindows: windows };
+    }
+    case "TOGGLE_DAY_MEAL": {
+      const nextPlans = togglePlanDayMeal(state.dayMealPlans, action.day, action.item);
+      const selectedOnDay =
+        nextPlans.find((plan) => plan.day === action.day)?.mainSlugs.includes(action.item.id) ??
+        false;
+      return {
+        ...state,
+        dayMealPlans: nextPlans,
+        // Keep the legacy checkout main populated from the first day selection.
+        // The full per-day plan is the authoritative preference payload.
+        main:
+          selectedOnDay || state.main?.id !== action.item.id ? (state.main ?? action.item) : null,
+        favoriteMealId:
+          selectedOnDay || state.favoriteMealId !== action.item.id ? state.favoriteMealId : null,
+        favoriteMealDeferred: false,
+        week2Deferred: false,
+      };
+    }
+    case "TOGGLE_WEEK2_DAY_MEAL": {
+      if (state.week2DayMealPlans === null) return state;
+      return {
+        ...state,
+        week2DayMealPlans: togglePlanDayMeal(state.week2DayMealPlans, action.day, action.item),
+      };
+    }
+    case "TOGGLE_DAY_OATS": {
+      return {
+        ...state,
+        dayMealPlans: togglePlanDayOats(state.dayMealPlans, action.day),
+        favoriteMealDeferred: false,
+        week2Deferred: false,
+      };
+    }
+    case "TOGGLE_WEEK2_DAY_OATS": {
+      if (state.week2DayMealPlans === null) return state;
+      return {
+        ...state,
+        week2DayMealPlans: togglePlanDayOats(state.week2DayMealPlans, action.day),
+      };
+    }
+    case "SET_DAY_LINK": {
+      const url = action.url.trim();
+      if (url.length === 0) return state;
+      return {
+        ...state,
+        dayMealPlans: setPlanDayLink(state.dayMealPlans, action.day, action.source, url),
+        favoriteMealDeferred: false,
+        week2Deferred: false,
+      };
+    }
+    case "REMOVE_DAY_LINK":
+      return {
+        ...state,
+        dayMealPlans: removePlanDayLink(state.dayMealPlans, action.day, action.url),
+      };
+    case "SET_WEEK2_DAY_LINK": {
+      if (state.week2DayMealPlans === null) return state;
+      const url = action.url.trim();
+      if (url.length === 0) return state;
+      return {
+        ...state,
+        week2DayMealPlans: setPlanDayLink(state.week2DayMealPlans, action.day, action.source, url),
+      };
+    }
+    case "REMOVE_WEEK2_DAY_LINK":
+      return state.week2DayMealPlans === null
+        ? state
+        : {
+            ...state,
+            week2DayMealPlans: removePlanDayLink(state.week2DayMealPlans, action.day, action.url),
+          };
+    case "START_WEEK2":
+      return {
+        ...state,
+        week2DayMealPlans: Object.freeze([]),
+        week2Deferred: false,
+      };
+    case "DEFER_WEEK2":
+      return { ...state, week2DayMealPlans: null, week2Deferred: true };
+    case "COPY_WEEK1_TO_WEEK2":
+      return { ...state, week2DayMealPlans: state.dayMealPlans, week2Deferred: false };
+    case "CONFIRM_FIRST_SESSION":
+      return { ...state, firstSessionDate: action.date };
+    case "COMMIT_DAY_MEALS":
+      return commitDayMealsState(state);
     case "SELECT_PLAN_FAVORITE": {
       if (action.item.id === state.favoriteMealId) {
         // Toggling the current option 1 off; keep option 2.
@@ -507,7 +792,9 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "REMOVE_GIFT":
       return { ...state, appliedGift: null, giftCodeInput: "", giftMessage: "" };
     case "NEXT":
-      return { ...state, step: stepAfter(state) };
+      return state.step === "plan-meals"
+        ? { ...commitDayMealsState(state), step: stepAfter(state) }
+        : { ...state, step: stepAfter(state) };
     case "BACK":
       if (state.step === "plan-days") {
         return INITIAL_ORDER_STATE;
@@ -558,6 +845,14 @@ export function selectCanContinue(state: OrderState, usesAccountContact = false)
       return state.goalId !== null;
     case "plan-days":
       return state.planScheduleDeferred || state.preferredDays.length > 0;
+    // Day planning never blocks: any day can be left to the chef, and the
+    // whole week can be deferred at the favourite step.
+    case "plan-meals":
+      return true;
+    case "plan-week2":
+      return state.week2DayMealPlans !== null || state.week2Deferred;
+    case "plan-first-session":
+      return true;
     case "plan-favorite":
       return (
         state.favoriteMealDeferred ||

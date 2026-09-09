@@ -78,10 +78,10 @@ function setHash(hash: string): void {
 }
 
 async function walkSubscriptionToSides(): Promise<void> {
-  // plan-days
+  // plan-days: defer weekday planning
   fireEvent.click(await screen.findByRole("button", { name: "Decide later" }));
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-  // plan-favorite
+  // plan-favorite: defer the weekly menu
   fireEvent.click(await screen.findByRole("button", { name: "I'll choose later" }));
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
   // meal discovery -> pick the main -> optional second meal -> sides
