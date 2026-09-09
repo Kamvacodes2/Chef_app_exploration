@@ -317,7 +317,11 @@ export function ReviewStep(): ReactElement {
               ) : null}
               {weeklyMenuNames.length > 2 ? (
                 <p className="text-sm text-[var(--color-bone)]/80">
-                  Weekly menu: {weeklyMenuNames.slice(2).join(", ")}
+                  Weekly menu:{" "}
+                  {weeklyMenuNames
+                    .slice(2)
+                    .map((name, index) => `Option ${3 + index}: ${name}`)
+                    .join(", ")}
                 </p>
               ) : null}
               {state.preferredDays.length > 0 &&

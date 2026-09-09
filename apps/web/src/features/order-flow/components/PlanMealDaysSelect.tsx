@@ -97,10 +97,11 @@ export function PlanMealDaysSelect(): ReactElement {
                   )}
                 >
                   <option value="">Chef&apos;s choice from my meals</option>
-                  {namedMeals.map((meal) => (
-                    <option key={meal.slug} value={meal.slug}>
-                      {meal.name}
-                    </option>
+                  {namedMeals.map((meal, index) => (
+                    <option
+                      key={meal.slug}
+                      value={meal.slug}
+                    >{`Option ${index + 1}: ${meal.name}`}</option>
                   ))}
                 </select>
               </div>

@@ -111,15 +111,23 @@ export function PlanFavoriteSelect(): ReactElement {
     : null;
   const extraMeals = state.extraMeals;
 
-  /** Which slot a tapped meal would fill (or is already filling). */
-  const slotFor = (meal: BrowserMeal): 1 | 2 | "extra" | "full" => {
+  /**
+   * Which option slot a tapped meal fills (or is already filling): 1 and 2 are
+   * the favourite / meal-prep picks; extras number on as options 3, 4, 5, 6.
+   */
+  const slotFor = (meal: BrowserMeal): 1 | 2 | 3 | 4 | 5 | 6 | "full" => {
     if (state.favoriteMealId === meal.slug) return 1;
     if (state.secondFavoriteMealId === meal.slug) return 2;
-    if (state.extraMeals.some((extra) => extra.id === meal.slug)) return "extra";
+    const extraIndex = state.extraMeals.findIndex((extra) => extra.id === meal.slug);
+    if (extraIndex >= 0) return (3 + extraIndex) as 3 | 4 | 5 | 6;
     if (!state.favoriteMealId) return 1;
     if (!state.secondFavoriteMealId) return 2;
-    return extrasFull ? "full" : "extra";
+    // extrasFull guard above guarantees 3 + extrasUsed <= capacity <= 6.
+    return (3 + extrasUsed) as 3 | 4 | 5 | 6;
   };
+
+  /** Option number the next extra (meal or link) will fill. */
+  const nextExtraOption = Math.min(3 + extrasUsed, capacity);
 
   const handleMealClick = (meal: BrowserMeal): void => {
     const slot = slotFor(meal);
@@ -132,8 +140,8 @@ export function PlanFavoriteSelect(): ReactElement {
       selectPlanSecondFavorite(item); // toggles option 2 off
       return;
     }
-    if (slot === "extra") {
-      togglePlanExtraMeal(item);
+    if (slot !== "full") {
+      togglePlanExtraMeal(item); // options 3–6: toggle the extra on/off
     }
     // "full": every slot is taken — no-op, matching the disabled semantics.
   };
@@ -216,12 +224,14 @@ export function PlanFavoriteSelect(): ReactElement {
         state.secondFavoriteMealLink ||
         state.extraMealLinks.length > 0 ? (
           <div
-            className="flex max-w-xl flex-wrap items-center gap-2"
+            className="grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2"
             aria-label="Your chosen meals"
           >
             {state.favoriteMealLink ? (
-              <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
-                Option 1: {state.favoriteMealLink.source.toLowerCase()} link
+              <span className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option 1: {state.favoriteMealLink.source.toLowerCase()} link
+                </span>
                 <button
                   type="button"
                   aria-label="Remove option 1 link"
@@ -233,8 +243,10 @@ export function PlanFavoriteSelect(): ReactElement {
               </span>
             ) : null}
             {state.secondFavoriteMealLink ? (
-              <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--color-bone)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20">
-                Option 2: {state.secondFavoriteMealLink.source.toLowerCase()} link
+              <span className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-bone)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20">
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option 2: {state.secondFavoriteMealLink.source.toLowerCase()} link
+                </span>
                 <button
                   type="button"
                   aria-label="Remove option 2 link"
@@ -246,15 +258,17 @@ export function PlanFavoriteSelect(): ReactElement {
               </span>
             ) : null}
             {firstMeal ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
+              <span className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-bone)] px-3 py-1.5 text-xs font-bold text-[var(--color-oxblood)]">
                 <Image
                   src={mealImage(firstMeal).src}
                   alt=""
                   width={56}
                   height={56}
-                  className="h-7 w-7 rounded-full object-cover"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
                 />
-                Option 1: {firstMeal.name}
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option 1: {firstMeal.name}
+                </span>
                 <button
                   type="button"
                   aria-label={`Remove ${firstMeal.name} as option 1`}
@@ -266,15 +280,17 @@ export function PlanFavoriteSelect(): ReactElement {
               </span>
             ) : null}
             {secondMeal ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-bone)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20">
+              <span className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-bone)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20">
                 <Image
                   src={mealImage(secondMeal).src}
                   alt=""
                   width={56}
                   height={56}
-                  className="h-7 w-7 rounded-full object-cover"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
                 />
-                Option 2: {secondMeal.name}
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option 2: {secondMeal.name}
+                </span>
                 <button
                   type="button"
                   aria-label={`Remove ${secondMeal.name} as option 2`}
@@ -285,10 +301,10 @@ export function PlanFavoriteSelect(): ReactElement {
                 </button>
               </span>
             ) : null}
-            {extraMeals.map((meal) => (
+            {extraMeals.map((meal, index) => (
               <span
                 key={meal.id}
-                className="inline-flex items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
+                className="flex min-w-0 items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
               >
                 {/* Extras are full catalog items — render their image directly. */}
                 <Image
@@ -296,9 +312,11 @@ export function PlanFavoriteSelect(): ReactElement {
                   alt=""
                   width={56}
                   height={56}
-                  className="h-7 w-7 rounded-full object-cover"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
                 />
-                {meal.name}
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option {3 + index}: {meal.name}
+                </span>
                 <button
                   type="button"
                   aria-label={`Remove ${meal.name}`}
@@ -309,12 +327,14 @@ export function PlanFavoriteSelect(): ReactElement {
                 </button>
               </span>
             ))}
-            {state.extraMealLinks.map((link) => (
+            {state.extraMealLinks.map((link, index) => (
               <span
                 key={link.url}
-                className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
+                className="flex min-w-0 items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
               >
-                {link.source.toLowerCase()} link
+                <span className="min-w-0 flex-1 truncate text-left">
+                  Option {3 + extraMeals.length + index}: {link.source.toLowerCase()} link
+                </span>
                 <button
                   type="button"
                   aria-label={`Remove ${link.source.toLowerCase()} link`}
@@ -325,9 +345,9 @@ export function PlanFavoriteSelect(): ReactElement {
                 </button>
               </span>
             ))}
-            <span className="text-xs text-[var(--color-bone)]/62">
+            <span className="text-xs text-[var(--color-bone)]/62 sm:col-span-2">
               {capacity > 2
-                ? `${extrasUsed}/${extraCapacity} extra mains · option 2 is for meal-prep packs.`
+                ? `${extrasUsed}/${extraCapacity} of options 3–${capacity} filled · option 2 is for meal-prep packs.`
                 : "Option 2 is for meal-prep packs — optional."}
             </span>
           </div>
@@ -341,8 +361,8 @@ export function PlanFavoriteSelect(): ReactElement {
           >
             {visibleMeals.map((meal) => {
               const slot = slotFor(meal);
-              const isSelected = slot === 1 || slot === 2 || slot === "extra";
-              const isFull = slot === "full" && !isSelected;
+              const isSelected = typeof slot === "number";
+              const isFull = slot === "full";
               const image = mealImage(meal);
               return (
                 <li key={meal.slug}>
@@ -372,19 +392,16 @@ export function PlanFavoriteSelect(): ReactElement {
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="flex items-center gap-2 text-sm font-bold">
                         <span className="truncate">{meal.name}</span>
-                        {slot === 1 ? (
-                          <span className="shrink-0 rounded-full bg-[var(--color-oxblood)]/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-oxblood)]">
-                            Option 1
-                          </span>
-                        ) : null}
-                        {slot === 2 ? (
-                          <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-bone)]">
-                            Option 2
-                          </span>
-                        ) : null}
-                        {slot === "extra" ? (
-                          <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[var(--color-bone)]">
-                            Weekly main
+                        {typeof slot === "number" ? (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+                              slot === 1
+                                ? "bg-[var(--color-oxblood)]/15 text-[var(--color-oxblood)]"
+                                : "bg-white/20 text-[var(--color-bone)]",
+                            )}
+                          >
+                            Option {slot}
                           </span>
                         ) : null}
                       </span>
@@ -484,7 +501,11 @@ export function PlanFavoriteSelect(): ReactElement {
                         : "bg-white/[0.07] text-[var(--color-bone)] ring-white/20 hover:bg-white/[0.13]")
                     }
                   >
-                    {slot === "one" ? "Option 1" : slot === "two" ? "Option 2" : "Extra main"}
+                    {slot === "one"
+                      ? "Option 1"
+                      : slot === "two"
+                        ? "Option 2"
+                        : `Option ${nextExtraOption}`}
                   </button>
                 ),
               )}
@@ -508,7 +529,7 @@ export function PlanFavoriteSelect(): ReactElement {
                   ? "Use as option 1"
                   : linkSlot === "two"
                     ? "Use as option 2"
-                    : "Add as extra main"}
+                    : `Use as option ${nextExtraOption}`}
               </button>
             </div>
           </div>
