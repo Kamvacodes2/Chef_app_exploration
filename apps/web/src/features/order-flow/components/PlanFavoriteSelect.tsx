@@ -44,7 +44,7 @@ export function PlanFavoriteSelect(): ReactElement {
   const plan = findChefmatePlan(state.planId);
   const capacity = weeklyMainCapacity(state.planId);
   const extraCapacity = Math.max(0, capacity - 2);
-  const extrasUsed = state.extraMealIds.length + state.extraMealLinks.length;
+  const extrasUsed = state.extraMeals.length + state.extraMealLinks.length;
   const extrasFull = extrasUsed >= extraCapacity;
 
   const [linkPanelOpen, setLinkPanelOpen] = useState(false);
@@ -109,15 +109,13 @@ export function PlanFavoriteSelect(): ReactElement {
   const secondMeal = state.secondFavoriteMealId
     ? (meals.find((meal) => meal.slug === state.secondFavoriteMealId) ?? null)
     : null;
-  const extraMeals = state.extraMealIds
-    .map((slug) => meals.find((meal) => meal.slug === slug) ?? null)
-    .filter((meal): meal is BrowserMeal => meal !== null);
+  const extraMeals = state.extraMeals;
 
   /** Which slot a tapped meal would fill (or is already filling). */
   const slotFor = (meal: BrowserMeal): 1 | 2 | "extra" | "full" => {
     if (state.favoriteMealId === meal.slug) return 1;
     if (state.secondFavoriteMealId === meal.slug) return 2;
-    if (state.extraMealIds.includes(meal.slug)) return "extra";
+    if (state.extraMeals.some((extra) => extra.id === meal.slug)) return "extra";
     if (!state.favoriteMealId) return 1;
     if (!state.secondFavoriteMealId) return 2;
     return extrasFull ? "full" : "extra";
@@ -289,11 +287,12 @@ export function PlanFavoriteSelect(): ReactElement {
             ) : null}
             {extraMeals.map((meal) => (
               <span
-                key={meal.slug}
+                key={meal.id}
                 className="inline-flex items-center gap-2 rounded-full bg-white/[0.13] px-3 py-1.5 text-xs font-bold text-[var(--color-bone)] ring-1 ring-white/20"
               >
+                {/* Extras are full catalog items — render their image directly. */}
                 <Image
-                  src={mealImage(meal).src}
+                  src={meal.imageSrc}
                   alt=""
                   width={56}
                   height={56}
@@ -303,7 +302,7 @@ export function PlanFavoriteSelect(): ReactElement {
                 <button
                   type="button"
                   aria-label={`Remove ${meal.name}`}
-                  onClick={() => togglePlanExtraMeal(toOrderMenuItem(meal))}
+                  onClick={() => togglePlanExtraMeal(meal)}
                   className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[var(--color-bone)] hover:bg-white/30"
                 >
                   ×

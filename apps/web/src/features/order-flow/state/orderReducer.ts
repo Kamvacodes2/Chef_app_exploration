@@ -51,7 +51,7 @@ export interface OrderState {
   readonly secondFavoriteMealLink: PlanMealLink | null;
   readonly favoriteMealDeferred: boolean;
   /** Weekly mains beyond options 1 & 2 (8- and 12-session plans; capacity 6). */
-  readonly extraMealIds: readonly string[];
+  readonly extraMeals: readonly OrderMenuItem[];
   /** Pasted-link references for extra slots beyond option 2. */
   readonly extraMealLinks: readonly PlanMealLink[];
   /** Day -> meal-slug assignments from the optional match step; empty when deferred or unmatched. */
@@ -85,7 +85,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   favoriteMealLink: null,
   secondFavoriteMealLink: null,
   favoriteMealDeferred: false,
-  extraMealIds: Object.freeze([]),
+  extraMeals: Object.freeze([]),
   extraMealLinks: Object.freeze([]),
   dayMealAssignments: Object.freeze({}),
   dayMealsDeferred: false,
@@ -165,13 +165,14 @@ export const STEP_ORDER: readonly OrderStep[] = Object.freeze([
   "review",
 ]);
 
-/** True when the optional plan-meal-days match step applies to this state. */
-function planMealDaysApplies(state: OrderState): boolean {
+/** True when the optional plan-meal-days match step applies to this state. */ function planMealDaysApplies(
+  state: OrderState,
+): boolean {
   return Boolean(
     state.planId &&
     isRecurringChefmatePlan(state.planId) &&
     !state.favoriteMealDeferred &&
-    (state.extraMealIds.length > 0 || state.extraMealLinks.length > 0),
+    (state.extraMeals.length > 0 || state.extraMealLinks.length > 0),
   );
 }
 
@@ -184,9 +185,11 @@ function findItem(id: string): OrderMenuItem | undefined {
 /** Day assignments may only reference meals still named in the weekly menu. */
 function pruneDayMealAssignments(state: OrderState): OrderState {
   const namedMeals = new Set(
-    [state.favoriteMealId, state.secondFavoriteMealId, ...state.extraMealIds].filter(
-      (id): id is string => typeof id === "string",
-    ),
+    [
+      state.favoriteMealId,
+      state.secondFavoriteMealId,
+      ...state.extraMeals.map((meal) => meal.id),
+    ].filter((id): id is string => typeof id === "string"),
   );
   const dayMealAssignments = Object.fromEntries(
     Object.entries(state.dayMealAssignments).filter(([, mealId]) => namedMeals.has(mealId)),
@@ -287,7 +290,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           favoriteMealLink: null,
           main: state.main?.id === action.item.id ? null : state.main,
           customRequest: null,
-          extraMealIds: state.extraMealIds.filter((id) => id !== action.item.id),
+          extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
         });
       }
       return pruneDayMealAssignments({
@@ -300,7 +303,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           state.secondFavoriteMealId === action.item.id ? null : state.secondFavoriteMealId,
         main: action.item,
         customRequest: null,
-        extraMealIds: state.extraMealIds.filter((id) => id !== action.item.id),
+        extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
       });
     }
     case "SELECT_PLAN_SECOND_FAVORITE": {
@@ -322,14 +325,14 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         secondFavoriteMeal: action.item,
         secondFavoriteMealLink: null,
         favoriteMealDeferred: false,
-        extraMealIds: state.extraMealIds.filter((id) => id !== action.item.id),
+        extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
       });
     }
     case "TOGGLE_PLAN_EXTRA_MEAL": {
-      if (state.extraMealIds.includes(action.item.id)) {
+      if (state.extraMeals.some((meal) => meal.id === action.item.id)) {
         return pruneDayMealAssignments({
           ...state,
-          extraMealIds: state.extraMealIds.filter((id) => id !== action.item.id),
+          extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
         });
       }
       // One meal per slot: extras cannot duplicate the named options or the
@@ -341,10 +344,10 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       ) {
         return state;
       }
-      if (state.extraMealIds.length >= extraSlotCapacity(state)) return state;
+      if (state.extraMeals.length >= extraSlotCapacity(state)) return state;
       return {
         ...state,
-        extraMealIds: [...state.extraMealIds, action.item.id],
+        extraMeals: [...state.extraMeals, action.item],
         favoriteMealDeferred: false,
         dayMealsDeferred: false,
       };
@@ -403,7 +406,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         customRequest: null,
         // "I'll choose later" defers the whole weekly menu, including the
         // extra mains and any day assignments made so far.
-        extraMealIds: [],
+        extraMeals: [],
         extraMealLinks: [],
         dayMealAssignments: {},
         dayMealsDeferred: false,

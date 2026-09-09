@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import {
   PREFERRED_DAYS,
@@ -8,7 +7,6 @@ import {
   type PlanDayMealAssignments,
   type PreferredDayId,
 } from "@/features/plans/planCatalog";
-import { fetchMeals, type BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
 import { cn } from "@/lib/cn";
 import { useOrder } from "../state/OrderContext";
 
@@ -20,57 +18,33 @@ import { useOrder } from "../state/OrderContext";
  *
  * Pasted-link meals cannot be pinned to a day here — there is no catalog slug
  * to reference — so only named catalog meals appear in the pickers. The chef
- * settles those links during the scheduling conversation.
+ * settles those links during the scheduling conversation. All meal names come
+ * from order state (the picker step stored full items), so no catalog fetch is
+ * needed on this step.
  */
 export function PlanMealDaysSelect(): ReactElement {
   const { state, assignDayMeal, decideDayMeals, reset } = useOrder();
   const plan = findChefmatePlan(state.planId);
-
-  const [meals, setMeals] = useState<readonly BrowserMeal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchMeals()
-      .then((catalog) => {
-        if (!cancelled) setMeals(catalog);
-      })
-      .catch((caught: unknown) => {
-        if (!cancelled) {
-          setLoadError(
-            caught instanceof Error ? caught.message : "The menu could not be loaded right now.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const nameBySlug = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const meal of meals) map.set(meal.slug, meal.name);
-    return map;
-  }, [meals]);
 
   if (!plan) {
     return <div />;
   }
 
   /** Named weekly meals that can be pinned to a day, in slot order. */
-  const namedMeals = [
-    state.favoriteMealId,
-    state.secondFavoriteMealId,
-    ...state.extraMealIds,
-  ].filter((slug): slug is string => typeof slug === "string" && slug.length > 0);
+  const namedMeals: readonly { slug: string; name: string }[] = [
+    state.main && state.favoriteMealId === state.main.id
+      ? { slug: state.favoriteMealId, name: state.main.name }
+      : null,
+    state.secondFavoriteMealId && state.secondFavoriteMeal
+      ? { slug: state.secondFavoriteMealId, name: state.secondFavoriteMeal.name }
+      : null,
+    ...state.extraMeals.map((meal) => ({ slug: meal.id, name: meal.name })),
+  ].filter((entry): entry is { slug: string; name: string } => entry !== null);
   const assignments = state.dayMealAssignments as PlanDayMealAssignments;
   const assignedCount = Object.keys(assignments).length;
 
-  const mealLabel = (slug: string): string => nameBySlug.get(slug) ?? slug;
+  const mealLabel = (slug: string): string =>
+    namedMeals.find((meal) => meal.slug === slug)?.name ?? slug;
 
   return (
     <div className="flex w-full flex-col gap-7">
@@ -91,17 +65,6 @@ export function PlanMealDaysSelect(): ReactElement {
         <p className="max-w-2xl rounded-2xl bg-white/[0.08] px-4 py-3 text-sm text-[var(--color-bone)] ring-1 ring-white/10">
           You chose to settle your days later, so we&apos;ll match meals to days together then. Your
           named meals are saved to your menu.
-        </p>
-      ) : isLoading && !loadError ? (
-        <p role="status" className="text-sm text-[var(--color-bone)]/70">
-          Loading your meals…
-        </p>
-      ) : loadError ? (
-        <p
-          role="alert"
-          className="max-w-xl rounded-2xl bg-white/[0.08] px-4 py-3 text-sm text-[var(--color-bone)] ring-1 ring-white/10"
-        >
-          {loadError} Your meals are still saved — day matching can be settled with your chef.
         </p>
       ) : namedMeals.length === 0 ? (
         <p className="text-sm text-[var(--color-bone)]/70">
@@ -134,9 +97,9 @@ export function PlanMealDaysSelect(): ReactElement {
                   )}
                 >
                   <option value="">Chef&apos;s choice from my meals</option>
-                  {namedMeals.map((slug) => (
-                    <option key={slug} value={slug}>
-                      {mealLabel(slug)}
+                  {namedMeals.map((meal) => (
+                    <option key={meal.slug} value={meal.slug}>
+                      {meal.name}
                     </option>
                   ))}
                 </select>

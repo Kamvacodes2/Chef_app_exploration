@@ -209,7 +209,7 @@ export function ReviewStep(): ReactElement {
   const weeklyMenuNames = [
     favourite,
     secondFavourite,
-    ...state.extraMealIds.map((slug) => findItem(slug)?.name ?? slug),
+    ...state.extraMeals.map((meal) => meal.name),
     ...state.extraMealLinks.map((link) => `Linked meal (${link.source.toLowerCase()})`),
   ].filter((name): name is string => name !== null);
 

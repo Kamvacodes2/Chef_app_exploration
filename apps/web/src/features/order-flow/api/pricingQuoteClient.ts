@@ -85,7 +85,7 @@ export function buildPricingQuotePayload(
     | "secondFavoriteMealLink"
     | "favoriteMealDeferred"
     | "breakfastAddOn"
-    | "extraMealIds"
+    | "extraMeals"
     | "extraMealLinks"
     | "dayMealAssignments"
     | "dayMealsDeferred"
