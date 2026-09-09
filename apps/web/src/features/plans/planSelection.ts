@@ -6,6 +6,7 @@ import {
   type PreferredDayId,
 } from "./planCatalog";
 import type { MealLinkSource, PlanMealLink } from "../order-flow/state/orderReducer";
+import type { OrderMenuItem } from "../order-flow/types";
 
 export interface PlanSelectionInput {
   readonly planId: ChefmatePlanId | null;
@@ -16,7 +17,7 @@ export interface PlanSelectionInput {
   readonly favoriteMealLink: PlanMealLink | null;
   readonly secondFavoriteMealLink: PlanMealLink | null;
   readonly favoriteMealDeferred: boolean;
-  readonly extraMealIds: readonly string[];
+  readonly extraMeals: readonly OrderMenuItem[];
   readonly extraMealLinks: readonly PlanMealLink[];
   readonly dayMealAssignments: PlanDayMealAssignments;
   readonly dayMealsDeferred: boolean;
@@ -42,7 +43,7 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
   const deferred = input.favoriteMealDeferred;
   // Extras and day assignments only exist when the weekly menu itself was named
   // now (not deferred).
-  const extraMealSlugs = deferred ? [] : [...input.extraMealIds];
+  const extraMealSlugs = deferred ? [] : input.extraMeals.map((meal) => meal.id);
   const extraMealLinks = deferred
     ? []
     : input.extraMealLinks.map((link) => formatMealLink(link)).filter((v) => v !== null);
