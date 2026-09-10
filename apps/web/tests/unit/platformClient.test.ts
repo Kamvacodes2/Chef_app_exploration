@@ -654,6 +654,15 @@ describe("platformClient", () => {
       "Chefmate API URL is not configured",
     );
   });
+  it("accepts a chef application with an empty phone from legacy records", async () => {
+    const fetchImpl = mockFetch({
+      data: { items: [{ ...application, phone: "" }] },
+    });
+
+    await expect(fetchChefApplications({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(
+      [expect.objectContaining({ ...application, phone: "" })],
+    );
+  });
 });
 
 function mockFetch(body: unknown): typeof fetch {

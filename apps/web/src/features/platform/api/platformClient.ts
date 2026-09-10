@@ -190,7 +190,10 @@ const chefApplicationSchema = z.object({
   id: z.string().min(1),
   fullName: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().min(1),
+  phone: z
+    .string()
+    .nullish()
+    .transform((val) => val ?? ""),
   city: z.string().nullable(),
   serviceAreas: z.array(z.string()),
   experience: z.string(),
