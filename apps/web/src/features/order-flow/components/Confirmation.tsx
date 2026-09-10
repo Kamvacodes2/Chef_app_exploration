@@ -46,11 +46,16 @@ export function Confirmation(): ReactElement {
   const paystack = payment?.method === "PAYSTACK" ? payment.paystack : null;
   const isReviewRequest = bookingConfirmation?.status === "NEEDS_REVIEW";
   const isPlanRequest = isReviewRequest && Boolean(findChefmatePlan(state.planId)?.recurring);
-  const milestones = isPlanRequest
-    ? ["Plan request received", "Schedule review", "Payment details", "Plan activation"]
-    : isReviewRequest
-      ? ["Request received", "Chefmate review", "Price confirmation", "Chef matching"]
-      : ["Order received", "Payment review", "Chef matching", "Visit complete"];
+  // A plan checkout now initializes payment immediately, so the subscription
+  // value and bank details render right away; only the scheduling is reviewed.
+  const planAwaitingPayment = isPlanRequest && Boolean(bankTransfer ?? paystack);
+  const milestones = planAwaitingPayment
+    ? ["Order received", "Payment verification", "Schedule review", "Plan activation"]
+    : isPlanRequest
+      ? ["Plan request received", "Schedule review", "Payment details", "Plan activation"]
+      : isReviewRequest
+        ? ["Request received", "Chefmate review", "Price confirmation", "Chef matching"]
+        : ["Order received", "Payment review", "Chef matching", "Visit complete"];
 
   return (
     <div className="flex w-full flex-col items-center gap-6 py-8 text-center">
@@ -72,18 +77,22 @@ export function Confirmation(): ReactElement {
 
       <div className="flex flex-col gap-2">
         <h2 className="font-display text-4xl font-semibold text-[var(--color-bone)]">
-          {isPlanRequest
-            ? "Thank you. Your plan request is received."
-            : isReviewRequest
-              ? "Thank you. Your request is received."
-              : "Thank you for your order."}
+          {planAwaitingPayment
+            ? "Thank you for your order."
+            : isPlanRequest
+              ? "Thank you. Your plan request is received."
+              : isReviewRequest
+                ? "Thank you. Your request is received."
+                : "Thank you for your order."}
         </h2>
         <p className="mx-auto max-w-md text-sm text-[var(--color-bone)]/70">
-          {isPlanRequest
-            ? "We will confirm your recurring routine and monthly payment details before activating your plan."
-            : isReviewRequest
-              ? "Our team will review your recipe and email a tailored price before payment."
-              : `Thank you for ordering ${state.main?.name ?? "your meal"} for ${state.date ?? ""}${state.time ? " at " + state.time : ""}.`}
+          {planAwaitingPayment
+            ? "Your plan is ready to activate. Pay the first month with the details below and we will confirm your recurring schedule."
+            : isPlanRequest
+              ? "We will confirm your recurring routine and monthly payment details before activating your plan."
+              : isReviewRequest
+                ? "Our team will review your recipe and email a tailored price before payment."
+                : `Thank you for ordering ${state.main?.name ?? "your meal"} for ${state.date ?? ""}${state.time ? " at " + state.time : ""}.`}
         </p>
         {bankTransfer && (
           <p className="mx-auto max-w-md text-sm text-[var(--color-bone)]/70">
@@ -107,12 +116,17 @@ export function Confirmation(): ReactElement {
               : formatZar(bookingConfirmation.totalCents)
             : "Pending"}
         </DetailRow>
+        {planAwaitingPayment ? (
+          <DetailRow label="First session">{state.date ?? "Not selected"}</DetailRow>
+        ) : null}
       </div>
 
       {bankTransfer ? (
         <div className="w-full max-w-lg rounded-3xl bg-[var(--color-bone)] p-5 text-left text-[var(--color-oxblood)]">
           <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h3 className="font-display text-2xl font-semibold">Bank transfer</h3>
+            <h3 className="font-display text-2xl font-semibold">
+              {planAwaitingPayment ? "Bank transfer — first month" : "Bank transfer"}
+            </h3>
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]/60">
               {payment?.status}
             </span>

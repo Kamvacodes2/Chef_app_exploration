@@ -246,8 +246,8 @@ describe("order flow end-to-end", () => {
     s = orderReducer(s, { type: "NEXT" });
     expect(s.step).toBe("plan-week2");
 
+    // Deferring week 2 now auto-advances to the first-session checkpoint.
     s = orderReducer(s, { type: "DEFER_WEEK2" });
-    s = orderReducer(s, { type: "NEXT" });
     expect(s.step).toBe("plan-first-session");
 
     s = orderReducer(s, { type: "NEXT" });

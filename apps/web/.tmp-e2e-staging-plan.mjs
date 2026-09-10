@@ -64,11 +64,10 @@ try {
   console.log(`    Monday meal selected (${mondayPicked}) ✓`);
   await search.fill("");
 
-  console.log("==> 4. Defer fresh week-2 meal choices");
+  console.log("==> 4. Defer fresh week-2 meal choices (auto-advances)");
   await continueBtn(page).click();
   await step(page, "plan-week2");
   await page.getByRole("button", { name: /I'll do it later/i }).click();
-  await continueBtn(page).click();
   await step(page, "plan-first-session");
   console.log("    week 2 deferred and first-session checkpoint reached ✓");
   await continueBtn(page).click();

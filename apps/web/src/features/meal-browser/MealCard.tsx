@@ -105,10 +105,18 @@ export function MealCard({ meal, selected, onOpenDetail, onSelect }: MealCardPro
           event.stopPropagation();
           onSelect();
         }}
-        aria-label={`Choose ${meal.name}`}
-        className="absolute right-2 top-2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-oxblood)] text-lg font-bold leading-none text-[var(--color-bone)] shadow-lg transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-bone)]"
+        aria-label={selected ? `${meal.name} selected` : `Choose ${meal.name}`}
+        aria-pressed={selected}
+        className={cn(
+          "absolute right-2 top-2 z-20 flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold leading-none shadow-lg transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-bone)]",
+          // Selected meals swap the plus for a cream/white check so the
+          // choice is obvious at a glance.
+          selected
+            ? "bg-[var(--color-bone)] text-[var(--color-oxblood)]"
+            : "bg-[var(--color-oxblood)] text-[var(--color-bone)]",
+        )}
       >
-        <span aria-hidden="true">+</span>
+        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
       </button>
     </article>
   );

@@ -176,6 +176,14 @@ function parsePricingPayload(body: unknown): PricingPayload {
               ),
             )
           : {},
+        dayTimeSlots: isRecord(body.planSelection.dayTimeSlots)
+          ? Object.fromEntries(
+              Object.entries(body.planSelection.dayTimeSlots).filter(
+                (entry): entry is [string, string | null] =>
+                  entry[1] === null || typeof entry[1] === "string",
+              ),
+            )
+          : {},
         firstSessionDate: nullableStringField(body.planSelection, "firstSessionDate"),
       }
     : undefined;

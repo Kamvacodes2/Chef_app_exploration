@@ -7,10 +7,12 @@ export const CHEFMATE_PLANS = [
     savings: null,
     price: "From R527.85 / session",
     priceCents: 52785,
-    description: "A once-off session for busy weeknights, family dinners, or when you need a break.",
+    description:
+      "A once-off session for busy weeknights, family dinners, or when you need a break.",
     image: "/images/pricing-plans/chefmate_tonight.jpg",
     alt: "Two people enjoying a freshly cooked meal together at home",
-    overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(86, 27, 24, 0.2) 34%, rgba(86, 27, 24, 0.78) 58%, rgba(86, 27, 24, 0.98) 100%)",
+    overlay:
+      "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(86, 27, 24, 0.2) 34%, rgba(86, 27, 24, 0.78) 58%, rgba(86, 27, 24, 0.98) 100%)",
     featured: false,
     recurring: false,
   },
@@ -25,7 +27,8 @@ export const CHEFMATE_PLANS = [
     description: "Four sessions a month for a little more breathing room during the week.",
     image: "/images/pricing-plans/chefmate_rhythm.jpg",
     alt: "A customer enjoying a quiet meal at home",
-    overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(125, 44, 39, 0.22) 34%, rgba(111, 39, 33, 0.8) 58%, rgba(86, 27, 24, 0.98) 100%)",
+    overlay:
+      "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(125, 44, 39, 0.22) 34%, rgba(111, 39, 33, 0.8) 58%, rgba(86, 27, 24, 0.98) 100%)",
     featured: true,
     recurring: true,
   },
@@ -40,7 +43,8 @@ export const CHEFMATE_PLANS = [
     description: "Eight sessions a month for households that want dinner covered more often.",
     image: "/images/pricing-plans/chefmate_family.jpg",
     alt: "A family sharing a relaxed dinner together at home",
-    overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(122, 82, 39, 0.22) 34%, rgba(121, 75, 35, 0.76) 58%, rgba(86, 27, 24, 0.98) 100%)",
+    overlay:
+      "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(122, 82, 39, 0.22) 34%, rgba(121, 75, 35, 0.76) 58%, rgba(86, 27, 24, 0.98) 100%)",
     featured: false,
     recurring: true,
   },
@@ -55,7 +59,8 @@ export const CHEFMATE_PLANS = [
     description: "Twelve sessions a month for regular dinner help, easy evenings, and leftovers.",
     image: "/images/pricing-plans/chefmate_full_house.jpg",
     alt: "A family enjoying a generous home-cooked meal together",
-    overlay: "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(151, 70, 45, 0.22) 34%, rgba(132, 50, 34, 0.78) 58%, rgba(86, 27, 24, 0.98) 100%)",
+    overlay:
+      "linear-gradient(180deg, rgba(86, 27, 24, 0.08) 0%, rgba(151, 70, 45, 0.22) 34%, rgba(132, 50, 34, 0.78) 58%, rgba(86, 27, 24, 0.98) 100%)",
     featured: false,
     recurring: true,
   },
@@ -112,6 +117,13 @@ export function isDayTimeWindowId(value: string): value is DayTimeWindowId {
 }
 
 export type PlanDayTimeWindows = Readonly<Partial<Record<PreferredDayId, DayTimeWindowId | null>>>;
+
+/**
+ * Exact preferred start time per weekday (e.g. "14:00"), chosen inside the
+ * preferred window. Kept separate from dayTimeWindows so the window math in
+ * firstSessionDate keeps working when only a window was chosen.
+ */
+export type PlanDayTimeSlots = Readonly<Partial<Record<PreferredDayId, string | null>>>;
 
 /**
  * How many mains a customer may plan for a single day. A session cooks up to
@@ -178,6 +190,8 @@ export interface ChefmatePlanSelection {
   readonly week2Deferred?: boolean;
   /** Preferred time window per weekday. */
   readonly dayTimeWindows?: PlanDayTimeWindows | null;
+  /** Exact preferred start time per weekday, chosen inside its window. */
+  readonly dayTimeSlots?: PlanDayTimeSlots | null;
   /** Auto-computed nearest bookable date (SAST) for the first session. */
   readonly firstSessionDate?: string | null;
 }

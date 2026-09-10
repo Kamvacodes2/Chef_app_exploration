@@ -218,6 +218,59 @@ describe("Confirmation — request needing review", () => {
   });
 });
 
+describe("Confirmation — subscription plan checkout", () => {
+  const planCheckout = {
+    reference: "CM-3001",
+    status: "NEEDS_REVIEW",
+    totalCents: 379_900,
+    payment: {
+      method: "BANK_TRANSFER",
+      provider: "BANK_TRANSFER",
+      status: "PENDING",
+      bankTransfer,
+      paystack: null,
+    },
+  } as unknown as OrderController["bookingConfirmation"];
+
+  it("shows the subscription value and bank details instead of a review notice", () => {
+    renderWith(
+      controller({
+        bookingConfirmation: planCheckout,
+        state: { ...INITIAL_ORDER_STATE, planId: "family", main: null, date: "2026-09-11" },
+      }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Thank you for your order." })).toBeInTheDocument();
+    expect(screen.getByText(/Pay the first month with the details below/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\s?799[.,]00/)).toBeInTheDocument();
+    expect(screen.getByText("Bank transfer — first month")).toBeInTheDocument();
+    expect(screen.getByText("000123456")).toBeInTheDocument();
+    expect(screen.getByText("CM-REF-001")).toBeInTheDocument();
+    expect(screen.getByText("Payment verification")).toBeInTheDocument();
+  });
+
+  it("falls back to the review notice when payment was not initialized", () => {
+    renderWith(
+      controller({
+        bookingConfirmation: {
+          id: "test-cm-3002",
+          reference: "CM-3002",
+          status: "NEEDS_REVIEW",
+          subtotalCents: 379_900,
+          discountCents: 0,
+          totalCents: 379_900,
+          payment: null,
+        },
+        state: { ...INITIAL_ORDER_STATE, planId: "family" },
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Thank you. Your plan request is received." }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("Confirmation — no confirmation yet", () => {
   it("falls back to pending placeholders rather than blank fields", () => {
     renderWith(controller({ bookingConfirmation: null }));

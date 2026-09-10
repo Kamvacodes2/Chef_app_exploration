@@ -220,8 +220,8 @@ describe("LandingPage", () => {
         name: "Would you like to plan the following week too?",
       }),
     ).toBeInTheDocument();
+    // "I'll do it later" now advances straight to the first-session step.
     fireEvent.click(screen.getByRole("button", { name: /I'll do it later/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(
       await screen.findByRole("heading", { name: "Order your first session now?" }),
     ).toBeInTheDocument();

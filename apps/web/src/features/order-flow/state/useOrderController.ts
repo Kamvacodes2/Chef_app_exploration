@@ -52,6 +52,8 @@ export interface OrderController {
   readonly togglePreferredDay: (day: PreferredDayId) => void;
   readonly decidePlanDays: () => void;
   readonly setDayTimeWindow?: (day: PreferredDayId, window: DayTimeWindowId | null) => void;
+  /** Exact preferred start time inside the chosen window. */
+  readonly setDayTimeSlot?: (day: PreferredDayId, slot: string | null) => void;
   /** Week-1 per-day planning: toggle a main / oats / link for a day. */
   readonly toggleDayMeal?: (day: PreferredDayId, item: OrderMenuItem) => void;
   readonly toggleWeek2DayMeal?: (day: PreferredDayId, item: OrderMenuItem) => void;
@@ -222,6 +224,7 @@ export function useOrderController(): OrderController {
         dayMealAssignments: state.dayMealAssignments,
         dayMealsDeferred: state.dayMealsDeferred,
         dayTimeWindows: state.dayTimeWindows,
+        dayTimeSlots: state.dayTimeSlots,
         dayMealPlans: state.dayMealPlans,
         week2DayMealPlans: state.week2DayMealPlans,
         week2Deferred: state.week2Deferred,
@@ -247,6 +250,7 @@ export function useOrderController(): OrderController {
       state.sides,
       state.favoriteMealDeferred,
       state.dayTimeWindows,
+      state.dayTimeSlots,
       state.dayMealPlans,
       state.week2DayMealPlans,
       state.week2Deferred,
@@ -424,6 +428,11 @@ export function useOrderController(): OrderController {
     setDayTimeWindow: useCallback(
       (day: PreferredDayId, window: DayTimeWindowId | null) =>
         dispatch({ type: "SET_DAY_TIME_WINDOW", day, window }),
+      [],
+    ),
+    setDayTimeSlot: useCallback(
+      (day: PreferredDayId, slot: string | null) =>
+        dispatch({ type: "SET_DAY_TIME_SLOT", day, slot }),
       [],
     ),
     toggleDayMeal: useCallback(

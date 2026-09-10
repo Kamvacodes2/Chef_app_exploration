@@ -64,6 +64,8 @@ export interface PlanSelection {
   }[];
   readonly week2Deferred?: boolean;
   readonly dayTimeWindows?: Readonly<Record<string, string | null>>;
+  /** Exact preferred start time per weekday (HH:mm), chosen inside its window. */
+  readonly dayTimeSlots?: Readonly<Record<string, string | null>>;
   readonly firstSessionDate?: string | null;
 }
 

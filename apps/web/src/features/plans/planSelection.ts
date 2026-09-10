@@ -4,6 +4,7 @@ import {
   type ChefmatePlanSelection,
   type PlanDayMealAssignments,
   type PlanDayMealPlan,
+  type PlanDayTimeSlots,
   type PlanDayTimeWindows,
   type PreferredDayId,
 } from "./planCatalog";
@@ -24,6 +25,7 @@ export interface PlanSelectionInput {
   readonly dayMealAssignments: PlanDayMealAssignments;
   readonly dayMealsDeferred: boolean;
   readonly dayTimeWindows: PlanDayTimeWindows;
+  readonly dayTimeSlots: PlanDayTimeSlots;
   readonly dayMealPlans: readonly PlanDayMealPlan[];
   readonly week2DayMealPlans: readonly PlanDayMealPlan[] | null;
   readonly week2Deferred: boolean;
@@ -69,9 +71,7 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
   const plansEmitted = recurring && !deferred && hasDayPlanContent(input.dayMealPlans);
   const dayMealPlans = plansEmitted
     ? input.dayMealPlans
-        .filter(
-          (plan) => plan.mainSlugs.length > 0 || plan.overnightOats || plan.links.length > 0,
-        )
+        .filter((plan) => plan.mainSlugs.length > 0 || plan.overnightOats || plan.links.length > 0)
         .map(({ day, mainSlugs, overnightOats, links }) => ({
           day,
           mainSlugs: [...mainSlugs],
@@ -80,12 +80,13 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
         }))
     : null;
   const week2Emitted =
-    recurring && !deferred && input.week2DayMealPlans !== null && hasDayPlanContent(input.week2DayMealPlans);
+    recurring &&
+    !deferred &&
+    input.week2DayMealPlans !== null &&
+    hasDayPlanContent(input.week2DayMealPlans);
   const week2DayMealPlans = week2Emitted
     ? (input.week2DayMealPlans ?? [])
-        .filter(
-          (plan) => plan.mainSlugs.length > 0 || plan.overnightOats || plan.links.length > 0,
-        )
+        .filter((plan) => plan.mainSlugs.length > 0 || plan.overnightOats || plan.links.length > 0)
         .map(({ day, mainSlugs, overnightOats, links }) => ({
           day,
           mainSlugs: [...mainSlugs],
@@ -97,7 +98,13 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
   const windowsEmitted =
     recurring &&
     Object.values(input.dayTimeWindows).some((value) => value !== null && value !== undefined);
-  const dayTimeWindows: PlanDayTimeWindows | null = windowsEmitted ? { ...input.dayTimeWindows } : null;
+  const dayTimeWindows: PlanDayTimeWindows | null = windowsEmitted
+    ? { ...input.dayTimeWindows }
+    : null;
+  const slotsEmitted =
+    recurring &&
+    Object.values(input.dayTimeSlots).some((value) => value !== null && value !== undefined);
+  const dayTimeSlots: PlanDayTimeSlots | null = slotsEmitted ? { ...input.dayTimeSlots } : null;
 
   const hasDayPlans = plansEmitted || week2Emitted;
 
@@ -132,6 +139,7 @@ export function buildPlanSelection(input: PlanSelectionInput): ChefmatePlanSelec
     ...(week2DayMealPlans ? { week2DayMealPlans } : {}),
     ...(input.week2Deferred && recurring ? { week2Deferred: true } : {}),
     ...(dayTimeWindows ? { dayTimeWindows } : {}),
+    ...(dayTimeSlots ? { dayTimeSlots } : {}),
     ...(input.firstSessionDate ? { firstSessionDate: input.firstSessionDate } : {}),
   };
 }

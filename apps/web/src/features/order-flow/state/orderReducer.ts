@@ -8,6 +8,7 @@ import {
   type ChefmatePlanId,
   type DayTimeWindowId,
   type PlanDayMealPlan,
+  type PlanDayTimeSlots,
   type PlanDayTimeWindows,
   type PlanDayMealAssignments,
   type PreferredDayId,
@@ -69,6 +70,8 @@ export interface OrderState {
   readonly dayMealsDeferred: boolean;
   /** Preferred time window per weekday ("morning" / "afternoon" / "evening"). */
   readonly dayTimeWindows: PlanDayTimeWindows;
+  /** Exact preferred start time per weekday, chosen inside its window. */
+  readonly dayTimeSlots: PlanDayTimeSlots;
   /** Week-1 per-day meal plans (day -> mains + oats + links), in preferred-day order. */
   readonly dayMealPlans: readonly PlanDayMealPlan[];
   /** Week-2 per-day meal plans, only when the customer opted to plan week 2 now. */
@@ -109,6 +112,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   dayMealAssignments: Object.freeze({}),
   dayMealsDeferred: false,
   dayTimeWindows: Object.freeze({}),
+  dayTimeSlots: Object.freeze({}),
   dayMealPlans: Object.freeze([]),
   week2DayMealPlans: null,
   week2Deferred: false,
@@ -141,6 +145,7 @@ export type OrderAction =
   | { type: "TOGGLE_PREFERRED_DAY"; day: PreferredDayId }
   | { type: "DECIDE_PLAN_DAYS" }
   | { type: "SET_DAY_TIME_WINDOW"; day: PreferredDayId; window: DayTimeWindowId | null }
+  | { type: "SET_DAY_TIME_SLOT"; day: PreferredDayId; slot: string | null }
   | { type: "TOGGLE_DAY_MEAL"; day: PreferredDayId; item: OrderMenuItem }
   | { type: "TOGGLE_WEEK2_DAY_MEAL"; day: PreferredDayId; item: OrderMenuItem }
   | { type: "TOGGLE_DAY_OATS"; day: PreferredDayId }
@@ -329,10 +334,14 @@ function removePlanDayLink(
 function commitDayMealsState(state: OrderState): OrderState {
   const suggested = firstSessionDate(state.preferredDays, state.dayTimeWindows, new Date());
   const firstDay = state.preferredDays[0];
+  // An exact chosen start time wins over the window's earliest slot.
+  const firstExactSlot = firstDay ? (state.dayTimeSlots[firstDay] ?? null) : null;
   const firstWindow = firstDay ? state.dayTimeWindows[firstDay] : null;
-  const firstSlot = firstWindow
-    ? (DAY_TIME_WINDOWS.find((window) => window.id === firstWindow)?.slots[0] ?? null)
-    : null;
+  const firstSlot =
+    firstExactSlot ??
+    (firstWindow
+      ? (DAY_TIME_WINDOWS.find((window) => window.id === firstWindow)?.slots[0] ?? null)
+      : null);
   return {
     ...state,
     firstSessionDate: state.firstSessionDate ?? suggested,
@@ -479,7 +488,24 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       // Clearing a window for a day that is no longer preferred drops the key.
       if (action.window === null && !state.preferredDays.includes(action.day))
         delete windows[action.day];
-      return { ...state, dayTimeWindows: windows };
+      // Switching a window invalidates that day's exact slot if it falls outside it.
+      const slots: Record<string, string | null> = { ...state.dayTimeSlots };
+      if (action.window === null) {
+        delete slots[action.day];
+      } else {
+        const windowDef = DAY_TIME_WINDOWS.find((candidate) => candidate.id === action.window);
+        const currentSlot = slots[action.day];
+        if (currentSlot && windowDef && !windowDef.slots.includes(currentSlot)) {
+          delete slots[action.day];
+        }
+      }
+      return { ...state, dayTimeWindows: windows, dayTimeSlots: slots };
+    }
+    case "SET_DAY_TIME_SLOT": {
+      const slots: Record<string, string | null> = { ...state.dayTimeSlots };
+      if (action.slot === null) delete slots[action.day];
+      else slots[action.day] = action.slot;
+      return { ...state, dayTimeSlots: slots };
     }
     case "TOGGLE_DAY_MEAL": {
       const nextPlans = togglePlanDayMeal(state.dayMealPlans, action.day, action.item);
@@ -553,13 +579,16 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
             week2DayMealPlans: removePlanDayLink(state.week2DayMealPlans, action.day, action.url),
           };
     case "START_WEEK2":
+      // The week-2 planner swaps in immediately (no extra Continue click);
+      // the step itself only advances once the planner's Continue is used.
       return {
         ...state,
         week2DayMealPlans: Object.freeze([]),
         week2Deferred: false,
       };
     case "DEFER_WEEK2":
-      return { ...state, week2DayMealPlans: null, week2Deferred: true };
+      // Choosing "I'll do it later" advances straight to the next step.
+      return { ...state, week2DayMealPlans: null, week2Deferred: true, step: stepAfter(state) };
     case "COPY_WEEK1_TO_WEEK2":
       return { ...state, week2DayMealPlans: state.dayMealPlans, week2Deferred: false };
     case "CONFIRM_FIRST_SESSION":
@@ -850,6 +879,7 @@ export function selectCanContinue(state: OrderState, usesAccountContact = false)
     case "plan-meals":
       return true;
     case "plan-week2":
+      // Both week-2 choices auto-advance; Continue is a no-op fallback.
       return state.week2DayMealPlans !== null || state.week2Deferred;
     case "plan-first-session":
       return true;

@@ -90,6 +90,7 @@ export function buildPricingQuotePayload(
     | "dayMealAssignments"
     | "dayMealsDeferred"
     | "dayTimeWindows"
+    | "dayTimeSlots"
     | "dayMealPlans"
     | "week2DayMealPlans"
     | "week2Deferred"
