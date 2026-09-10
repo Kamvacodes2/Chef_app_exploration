@@ -86,6 +86,43 @@ export async function fetchCustomerSubscription(
   return subscriptionResponseSchema.parse(await response.json()).data.subscription;
 }
 
+export interface RescheduleCustomerBookingInput {
+  readonly scheduledDate: string;
+  readonly timeSlot: string;
+  readonly reason?: string | null;
+}
+
+export async function rescheduleCustomerBooking(
+  bookingId: string,
+  input: RescheduleCustomerBookingInput,
+  options: CustomerBookingsRequestOptions = {},
+): Promise<CustomerBooking> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      `/api/v1/account/booking-requests/${encodeURIComponent(bookingId)}/reschedule`,
+    ),
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        scheduledDate: input.scheduledDate,
+        timeSlot: input.timeSlot,
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate could not reschedule your booking."),
+    );
+  }
+  const parsed = z.object({ data: customerBookingSchema }).parse(await response.json());
+  return parsed.data;
+}
+
 function apiUrl(baseUrl: string, path: string): string {
   const base = baseUrl.trim().replace(/\/$/, "");
   if (!base) throw new Error("Chefmate API URL is not configured.");
