@@ -322,7 +322,9 @@ export function OrderFlow(): ReactElement {
                     disabled={isSubmittingRequest || isPricingLoading || !pricingQuote}
                     className="rounded-2xl bg-[var(--color-bone)] px-8 py-3 font-display text-base text-[var(--color-oxblood)] shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-bone)]"
                   >
-                    Checkout
+                    {pricingQuote?.totalCents === 0 && pricingQuote?.plan?.recurring
+                      ? "Confirm Booking"
+                      : "Checkout"}
                   </button>
                 ) : (
                   <button

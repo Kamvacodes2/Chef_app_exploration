@@ -180,7 +180,7 @@ export type OrderAction =
   | { type: "SET_CUSTOM_REQUEST"; text: string }
   | { type: "CLEAR_CUSTOM_REQUEST" }
   | { type: "SET_BREAKFAST_ADD_ON"; value: boolean }
-  | { type: "SET_DATE"; date: string }
+  | { type: "SET_DATE"; date: string | null }
   | { type: "SET_TIME"; time: string | null }
   | { type: "SET_ADDRESS_FIELD"; field: keyof Address; value: string }
   | { type: "SET_CONTACT_FIELD"; field: keyof ContactDetails; value: string }

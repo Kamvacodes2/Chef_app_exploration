@@ -6,6 +6,7 @@ export const CHEFMATE_BUSINESS_TIME_ZONE = "Africa/Johannesburg";
  * with the server even when the availability API is unreachable.
  */
 export const LEAD_TIME_HOURS = 24;
+export const NEXT_DAY_CUTOFF_HOUR = 12;
 
 export interface BusinessDateParts {
   readonly year: number;
@@ -75,6 +76,13 @@ export function isBookableJohannesburgTimeSlot(
   if (!Number.isInteger(hour) || !Number.isInteger(minute)) return false;
 
   const dayDiff = dayDiffFromISODate(date, today);
+  if (dayDiff <= 0) return false;
+
+  // Next-day orders must be placed before 12:00 PM (noon) in Johannesburg
+  if (dayDiff === 1 && now.hour >= NEXT_DAY_CUTOFF_HOUR) {
+    return false;
+  }
+
   const leadMinutes = dayDiff * 24 * 60 + (hour * 60 + minute - (now.hour * 60 + now.minute));
   return leadMinutes >= LEAD_TIME_HOURS * 60;
 }

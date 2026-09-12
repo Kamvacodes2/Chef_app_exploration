@@ -191,4 +191,35 @@ describe("ReviewStep — main dish never shows an individual price", () => {
 
     expect(screen.queryByText("Overnight Oats Trio")).not.toBeInTheDocument();
   });
+
+  it("displays 'Included with subscription' and suppresses item/total prices for a subscription session reorder", () => {
+    const base = controller();
+    renderWith(
+      controller({
+        state: base.state,
+        pricingQuote: {
+          subtotalCents: 0,
+          discountCents: 0,
+          totalCents: 0,
+          items: [
+            { kind: "main", slug: main.id, name: main.name, priceCents: 0, sortOrder: 0 },
+            { kind: "side", slug: side.id, name: side.name, priceCents: 0, sortOrder: 1 },
+            { kind: "dessert", slug: dessert.id, name: dessert.name, priceCents: 0, sortOrder: 2 },
+          ],
+          plan: {
+            id: "rhythm",
+            name: "chefmate rhythm",
+            sessions: "4 sessions",
+            recurring: true,
+            priceCents: 199900,
+          },
+        },
+      }),
+    );
+
+    expect(screen.getByText("Included with subscription")).toBeInTheDocument();
+    expect(screen.getByText("Your session")).toBeInTheDocument();
+    expect(screen.queryByText("Order total")).not.toBeInTheDocument();
+    expect(screen.queryByText("Estimated order total")).not.toBeInTheDocument();
+  });
 });

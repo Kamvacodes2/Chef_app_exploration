@@ -61,13 +61,13 @@ function renderSchedule(overrides: Partial<OrderController> = {}) {
     ...overrides,
   };
 
-  render(
+  const renderResult = render(
     <OrderContext.Provider value={controller}>
       <ScheduleSelect />
     </OrderContext.Provider>,
   );
 
-  return controller;
+  return { ...renderResult, controller };
 }
 
 describe("ScheduleSelect", () => {
@@ -137,33 +137,80 @@ describe("ScheduleSelect", () => {
     }
   });
 
-  it("shows the 24h lead-time notice with the earliest bookable day", () => {
+  it("shows the earliest bookable day as tomorrow when before 12:00 PM, and advances to day-after when past 12:00 PM", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-15T10:30:00.000Z")); // 12:30 Johannesburg
 
+    // 1) Saturday 10:30 AM JHB (08:30 UTC) -> Before 12:00 PM cutoff, Aug 16 (tomorrow) is bookable.
+    vi.setSystemTime(new Date("2026-08-15T08:30:00.000Z"));
     try {
-      renderSchedule({});
-
-      // Window closes 2026-08-16 12:30 JHB; tomorrow's 20:00 slot is beyond, so Aug 16 is bookable.
-      expect(screen.getByText(/at least 24 hours/i)).toBeInTheDocument();
+      const { unmount } = renderSchedule({});
+      expect(screen.getByText(/at least 24 hours of lead time/i)).toBeInTheDocument();
       expect(screen.getByText(/earliest day you can book is/i)).toBeInTheDocument();
       expect(screen.getByText("16 August 2026")).toBeInTheDocument();
+      unmount();
+    } finally {
+      vi.useRealTimers();
+    }
+
+    // 2) Saturday 12:30 PM JHB (10:30 UTC) -> Past 12:00 PM cutoff, Aug 16 is NOT bookable, advances to Aug 17.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T10:30:00.000Z"));
+    try {
+      renderSchedule({});
+      expect(screen.getByText(/at least 24 hours of lead time/i)).toBeInTheDocument();
+      expect(screen.getByText(/earliest day you can book is/i)).toBeInTheDocument();
+      expect(screen.getByText("17 August 2026")).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("disables slots inside the 24h lead-time window while leaving later slots selectable", () => {
+  it("disables next-day slots entirely when ordered after 12:00 PM, but enables future day slots", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-15T13:19:00.000Z")); // 15:19 Johannesburg
+    // Saturday at 14:00 Johannesburg (12:00 UTC)
+    vi.setSystemTime(new Date("2026-08-15T12:00:00.000Z"));
 
     try {
-      renderSchedule({ state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-16" } });
+      // 1) Attempting to view Sunday (next day) 2026-08-16
+      const { unmount } = renderSchedule({
+        state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-16" },
+      });
 
-      fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
+      // All time period buttons (Morning, Afternoon, Evening) must be disabled because Saturday 14:00 is past the 12:00 PM cutoff
+      expect(screen.getByRole("button", { name: /morning/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /afternoon/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /evening/i })).toBeDisabled();
+      unmount();
 
-      // 2026-08-16 15:00 JHB is only 23.7h away -> inside window.
-      expect(screen.getByRole("button", { name: "15:00" })).toBeDisabled();
+      // 2) Viewing Monday (day after tomorrow) 2026-08-17
+      renderSchedule({
+        state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-17" },
+      });
+      const eveningButton = screen.getByRole("button", { name: /evening/i });
+      expect(eveningButton).not.toBeDisabled();
+      fireEvent.click(eveningButton);
+      // Monday 17:00 is > 24 hours away and not next-day cutoff -> enabled
+      expect(screen.getByRole("button", { name: "17:00" })).not.toBeDisabled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("enables next-day slots that satisfy 24h lead time when ordered before 12:00 PM", () => {
+    vi.useFakeTimers();
+    // Saturday at 10:00 AM Johannesburg (08:00 UTC)
+    vi.setSystemTime(new Date("2026-08-15T08:00:00.000Z"));
+
+    try {
+      renderSchedule({
+        state: { ...INITIAL_ORDER_STATE, step: "schedule", date: "2026-08-16" },
+      });
+
+      // Evening (17:00) is 31 hours away and ordered before 12:00 PM -> enabled
+      const eveningButton = screen.getByRole("button", { name: /evening/i });
+      expect(eveningButton).not.toBeDisabled();
+      fireEvent.click(eveningButton);
+      expect(screen.getByRole("button", { name: "17:00" })).not.toBeDisabled();
     } finally {
       vi.useRealTimers();
     }

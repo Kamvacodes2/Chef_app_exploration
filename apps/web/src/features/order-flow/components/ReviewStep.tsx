@@ -132,7 +132,9 @@ export function ReviewStep(): ReactElement {
     ? Math.round(total * 100)
     : (pricingQuote?.totalCents ?? Math.round(total * 100));
   const isCustomRequest = state.main?.id === "custom-request";
-  const isPlanRequest = Boolean(plan?.recurring);
+  const isSubscriptionSession =
+    pricingQuote?.totalCents === 0 && Boolean(pricingQuote?.plan?.recurring);
+  const isPlanRequest = Boolean(plan?.recurring) && !isSubscriptionSession;
   const isEstimatedPricing = !isCustomRequest && !hasPricingQuote;
   const totalLabel = isCustomRequest
     ? "Custom quote"
@@ -158,17 +160,19 @@ export function ReviewStep(): ReactElement {
       : plan
         ? "Package price"
         : "Items";
-  const nextStepCopy = isCustomRequest
-    ? "Send your request and Chefmate will review the recipe, confirm your tailored price, then send payment details before matching a chef."
-    : isEstimatedPricing
-      ? isPlanRequest
-        ? "Estimated from your plan choices while Chefmate confirms the latest server price. You can send the plan request once the confirmed quote is ready."
-        : "Estimated from your selections while Chefmate confirms the latest server price. Checkout will unlock once the confirmed quote is ready."
-      : isPlanRequest
-        ? "Send your plan request. Chefmate will confirm your recurring session schedule and email payment details before activating the plan."
-        : plan
-          ? "Once payment is confirmed, we confirm your first session and keep these package preferences with your booking."
-          : "Once payment is confirmed, we match you with an available Chefmate.";
+  const nextStepCopy = isSubscriptionSession
+    ? "This session is included with your subscription. We'll confirm your booking and match you with an available Chefmate."
+    : isCustomRequest
+      ? "Send your request and Chefmate will review the recipe, confirm your tailored price, then send payment details before matching a chef."
+      : isEstimatedPricing
+        ? isPlanRequest
+          ? "Estimated from your plan choices while Chefmate confirms the latest server price. You can send the plan request once the confirmed quote is ready."
+          : "Estimated from your selections while Chefmate confirms the latest server price. Checkout will unlock once the confirmed quote is ready."
+        : isPlanRequest
+          ? "Send your plan request. Chefmate will confirm your recurring session schedule and email payment details before activating the plan."
+          : plan
+            ? "Once payment is confirmed, we confirm your first session and keep these package preferences with your booking."
+            : "Once payment is confirmed, we match you with an available Chefmate.";
   // The favourite is a live-catalog slug, so its display name comes from the
   // item the plan step stored; `findItem` only still resolves legacy ids.
   const favourite = state.favoriteMealId
@@ -443,16 +447,18 @@ export function ReviewStep(): ReactElement {
             ) : null}
           </div>
 
-          <GiftCodeForm />
+          {!isSubscriptionSession ? <GiftCodeForm /> : null}
         </div>
 
         <aside className="flex h-fit flex-col gap-4 rounded-3xl bg-[var(--color-bone)] p-5 text-[var(--color-oxblood)] lg:sticky lg:top-4">
           <h3 className="font-display text-2xl font-semibold">
-            {isCustomRequest || isPlanRequest
-              ? "What happens next"
-              : plan
-                ? "Your package"
-                : "What happens next"}
+            {isSubscriptionSession
+              ? "Your session"
+              : isCustomRequest || isPlanRequest
+                ? "What happens next"
+                : plan
+                  ? "Your package"
+                  : "What happens next"}
           </h3>
           <div className="flex flex-col gap-2 border-b border-[var(--color-oxblood)]/15 pb-3">
             {plan ? (
@@ -460,32 +466,42 @@ export function ReviewStep(): ReactElement {
                 {plan.name} - {plan.sessions}
               </p>
             ) : null}
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-[var(--color-charcoal)]/75">{totalLabel}</span>
-              <span className="font-display text-2xl font-semibold">
-                {isCustomRequest
-                  ? "To be confirmed"
-                  : totalCents === undefined
-                    ? "--"
-                    : formatZarCents(totalCents)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
-              <span>{subtotalLabel}</span>
-              <span>
-                {isCustomRequest
-                  ? "Chefmate will confirm"
-                  : subtotalCents === undefined
-                    ? "--"
-                    : formatZarCents(subtotalCents)}
-              </span>
-            </div>
-            {discountCents > 0 ? (
-              <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
-                <span>Discount</span>
-                <span>-{formatZarCents(discountCents)}</span>
+            {isSubscriptionSession ? (
+              <div className="flex items-baseline justify-between gap-4 py-1">
+                <span className="font-display text-xl font-semibold text-[var(--color-oxblood)]">
+                  Included with subscription
+                </span>
               </div>
-            ) : null}
+            ) : (
+              <>
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-sm text-[var(--color-charcoal)]/75">{totalLabel}</span>
+                  <span className="font-display text-2xl font-semibold">
+                    {isCustomRequest
+                      ? "To be confirmed"
+                      : totalCents === undefined
+                        ? "--"
+                        : formatZarCents(totalCents)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
+                  <span>{subtotalLabel}</span>
+                  <span>
+                    {isCustomRequest
+                      ? "Chefmate will confirm"
+                      : subtotalCents === undefined
+                        ? "--"
+                        : formatZarCents(subtotalCents)}
+                  </span>
+                </div>
+                {discountCents > 0 ? (
+                  <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
+                    <span>Discount</span>
+                    <span>-{formatZarCents(discountCents)}</span>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
           <p className="text-sm leading-6 text-[var(--color-charcoal)]/75">{nextStepCopy}</p>
         </aside>

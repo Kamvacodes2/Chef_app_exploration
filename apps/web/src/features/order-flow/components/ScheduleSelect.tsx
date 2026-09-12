@@ -69,7 +69,7 @@ function monthLabel(d: Date): string {
   return d.toLocaleDateString("en-ZA", { month: "long", year: "numeric" });
 }
 
-function buildMonthDays(month: Date, todayIso: string): readonly CalendarDay[] {
+function buildMonthDays(month: Date, earliestBookableIso: string): readonly CalendarDay[] {
   const days: CalendarDay[] = [];
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
@@ -77,7 +77,7 @@ function buildMonthDays(month: Date, todayIso: string): readonly CalendarDay[] {
 
   for (let day = 1; day <= lastDate; day += 1) {
     const iso = toISODate(new Date(year, monthIndex, day));
-    days.push({ iso, label: String(day), disabled: iso < todayIso });
+    days.push({ iso, label: String(day), disabled: iso < earliestBookableIso });
   }
   return days;
 }
@@ -157,7 +157,7 @@ export function ScheduleSelect(): ReactElement {
   const selectedDateLabel = selectedDate ? friendlyDate(selectedDate) : "Choose a day";
   const activePeriodConfig = TIME_PERIODS.find((period) => period.id === activePeriod) ?? null;
 
-  // 24h lead-time notice: earliest bookable date is today+1 (or today+2 if no
+  // 24h lead-time and 12pm next-day cutoff: earliest bookable date is today+1 (or today+2 if no
   // tomorrow slot clears the window yet).
   const earliestBookableIso = useMemo(() => {
     const tomorrowIso = addDaysISO(todayIso, 1);
@@ -167,6 +167,13 @@ export function ScheduleSelect(): ReactElement {
     );
     return anyTomorrow ? tomorrowIso : dayAfterIso;
   }, [now, todayIso]);
+
+  useEffect(() => {
+    if (state.date && state.date < earliestBookableIso) {
+      setDate(null);
+      setTime(null);
+    }
+  }, [earliestBookableIso, setDate, setTime, state.date]);
 
   const days = useMemo(
     () => buildMonthDays(visibleMonth, earliestBookableIso),
@@ -185,8 +192,8 @@ export function ScheduleSelect(): ReactElement {
           What day and time works for you?
         </h2>
         <p className="text-sm text-[var(--color-bone)]/70">
-          Pick when your Chefmate should come by. Orders need at least 24 hours of lead time — the
-          earliest day you can book is{" "}
+          Pick when your Chefmate should come by. Orders require at least 24 hours of lead time
+          (with next-day orders placed by 12:00 pm) — the earliest day you can book is{" "}
           <strong className="text-[var(--color-bone)]">
             {friendlyDate(parseISODate(earliestBookableIso))}
           </strong>

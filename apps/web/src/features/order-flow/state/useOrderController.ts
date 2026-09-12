@@ -92,7 +92,7 @@ export interface OrderController {
   readonly setCustomRequest: (text: string) => void;
   readonly clearCustomRequest: () => void;
   readonly setBreakfastAddOn: (value: boolean) => void;
-  readonly setDate: (date: string) => void;
+  readonly setDate: (date: string | null) => void;
   readonly setTime: (time: string | null) => void;
   readonly setAddressField: (field: keyof Address, value: string) => void;
   readonly setContactField: (field: keyof ContactDetails, value: string) => void;
@@ -232,6 +232,7 @@ export function useOrderController(): OrderController {
         breakfastAddOn: state.breakfastAddOn,
       }),
     [
+      state.main,
       state.appliedGift,
       state.breakfastAddOn,
       state.customRequest,
