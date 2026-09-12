@@ -294,6 +294,8 @@ export function firstSessionDate(
     const dayId = WEEKDAY_TO_DAY_ID[isoWeekday(iso)];
     if (!dayId || !preferredDays.includes(dayId)) continue;
     if (offset === 1) {
+      // Next-day sessions must be booked before 12:00 PM (720 minutes).
+      if (today.minutes >= 12 * 60) continue;
       const windowStart = earliestWindowMinutes(timeWindows[dayId]);
       // With a chosen window, tomorrow only clears the 24-hour lead when its
       // first slot is still ahead of now. Without a window, tomorrow stands.
