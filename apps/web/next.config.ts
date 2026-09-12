@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/chef/sessions",
+        destination: "/chef/portal",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
