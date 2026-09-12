@@ -62,10 +62,44 @@ describe("SiteHeader", () => {
     mockAuth.user = { roles: ["CUSTOMER"] };
     render(<SiteHeader />);
 
-    expect(screen.getByRole("link", { name: "My Dashboard" })).toHaveAttribute(
-      "href",
-      "/customer/dashboard",
-    );
+    // Desktop CTA + mobile hamburger shortcut both render (jsdom applies no CSS).
+    const links = screen.getAllByRole("link", { name: "Dashboard" });
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link).toHaveAttribute("href", "/customer/dashboard");
+    }
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("links a signed-in chef to the chef portal dashboard", () => {
+    mockAuth.user = { roles: ["CHEF"] };
+    render(<SiteHeader />);
+
+    for (const link of screen.getAllByRole("link", { name: "Dashboard" })) {
+      expect(link).toHaveAttribute("href", "/chef/portal");
+    }
+    expect(screen.getAllByRole("link", { name: "Dashboard" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("links a signed-in admin to the admin dashboard", () => {
+    mockAuth.user = { roles: ["ADMIN"] };
+    render(<SiteHeader />);
+
+    for (const link of screen.getAllByRole("link", { name: "Dashboard" })) {
+      expect(link).toHaveAttribute("href", "/admin");
+    }
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("omits the dashboard link for a signed-in user without a dashboard role", () => {
+    mockAuth.user = { roles: [] };
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
   });
@@ -90,13 +124,29 @@ describe("SiteHeader", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("shows only logout without a dashboard link for a signed-in non-customer", () => {
-    mockAuth.user = { roles: ["CHEF"] };
+  it("shows the logout button without a dashboard link for a signed-in non-customer with no dashboard", () => {
+    mockAuth.user = { roles: ["NOBODY"] };
     render(<SiteHeader />);
 
-    expect(screen.queryByRole("link", { name: "My Dashboard" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("shows the mobile dashboard shortcut next to the hamburger for a signed-in user", () => {
+    mockAuth.user = { roles: ["CUSTOMER"] };
+    render(<SiteHeader />);
+
+    const mobileDashboard = screen.getByTestId("mobile-dashboard-link");
+    expect(mobileDashboard).toHaveAttribute("href", "/customer/dashboard");
+    expect(mobileDashboard).toHaveClass("md:hidden");
+  });
+
+  it("omits the mobile dashboard shortcut when logged out", () => {
+    mockAuth.user = null;
+    render(<SiteHeader />);
+
+    expect(screen.queryByTestId("mobile-dashboard-link")).not.toBeInTheDocument();
   });
 
   it("logs a signed-in customer out when Log out is clicked", async () => {

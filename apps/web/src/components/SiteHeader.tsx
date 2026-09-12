@@ -14,6 +14,20 @@ interface SiteHeaderProps {
   readonly variant?: "marketing" | "chefPortal";
 }
 
+/**
+ * Role-dependent dashboard route for the signed-in user (null when logged out
+ * or when no role maps to a dashboard). Staff roles (ADMIN/SUPPORT) land on
+ * the admin dashboard; a chef takes precedence over the customer dashboard
+ * when an account carries both roles.
+ */
+function dashboardHrefFor(roles: readonly string[] | undefined): string | null {
+  if (!roles) return null;
+  if (roles.includes("ADMIN") || roles.includes("SUPPORT")) return "/admin";
+  if (roles.includes("CHEF")) return "/chef/portal";
+  if (roles.includes("CUSTOMER")) return "/customer/dashboard";
+  return null;
+}
+
 /** Homepage-level brand header. It belongs before every page section rather
  * than inside one feature, so the first thing in the document is always the
  * ChefMate identity. Reloading the root route also restores any client-side
@@ -21,7 +35,7 @@ interface SiteHeaderProps {
  */
 export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
   const { user, logout } = useAuth();
-  const isCustomer = user?.roles.includes("CUSTOMER") ?? false;
+  const dashboardHref = dashboardHrefFor(user?.roles);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const returnToStart = (): void => {
@@ -71,9 +85,9 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
       </Link>
       {user ? (
         <>
-          {isCustomer ? (
-            <Link href="/customer/dashboard" className={ctaClassName}>
-              My Dashboard
+          {dashboardHref ? (
+            <Link href={dashboardHref} className={ctaClassName}>
+              Dashboard
             </Link>
           ) : null}
           <button className={ctaClassName} onClick={handleLogout} type="button">
@@ -114,6 +128,17 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
             <div className="hidden shrink-0 items-center gap-1.5 sm:gap-2 md:flex">
               {ctaActions}
             </div>
+            {/* Mobile dashboard shortcut, sitting to the left of the hamburger
+                and only rendered for a signed-in user with a dashboard. */}
+            {dashboardHref ? (
+              <Link
+                className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-oxblood)] px-3 text-xs font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] md:hidden"
+                data-testid="mobile-dashboard-link"
+                href={dashboardHref}
+              >
+                Dashboard
+              </Link>
+            ) : null}
             {/* Mobile hamburger */}
             <button
               aria-controls="site-header-mobile-menu"
