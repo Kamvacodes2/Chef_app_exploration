@@ -727,6 +727,16 @@ const operationsBookingSchema = z.object({
       roles: z.array(z.string()),
     })
     .nullable(),
+  payment: z
+    .object({
+      id: z.string(),
+      status: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "DECLINED"]),
+      method: z.string(),
+      amountCents: z.number(),
+      verifiedAt: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export type OperationsBooking = z.infer<typeof operationsBookingSchema>;
@@ -740,6 +750,20 @@ export async function fetchOperationsBookings(
     schema: itemsEnvelope(operationsBookingSchema),
     options,
     select: (data) => data.items,
+  });
+}
+
+export async function verifyBookingPayment(
+  bookingId: string,
+  note?: string | null,
+  options: PlatformRequestOptions = {},
+): Promise<void> {
+  await requestData({
+    path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/payment/verify`,
+    method: "POST",
+    body: { note: note ?? null },
+    schema: envelope(z.record(z.unknown())),
+    options,
   });
 }
 

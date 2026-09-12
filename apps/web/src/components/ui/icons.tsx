@@ -215,3 +215,20 @@ export function IconTikTok(props: SVGProps<SVGSVGElement>) {
     </SvgIcon>
   );
 }
+
+export function IconCheck(props: SVGProps<SVGSVGElement>) {
+  return (
+    <SvgIcon {...props}>
+      <polyline points="20 6 9 17 4 12" />
+    </SvgIcon>
+  );
+}
+
+export function IconSearch(props: SVGProps<SVGSVGElement>) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </SvgIcon>
+  );
+}
