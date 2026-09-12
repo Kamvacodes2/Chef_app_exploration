@@ -857,6 +857,7 @@ describe("ChefOverview", () => {
     });
     api.fetchChefOffers.mockResolvedValue([]);
     api.fetchChefBookings.mockResolvedValue([]);
+    api.fetchAvailableSessions.mockResolvedValue([]);
     api.fetchPolicyStatus.mockResolvedValue([
       {
         policyKey: "chef_service_agreement",

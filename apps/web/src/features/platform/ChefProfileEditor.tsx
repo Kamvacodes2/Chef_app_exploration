@@ -58,7 +58,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   };
 
   return (
-    <div className="space-y-6">
+    <form className="space-y-6" onSubmit={save}>
       <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Profile & Availability</h2>
       <div>
         <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Service areas</p>
@@ -129,6 +129,6 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
       >
         {busy ? "Saving..." : "Save profile & availability"}
       </button>
-    </div>
+    </form>
   );
 }
