@@ -201,6 +201,27 @@ describe("ChefPolicyGate", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("does not trap the portal when documents are complete but the legacy re-upload flag is unfinished", async () => {
+    auth.useAuth.mockReturnValue(authValue(chef));
+    api.fetchPolicyStatus.mockResolvedValue([currentTerms]);
+    api.fetchDocReuploadStatus.mockResolvedValue({
+      requestId: "reupload-1",
+      requestedAt: "2026-09-12T16:32:00.000Z",
+      requiredDocuments: ["ID_DOC", "BACKGROUND_CHECK", "CV", "QUALIFICATION", "FOOD_SAFETY"],
+      completedDocuments: ["ID_DOC", "BACKGROUND_CHECK", "CV", "QUALIFICATION", "FOOD_SAFETY"],
+      documentsCompletedAt: "2026-09-12T16:32:00.000Z",
+      termsAccepted: false,
+      termsCompletedAt: null,
+      applicationId: "application-1",
+    } as unknown as Awaited<ReturnType<typeof api.fetchDocReuploadStatus>>);
+
+    renderGate();
+
+    await expect(
+      screen.findByRole("heading", { name: "Protected chef operations" }),
+    ).resolves.toBeInTheDocument();
+    expect(screen.queryByText("Action needed: re-upload & accept terms")).not.toBeInTheDocument();
+  });
   it("keeps leave and logout available when the server policy check fails", async () => {
     const logout = vi.fn().mockResolvedValue(undefined);
     auth.useAuth.mockReturnValue(authValue(chef, { logout }));

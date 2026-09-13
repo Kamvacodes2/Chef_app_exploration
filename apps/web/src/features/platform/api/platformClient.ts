@@ -210,12 +210,18 @@ const chefApplicationSchema = z.object({
   documents: z.array(applicationDocumentSchema).default([]),
 });
 
+const nullableString = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value) => value ?? null);
+
 const chefProfileSchema = z.object({
   userId: z.string().min(1),
   displayName: z.string().min(1),
   email: z.string().email(),
   isAvailable: z.boolean(),
-  serviceArea: z.string().nullable(),
+  serviceArea: nullableString,
   serviceAreas: z.array(z.string()),
   bio: z.string().nullable(),
   latitude: z.number().nullable(),
@@ -237,7 +243,6 @@ const bookingStatusSchema = z.enum([
   "CANCELLED",
   "COMPLETED",
 ]);
-
 const chefBookingSchema = z.object({
   id: z.string().min(1),
   reference: z.string().min(1),
@@ -253,17 +258,17 @@ const chefBookingSchema = z.object({
   customRequest: z.string().nullable(),
   scheduledDate: z.string().min(1),
   timeSlot: z.string().min(1),
-  estate: z.string().nullable(),
-  unit: z.string().nullable(),
-  street: z.string().min(1),
-  serviceArea: z.string().nullable(),
+  estate: nullableString,
+  unit: nullableString,
+  street: nullableString,
+  serviceArea: nullableString,
   latitude: z.number().nullable(),
   longitude: z.number().nullable(),
-  contactName: z.string().nullable(),
-  contactEmail: z.string().nullable(),
-  contactPhone: z.string().nullable(),
-  goalId: z.string().nullable(),
-  promotionCodeHash: z.string().nullable(),
+  contactName: nullableString,
+  contactEmail: nullableString,
+  contactPhone: nullableString,
+  goalId: nullableString,
+  promotionCodeHash: nullableString,
   createdAt: z.string(),
   transitions: z.array(
     z.object({
@@ -295,7 +300,7 @@ const chefOfferSchema = z.object({
     mainName: z.string().min(1),
     scheduledDate: z.string().min(1),
     timeSlot: z.string().min(1),
-    serviceArea: z.string().nullable(),
+    serviceArea: nullableString,
   }),
 });
 
@@ -615,10 +620,10 @@ const availableSessionSchema = z.object({
   mainName: z.string().min(1),
   scheduledDate: z.string().min(1),
   timeSlot: z.string().min(1),
-  serviceArea: z.string().nullable(),
-  estate: z.string().nullable(),
-  unit: z.string().nullable(),
-  street: z.string().nullable(),
+  serviceArea: nullableString,
+  estate: nullableString,
+  unit: nullableString,
+  street: nullableString,
   chefPayoutCents: z.number().int().nonnegative().nullish(),
   /** PENDING until the customer's payment is confirmed, VERIFIED once confirmed. */
   paymentStatus: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "DECLINED"]).catch("PENDING"),
@@ -779,14 +784,14 @@ const operationsBookingSchema = z.object({
   customRequest: z.string().nullable(),
   scheduledDate: z.string().min(1),
   timeSlot: z.string().min(1),
-  estate: z.string().nullable(),
-  unit: z.string().nullable(),
-  street: z.string().min(1),
-  serviceArea: z.string().nullable(),
-  contactName: z.string().nullable(),
-  contactEmail: z.string().nullable(),
-  contactPhone: z.string().nullable(),
-  goalId: z.string().nullable(),
+  estate: nullableString,
+  unit: nullableString,
+  street: nullableString,
+  serviceArea: nullableString,
+  contactName: nullableString,
+  contactEmail: nullableString,
+  contactPhone: nullableString,
+  goalId: nullableString,
   createdAt: z.string(),
   cook: z
     .object({

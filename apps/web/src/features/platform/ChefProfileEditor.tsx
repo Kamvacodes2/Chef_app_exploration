@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import {
   availabilityFromRecord,
+  updateChefBankDetails,
   updateChefProfile,
   type AvailabilityWindow,
   type ChefProfile,
@@ -27,10 +28,11 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   const [notes, setNotes] = useState(initial.notes);
   const [bio, setBio] = useState(profile.bio ?? "");
   const [busy, setBusy] = useState(false);
+  const [bankBusy, setBankBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bankError, setBankError] = useState<string | null>(null);
 
-  const save = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
+  const save = async (): Promise<void> => {
     setError(null);
     if (serviceAreas.length === 0) {
       setError("Select at least one service area so we know where you can cook.");
@@ -57,78 +59,184 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
     }
   };
 
+  const saveBank = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    setBankError(null);
+    setBankBusy(true);
+    const formData = new FormData(event.currentTarget);
+    try {
+      const bankAccount = await updateChefBankDetails({
+        accountHolder: text(formData, "accountHolder"),
+        bankName: text(formData, "bankName"),
+        branchCode: text(formData, "branchCode"),
+        accountNumber: text(formData, "accountNumber"),
+        accountType: text(formData, "accountType") || null,
+      });
+      onSaved({ ...profile, bankAccount });
+      event.currentTarget.reset();
+    } catch (caught) {
+      setBankError(
+        caught instanceof Error ? caught.message : "Chefmate could not save your bank details.",
+      );
+    } finally {
+      setBankBusy(false);
+    }
+  };
+
   return (
-    <form className="space-y-6" onSubmit={save}>
-      <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Profile & Availability</h2>
-      <div>
-        <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Service areas</p>
-        <ServiceAreaPicker error={null} onChange={setServiceAreas} selected={serviceAreas} />
-        <label className="mt-3 grid gap-1 text-xs font-bold text-[var(--color-charcoal)]/70">
-          Primary service area
+    <div className="space-y-6">
+      <form
+        className="space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save();
+        }}
+      >
+        <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Profile & Availability</h2>
+        <div>
+          <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Service areas</p>
+          <ServiceAreaPicker error={null} onChange={setServiceAreas} selected={serviceAreas} />
+          <label className="mt-3 grid gap-1 text-xs font-bold text-[var(--color-charcoal)]/70">
+            Primary service area
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 text-sm outline-none focus:border-[var(--color-oxblood)]"
+              list="primary-area-suggestions"
+              onChange={(event) => setPrimaryArea(event.target.value)}
+              value={primaryArea}
+            />
+            <datalist id="primary-area-suggestions">
+              {serviceAreas.map((area) => (
+                <option key={area} value={area} />
+              ))}
+            </datalist>
+          </label>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Weekly availability</p>
+          <AvailabilityEditor onChange={setWindows} windows={windows} />
+          <label className="mt-3 grid gap-1 text-xs font-bold text-[var(--color-charcoal)]/70">
+            Availability notes (optional)
+            <textarea
+              className="min-h-16 w-full rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-oxblood)]"
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="e.g. Available for lunch sessions on weekends, notice preferred"
+              value={notes}
+            />
+          </label>
+        </div>
+
+        <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+          Max travel distance (km)
           <input
             className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 text-sm outline-none focus:border-[var(--color-oxblood)]"
-            list="primary-area-suggestions"
-            onChange={(event) => setPrimaryArea(event.target.value)}
-            value={primaryArea}
+            min={1}
+            onChange={(event) => setMaxTravelKm(Math.max(1, Number(event.target.value) || 30))}
+            type="number"
+            value={maxTravelKm}
           />
-          <datalist id="primary-area-suggestions">
-            {serviceAreas.map((area) => (
-              <option key={area} value={area} />
-            ))}
-          </datalist>
         </label>
-      </div>
 
-      <div>
-        <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Weekly availability</p>
-        <AvailabilityEditor onChange={setWindows} windows={windows} />
-        <label className="mt-3 grid gap-1 text-xs font-bold text-[var(--color-charcoal)]/70">
-          Availability notes (optional)
+        <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+          Bio (shown to customers)
           <textarea
-            className="min-h-16 w-full rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-oxblood)]"
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="e.g. Available for lunch sessions on weekends, notice preferred"
-            value={notes}
+            className="min-h-20 w-full rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-oxblood)]"
+            onChange={(event) => setBio(event.target.value)}
+            value={bio}
           />
         </label>
-      </div>
 
-      <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
-        Max travel distance (km)
-        <input
-          className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 text-sm outline-none focus:border-[var(--color-oxblood)]"
-          min={1}
-          onChange={(event) => setMaxTravelKm(Math.max(1, Number(event.target.value) || 30))}
-          type="number"
-          value={maxTravelKm}
-        />
-      </label>
+        {error ? (
+          <p
+            className="rounded-xl border border-[var(--color-terracotta)]/35 bg-[var(--color-terracotta)]/10 px-3 py-2 text-sm font-medium text-[var(--color-oxblood)]"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
 
-      <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
-        Bio (shown to customers)
-        <textarea
-          className="min-h-20 w-full rounded-xl border border-[var(--color-oxblood)]/20 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-oxblood)]"
-          onChange={(event) => setBio(event.target.value)}
-          value={bio}
-        />
-      </label>
-
-      {error ? (
-        <p
-          className="rounded-xl border border-[var(--color-terracotta)]/35 bg-[var(--color-terracotta)]/10 px-3 py-2 text-sm font-medium text-[var(--color-oxblood)]"
-          role="alert"
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={busy}
+          type="submit"
         >
-          {error}
-        </p>
-      ) : null}
+          {busy ? "Saving..." : "Save profile & availability"}
+        </button>
+      </form>
 
-      <button
-        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={busy}
-        type="submit"
-      >
-        {busy ? "Saving..." : "Save profile & availability"}
-      </button>
-    </form>
+      <section className="rounded-2xl border border-[var(--color-oxblood)]/10 p-5">
+        <h3 className="text-lg font-black text-[var(--color-oxblood)]">Bank details</h3>
+        {profile.bankAccount ? (
+          <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">
+            {profile.bankAccount.bankName} account ending {profile.bankAccount.accountNumberLast4}
+          </p>
+        ) : null}
+        <form className="mt-4 grid gap-3" onSubmit={saveBank}>
+          <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+            Account holder
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+              defaultValue={profile.bankAccount?.accountHolder ?? ""}
+              name="accountHolder"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+            Bank name
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+              defaultValue={profile.bankAccount?.bankName ?? ""}
+              name="bankName"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+            Branch code
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+              defaultValue={profile.bankAccount?.branchCode ?? ""}
+              name="branchCode"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+            Account number
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+              name="accountNumber"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+            Account type
+            <input
+              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+              defaultValue={profile.bankAccount?.accountType ?? ""}
+              name="accountType"
+            />
+          </label>
+          {bankError ? (
+            <p
+              className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-900"
+              role="alert"
+            >
+              {bankError}
+            </p>
+          ) : null}
+          <button
+            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--color-oxblood)] px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={bankBusy}
+            type="submit"
+          >
+            {bankBusy ? "Saving bank details..." : "Save bank details"}
+          </button>
+        </form>
+      </section>
+    </div>
   );
+}
+
+function text(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value.trim() : "";
 }

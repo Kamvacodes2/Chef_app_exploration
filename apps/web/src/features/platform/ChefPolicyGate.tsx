@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardLayout, type NavItem } from "@/components/layout/DashboardLayout";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -22,12 +22,10 @@ interface ChefPolicyGateProps {
 
 export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
   const [docReupload, setDocReupload] = useState<DocReuploadStatus | null>(null);
   const [docReuploadChecked, setDocReuploadChecked] = useState(false);
-  const [confirmedPathname, setConfirmedPathname] = useState<string | null>(null);
   const [checkingPolicies, setCheckingPolicies] = useState(false);
   const [policyError, setPolicyError] = useState<string | null>(null);
   const requestSequence = useRef(0);
@@ -40,19 +38,20 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     [policyStatus],
   );
 
-  const pendingReupload = docReupload && !docReupload.termsAccepted ? docReupload : null;
+  const pendingReupload =
+    docReupload && !docReupload.termsAccepted && !docReupload.documentsCompletedAt
+      ? docReupload
+      : null;
 
   const fetchAndConfirmStatus = useCallback(async (): Promise<PolicyStatusItem[]> => {
     const requestId = ++requestSequence.current;
     setCheckingPolicies(true);
-    setConfirmedPathname(null);
     setPolicyError(null);
 
     try {
       const nextStatus = await fetchPolicyStatus();
       if (requestId === requestSequence.current) {
         setPolicyStatus(nextStatus);
-        setConfirmedPathname(pathname);
       }
       return nextStatus;
     } catch (caught) {
@@ -65,7 +64,7 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     } finally {
       if (requestId === requestSequence.current) setCheckingPolicies(false);
     }
-  }, [pathname]);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     if (logoutInFlight.current) return;
@@ -176,7 +175,7 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     );
   }
 
-  if (policyError) {
+  if (policyError && policyStatus === null) {
     return (
       <GateFrame message={policyError}>
         <button
@@ -191,7 +190,7 @@ export function ChefPolicyGate({ children, navItems }: ChefPolicyGateProps) {
     );
   }
 
-  if (checkingPolicies || policyStatus === null || confirmedPathname !== pathname) {
+  if (policyStatus === null || (checkingPolicies && requiredPending.length > 0)) {
     return (
       <GateFrame message="Confirming your current policy status...">
         <GateActions onLogout={handleLogout} />

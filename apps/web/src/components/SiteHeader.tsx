@@ -110,12 +110,13 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
         <BrandMark onReset={returnToStart} />
         {variant === "chefPortal" ? (
-          <span
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-oxblood)]/25 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-oxblood)]"
+          <Link
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-oxblood)]/25 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)]/5"
             data-testid="chef-portal-indicator"
+            href="/chef/portal"
           >
             Chef portal
-          </span>
+          </Link>
         ) : (
           <>
             {/* Desktop navigation */}

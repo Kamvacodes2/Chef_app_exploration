@@ -261,6 +261,14 @@ describe("platformClient", () => {
     );
   });
 
+  it("accepts omitted nullable address fields from legacy chef booking responses", async () => {
+    const legacyBooking = { ...booking, estate: undefined, unit: undefined, street: undefined };
+    const fetchImpl = mockFetch({ data: { items: [legacyBooking] } });
+
+    await expect(
+      fetchChefBookings({ baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toMatchObject([{ estate: null, unit: null, street: null }]);
+  });
   it("connects offer acceptance and booking completion to chef payouts", async () => {
     const fetchImpl = vi
       .fn()

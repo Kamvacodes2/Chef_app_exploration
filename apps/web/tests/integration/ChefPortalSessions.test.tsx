@@ -237,6 +237,36 @@ describe("Chef portal sessions", () => {
     await waitFor(() => expect(saved).toHaveBeenCalled());
   });
 
+  it("saves bank details through the live profile editor", async () => {
+    api.updateChefBankDetails.mockResolvedValue({
+      accountHolder: "Test Chef",
+      bankName: "Capitec",
+      branchCode: "470010",
+      accountNumberLast4: "1234",
+      accountType: "Savings",
+      updatedAt: "2026-09-13T08:00:00.000Z",
+    });
+    render(<ChefProfileEditor onSaved={vi.fn()} profile={chefProfile} />);
+
+    fireEvent.change(screen.getByLabelText("Account holder"), {
+      target: { value: "Test Chef" },
+    });
+    fireEvent.change(screen.getByLabelText("Bank name"), { target: { value: "Capitec" } });
+    fireEvent.change(screen.getByLabelText("Branch code"), { target: { value: "470010" } });
+    fireEvent.change(screen.getByLabelText("Account number"), { target: { value: "1234561234" } });
+    fireEvent.change(screen.getByLabelText("Account type"), { target: { value: "Savings" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save bank details" }));
+
+    await waitFor(() =>
+      expect(api.updateChefBankDetails).toHaveBeenCalledWith({
+        accountHolder: "Test Chef",
+        bankName: "Capitec",
+        branchCode: "470010",
+        accountNumber: "1234561234",
+        accountType: "Savings",
+      }),
+    );
+  });
   it("blocks saving until a service area is selected", async () => {
     api.updateChefProfile.mockResolvedValue(chefProfile);
     const profileWithoutAreas = {
