@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminDashboardPage } from "@/features/platform/AdminDashboardPage";
 import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 import { ChefMagicLoginPage } from "@/features/platform/ChefMagicLoginPage";
-import { ChefPortalPage } from "@/features/platform/ChefPortalPage";
 import { AdminOverview } from "@/features/platform/AdminOverview";
 import { ChefOverview } from "@/features/platform/ChefOverview";
 
@@ -28,6 +27,8 @@ const api = vi.hoisted(() => ({
   markChefApplicationInterviewConducted: vi.fn(),
   markChefEnRoute: vi.fn(),
   submitChefApplication: vi.fn(),
+  alignSessionAvailability: vi.fn(),
+  releaseSessionClaim: vi.fn(),
   updateChefApplication: vi.fn(),
   updateChefApplicationVerification: vi.fn(),
   updateChefBankDetails: vi.fn(),
@@ -491,60 +492,27 @@ describe("platform pages", () => {
     expect(window.location.hash).toBe("");
   });
 
-  it("connects chef portal offers, bank details, and session actions", async () => {
+  it("connects chef portal offers and session actions", async () => {
     api.fetchChefProfile.mockResolvedValue(chefProfile);
     api.fetchChefOffers.mockResolvedValue([offer]);
     api.fetchAvailableSessions.mockResolvedValue([]);
     api.fetchChefBookings.mockResolvedValue([booking]);
     api.acceptChefOffer.mockResolvedValue({ booking, offer: { ...offer, status: "ACCEPTED" } });
-    api.updateChefBankDetails.mockResolvedValue({
-      accountHolder: "Nomsa Dlamini",
-      bankName: "Capitec",
-      branchCode: "470010",
-      accountNumberLast4: "1234",
-      accountType: "Savings",
-      updatedAt: "2026-07-30T10:00:00.000Z",
-    });
     api.completeChefBooking.mockResolvedValue({
       booking: { ...booking, status: "COMPLETED" },
       surveysIssued: 2,
       earning: { chefPayoutCents: 64675 },
     });
 
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await waitFor(() => expect(screen.getAllByText("Chicken peri-peri").length).toBeGreaterThan(0));
     expect(screen.getByText(/You receive/)).toHaveTextContent("646");
 
-    // Accepting a targeted offer first asks the chef to confirm availability.
     fireEvent.click(screen.getByRole("button", { name: "Accept" }));
-    const confirmCheckbox = screen.getByRole("checkbox", {
-      name: /I confirm I am available to cook this session/,
-    });
-    const confirmButton = screen.getByRole("button", {
-      name: "Yes, I confirm — take the session",
-    });
-    expect(confirmButton).toBeDisabled();
-    fireEvent.click(confirmCheckbox);
-    fireEvent.click(confirmButton);
     await waitFor(() => expect(api.acceptChefOffer).toHaveBeenCalledWith("offer-1"));
 
-    fireEvent.change(screen.getByLabelText("Account holder"), {
-      target: { value: "Nomsa Dlamini" },
-    });
-    fireEvent.change(screen.getByLabelText("Bank name"), { target: { value: "Capitec" } });
-    fireEvent.change(screen.getByLabelText("Branch code"), { target: { value: "470010" } });
-    fireEvent.change(screen.getByLabelText("Account number"), { target: { value: "1234561234" } });
-    fireEvent.change(screen.getByLabelText("Account type"), { target: { value: "Savings" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save bank details" }));
-
-    await waitFor(() =>
-      expect(api.updateChefBankDetails).toHaveBeenCalledWith(
-        expect.objectContaining({ accountNumber: "1234561234" }),
-      ),
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Complete booking" }));
+    fireEvent.click(screen.getByRole("button", { name: "Complete Booking" }));
     await waitFor(() => expect(api.completeChefBooking).toHaveBeenCalledWith("booking-1", null));
   });
 

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import {
+  alignSessionAvailability,
   availabilityFromRecord,
   claimAvailableSession,
+  releaseSessionClaim,
   type AvailableSession,
   type ChefProfile,
 } from "./api/platformClient";
@@ -14,7 +16,13 @@ interface ChefUnassignedSessionsPanelProps {
   readonly profile: ChefProfile | null;
   readonly busyKey: string | null;
   readonly onClaimed: (reference: string, payoutCents: number) => void;
-  readonly onLoadFailed?: (message: string) => void;
+  readonly onAligned: (reference: string) => void;
+  readonly onReleased: (reference: string, rebroadcastOffers: number) => void;
+  readonly run: (name: string, action: () => Promise<void>) => void;
+}
+
+function isPaid(session: AvailableSession): boolean {
+  return session.paymentStatus === "VERIFIED";
 }
 
 export function ChefUnassignedSessionsPanel({
@@ -22,18 +30,45 @@ export function ChefUnassignedSessionsPanel({
   profile,
   busyKey,
   onClaimed,
+  onAligned,
+  onReleased,
+  run,
 }: ChefUnassignedSessionsPanelProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
   const availability = availabilityFromRecord(profile?.availability);
-  const busy = busyKey === "claim-session";
+  const pendingSession = sessions.find((session) => session.id === pendingId) ?? null;
+  const pendingReleaseSession = sessions.find((session) => session.id === pendingReleaseId) ?? null;
+  const busy =
+    busyKey === "claim-session" || busyKey === "align-session" || busyKey === "release-session";
 
   const confirm = (): void => {
-    if (!pendingId) return;
-    const session = sessions.find((session) => session.id === pendingId) ?? null;
-    if (!session) return;
-    setPendingId(null);
-    void claimAvailableSession(session.id).then((result) => {
+    if (!pendingSession) return;
+    const session = pendingSession;
+    run("claim-session", async () => {
+      const result = await claimAvailableSession(session.id);
+      setPendingId(null);
       onClaimed(result.booking.reference, result.booking.chefPayoutCents ?? 0);
+    });
+  };
+
+  const confirmAlign = (): void => {
+    if (!pendingSession) return;
+    const session = pendingSession;
+    run("align-session", async () => {
+      await alignSessionAvailability(session.id);
+      setPendingId(null);
+      onAligned(session.reference);
+    });
+  };
+
+  const confirmRelease = (): void => {
+    if (!pendingReleaseSession) return;
+    const session = pendingReleaseSession;
+    run("release-session", async () => {
+      const result = await releaseSessionClaim(session.id);
+      setPendingReleaseId(null);
+      onReleased(result.reference, result.rebroadcastOffers);
     });
   };
 
@@ -41,8 +76,9 @@ export function ChefUnassignedSessionsPanel({
     <section className="rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
       <h3 className="text-xl font-black text-[var(--color-oxblood)]">Sessions up for grabs</h3>
       <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-        Open sessions you can claim first come, first served. Once you claim one, it is yours
-        immediately.
+        Sessions for the week ahead, paid or still awaiting payment confirmation. Claim a paid
+        session and it&apos;s yours immediately — or align availability on an unpaid one and
+        you&apos;re first in line the moment payment is confirmed. First come, first served.
       </p>
 
       {sessions.length === 0 ? (
@@ -52,59 +88,116 @@ export function ChefUnassignedSessionsPanel({
         </p>
       ) : null}
 
-      {sessions.map((session) => (
-        <article
-          className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
-          key={session.id}
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
-            {session.reference} · {session.status.replaceAll("_", " ")}
-          </p>
-          <h4 className="mt-2 text-lg font-black">{session.mainName}</h4>
-          <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-            {formatDate(session.scheduledDate)} at {session.timeSlot}
-            {session.serviceArea ? ` · ${session.serviceArea}` : ""}
-          </p>
-          {session.chefPayoutCents != null ? (
-            <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-              You receive {formatZar(session.chefPayoutCents)}
+      {sessions.map((session) => {
+        const paid = isPaid(session);
+        const aligned = Boolean(session.claimedAt);
+        return (
+          <article
+            className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
+            key={session.id}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-lg font-black">{session.mainName}</h4>
+              {paid ? (
+                <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-900">
+                  Paid
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-900">
+                  Awaiting payment
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-sm text-[var(--color-charcoal)]/70">
+              {session.reference} · {formatDate(session.scheduledDate)} at {session.timeSlot}
+              {session.serviceArea ? ` · ${session.serviceArea}` : ""}
             </p>
-          ) : null}
-          <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-            {session.estate ? `${session.estate}, ` : ""}
-            {session.street}
-          </p>
-          <div className="mt-4">
-            <button
-              className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={busy}
-              onClick={() => setPendingId(session.id)}
-              type="button"
-            >
-              {busy && pendingId === session.id ? "Claiming..." : "Claim this session"}
-            </button>
-          </div>
-        </article>
-      ))}
+            {session.repeatVisits > 0 ? (
+              <p className="mt-2 inline-flex rounded-full bg-[var(--color-oxblood)]/10 px-3 py-1 text-xs font-black text-[var(--color-oxblood)]">
+                Repeat customer · {session.repeatVisits}
+                {session.repeatVisits === 1 ? " completed visit" : " completed visits"}
+              </p>
+            ) : null}
+            {session.chefPayoutCents != null ? (
+              <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                You receive {formatZar(session.chefPayoutCents)}
+              </p>
+            ) : null}
+            <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
+              {session.estate ? `${session.estate}, ` : ""}
+              {session.street}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {paid ? (
+                <button
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={busy}
+                  onClick={() => setPendingId(session.id)}
+                  type="button"
+                >
+                  Claim this session
+                </button>
+              ) : aligned ? (
+                <>
+                  <span className="inline-flex min-h-10 items-center rounded-xl bg-emerald-50 px-4 text-sm font-bold text-emerald-900">
+                    Availability aligned
+                  </span>
+                  <button
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--color-oxblood)]/30 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={busy}
+                    onClick={() => setPendingReleaseId(session.id)}
+                    type="button"
+                  >
+                    Release availability
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={busy}
+                  onClick={() => setPendingId(session.id)}
+                  type="button"
+                >
+                  Align availability
+                </button>
+              )}
+            </div>
+          </article>
+        );
+      })}
 
-      {pendingId ? (
+      {pendingSession ? (
         <AvailabilityConfirmModal
           busy={busy}
           onCancel={() => setPendingId(null)}
-          onConfirm={confirm}
+          onConfirm={isPaid(pendingSession) ? confirm : confirmAlign}
           session={{
-            reference: sessions.find((session) => session.id === pendingId)?.reference ?? "",
-            mainName: sessions.find((session) => session.id === pendingId)?.mainName ?? "",
-            scheduledDate:
-              sessions.find((session) => session.id === pendingId)?.scheduledDate ?? "",
-            timeSlot: sessions.find((session) => session.id === pendingId)?.timeSlot ?? "",
-            chefPayoutCents:
-              sessions.find((session) => session.id === pendingId)?.chefPayoutCents ?? 0,
+            reference: pendingSession.reference,
+            mainName: pendingSession.mainName,
+            scheduledDate: formatDate(pendingSession.scheduledDate),
+            timeSlot: pendingSession.timeSlot,
+            chefPayoutCents: pendingSession.chefPayoutCents ?? 0,
             outsideAvailability: sessionFallsOutside(
-              sessions.find((session) => session.id === pendingId)?.scheduledDate ?? "",
-              sessions.find((session) => session.id === pendingId)?.timeSlot ?? "",
+              pendingSession.scheduledDate,
+              pendingSession.timeSlot,
               availability,
             ),
+          }}
+        />
+      ) : null}
+
+      {pendingReleaseSession ? (
+        <AvailabilityConfirmModal
+          busy={busy}
+          onCancel={() => setPendingReleaseId(null)}
+          onConfirm={confirmRelease}
+          session={{
+            reference: pendingReleaseSession.reference,
+            mainName: pendingReleaseSession.mainName,
+            scheduledDate: formatDate(pendingReleaseSession.scheduledDate),
+            timeSlot: pendingReleaseSession.timeSlot,
+            chefPayoutCents: pendingReleaseSession.chefPayoutCents ?? 0,
+            outsideAvailability: false,
           }}
         />
       ) : null}

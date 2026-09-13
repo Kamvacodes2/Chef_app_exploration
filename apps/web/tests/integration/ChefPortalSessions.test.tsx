@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ChefPortalPage } from "@/features/platform/ChefPortalPage";
+import { ChefOverview } from "@/features/platform/ChefOverview";
 import { ChefProfileEditor } from "@/features/platform/ChefProfileEditor";
 
 const api = vi.hoisted(() => {
@@ -103,7 +103,7 @@ describe("Chef portal sessions", () => {
       status: "claimed",
       booking: { ...session, status: "CHEF_MATCHED" },
     });
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await screen.findByText("Lamb curry and rice");
     expect(screen.getByText(/CM-GRAB-01/)).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("Chef portal sessions", () => {
       reference: "CM-GRAB-01",
       claimedAt: "2026-09-10T08:00:00.000Z",
     });
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await screen.findByText("Lamb curry and rice");
     expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe("Chef portal sessions", () => {
       releasedAt: "2026-09-10T09:00:00.000Z",
       rebroadcastOffers: 3,
     });
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await screen.findByText("Availability aligned");
     fireEvent.click(screen.getByRole("button", { name: "Release availability" }));
@@ -177,7 +177,7 @@ describe("Chef portal sessions", () => {
 
   it("flags repeat customers with their completed visit count", async () => {
     api.fetchAvailableSessions.mockResolvedValue([{ ...session, repeatVisits: 4 }]);
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await screen.findByText("Lamb curry and rice");
     expect(screen.getByText(/Repeat customer · 4 completed visits/)).toBeInTheDocument();
@@ -191,7 +191,7 @@ describe("Chef portal sessions", () => {
       },
     });
     api.fetchAvailableSessions.mockResolvedValue([session]);
-    render(<ChefPortalPage />);
+    render(<ChefOverview />);
 
     await screen.findByText("Lamb curry and rice");
     fireEvent.click(screen.getByRole("button", { name: "Claim this session" }));
