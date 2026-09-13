@@ -71,6 +71,12 @@ export function SiteFooter() {
                 Privacy
               </Link>
               <Link
+                href="/legal/paia-manual"
+                className="transition-colors hover:text-[var(--color-charcoal)]"
+              >
+                PAIA Manual
+              </Link>
+              <Link
                 href="/legal/terms"
                 className="transition-colors hover:text-[var(--color-charcoal)]"
               >

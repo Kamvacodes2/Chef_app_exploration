@@ -15,16 +15,16 @@ describe("published companion policies", () => {
       "Customer Terms and Conditions",
     );
     expect(screen.queryByText(/Version 2026-08-19/)).not.toBeInTheDocument();
-    expect(sectionFor("4. Customer cancellation")).toHaveTextContent(
+    expect(sectionFor("8. Cancellations, Rescheduling, and Refunds")).toHaveTextContent(
       "The applicable band is only a ceiling",
     );
-    expect(sectionFor("4. Customer cancellation")).toHaveTextContent(
+    expect(sectionFor("8. Cancellations, Rescheduling, and Refunds")).toHaveTextContent(
       "assess the final charge individually",
     );
-    expect(sectionFor("5. Chef or supplier inability to perform")).toHaveTextContent(
+    expect(sectionFor("9. Chef Inability to Perform and Substitutions")).toHaveTextContent(
       "full statutory monetary remedy",
     );
-    expect(sectionFor("5. Chef or supplier inability to perform")).toHaveTextContent(
+    expect(sectionFor("9. Chef Inability to Perform and Substitutions")).toHaveTextContent(
       "only after you expressly accept that Chef",
     );
   });
@@ -33,7 +33,7 @@ describe("published companion policies", () => {
     render(<PrivacyPage />);
 
     expect(screen.queryByText(/Version 2026-08-19/)).not.toBeInTheDocument();
-    const huru = sectionFor("4. HURU/Afiswitch criminal background checks");
+    const huru = sectionFor("8. HURU and Afiswitch Background Verification");
     expect(huru).toHaveTextContent("affirmative, purpose-specific consent");
     expect(huru).toHaveTextContent(
       "general acceptance of this policy is not treated as that consent",
@@ -54,7 +54,7 @@ describe("published companion policies", () => {
     {
       Page: ComplaintsHandlingPage,
       heading: "Complaints Handling Process",
-      section: "8. Internal review",
+      section: "9. Internal Review and Appeal Mechanism",
       contract: "someone not responsible for the original outcome",
     },
     {
@@ -88,6 +88,7 @@ describe("SiteFooter legal and social destinations", () => {
       ["Complaints", "/legal/complaints-handling"],
       ["Reviews and Ratings", "/legal/review-and-ratings"],
       ["Privacy", "/legal/privacy"],
+      ["PAIA Manual", "/legal/paia-manual"],
       ["Website Terms", "/legal/terms"],
     ] as const;
     links.forEach(([name, href]) => {

@@ -86,6 +86,7 @@ const FOOTER_POLICY_LINKS = [
   ["Complaints", "/legal/complaints-handling"],
   ["Reviews and Ratings", "/legal/review-and-ratings"],
   ["Privacy", "/legal/privacy"],
+  ["PAIA Manual", "/legal/paia-manual"],
   ["Website Terms", "/legal/terms"],
 ] as const;
 

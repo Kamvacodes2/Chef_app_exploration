@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import { OrderFlow } from "@/features/order-flow/OrderFlow";
+import { TestimonialShowcase } from "@/features/testimonials/TestimonialShowcase";
 import { CATEGORIES, HOW_IT_WORKS, LANDING_ASSETS } from "./content";
 import { LandingHeroCarousel } from "./LandingHeroCarousel";
 import { PopularMealsGrid } from "./PopularMealsGrid";
@@ -220,6 +221,7 @@ export function LandingPage(): ReactElement {
       <LandingHeroCarousel />
       <HowItWorksCompact />
       <PopularMealsGrid />
+      <TestimonialShowcase />
       <KitchenTrustSection />
       <CategoryGrid />
       <OrderFlow />

@@ -73,6 +73,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconMail width={18} height={18} />,
   },
   {
+    id: "testimonials",
+    label: "Testimonials",
+    path: "/admin/testimonials",
+    icon: <IconSparkles width={18} height={18} />,
+  },
+  {
     id: "featured-meals",
     label: "Featured Meals",
     path: "/admin/featured-meals",
