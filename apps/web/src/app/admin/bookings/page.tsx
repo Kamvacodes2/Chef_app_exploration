@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   fetchOperationsBookings,
+  sendPaymentReminder,
   verifyBookingPayment,
   type OperationsBooking,
 } from "@/features/platform/api/platformClient";
@@ -17,6 +18,7 @@ export default function Page() {
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   async function loadBookings() {
@@ -59,46 +61,58 @@ export default function Page() {
     }
   }
 
+  async function handleSendPaymentReminder(booking: OperationsBooking) {
+    if (!window.confirm(`Send a payment/proof-of-payment reminder to ${booking.contactName ?? "the customer"} for ${booking.reference}?`)) {
+      return;
+    }
+    setProcessingId(booking.id);
+    setAlert(null);
+    try {
+      await sendPaymentReminder(booking.id);
+      setAlert({ type: "success", message: `Payment reminder queued for ${booking.reference}.` });
+    } catch (err) {
+      setAlert({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to send payment reminder.",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
-      // Filter by tab
       if (filterTab === "unassigned") {
         if (b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
         if (
           b.payment?.status === "VERIFIED" &&
           b.status !== "REQUESTED" &&
           b.status !== "NEEDS_REVIEW"
-        )
-          return false;
+        ) return false;
       } else if (filterTab === "awaiting_chef") {
         if (
           b.status !== "AWAITING_CHEF" &&
-          !(
-            b.payment?.status === "VERIFIED" &&
-            !b.cook &&
-            b.status !== "CANCELLED" &&
-            b.status !== "COMPLETED"
-          )
-        )
-          return false;
+          !(b.payment?.status === "VERIFIED" && !b.cook && b.status !== "CANCELLED" && b.status !== "COMPLETED")
+        ) return false;
       } else if (filterTab === "assigned") {
         if (!b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
       } else if (filterTab === "completed") {
         if (b.status !== "COMPLETED" && b.status !== "CANCELLED") return false;
       }
 
-      // Filter by search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const refMatch = b.reference.toLowerCase().includes(q);
-        const mealMatch = b.mainName.toLowerCase().includes(q);
-        const contactMatch =
-          (b.contactName ?? "").toLowerCase().includes(q) ||
-          (b.contactEmail ?? "").toLowerCase().includes(q);
-        const chefMatch = (b.cook?.displayName ?? "").toLowerCase().includes(q);
-        if (!refMatch && !mealMatch && !contactMatch && !chefMatch) return false;
+        const searchable = [
+          b.reference,
+          b.mainName,
+          b.contactName,
+          b.contactEmail,
+          b.contactPhone,
+          b.cook?.displayName,
+          ...b.alignedChefs.map((chef) => chef.displayName),
+        ];
+        if (!searchable.some((value) => value?.toLowerCase().includes(q))) return false;
       }
-
       return true;
     });
   }, [bookings, filterTab, searchQuery]);
@@ -261,9 +275,19 @@ export default function Page() {
             <tbody>
               {filteredBookings.map((b) => {
                 const isPaid = b.payment?.status === "VERIFIED";
-                const isPending = b.payment?.status === "PENDING" || !b.payment;
                 const isSubmitted = b.payment?.status === "SUBMITTED";
                 const isDeclined = b.payment?.status === "DECLINED";
+
+                const canRemindPayment =
+                  !isPaid &&
+                  !isSubmitted &&
+                  b.status !== "CANCELLED" &&
+                  b.status !== "COMPLETED";
+
+                const address = [b.unit, b.estate, b.street, b.serviceArea]
+                  .filter((part): part is string => Boolean(part?.trim()))
+                  .join(", ");
+                const alignedNames = b.alignedChefs.map((chef) => chef.displayName).join(", ");
 
                 const canMarkPaid =
                   !b.cook &&
@@ -305,8 +329,16 @@ export default function Page() {
                         {b.contactName ?? "—"}
                       </div>
                       <div className="text-[11px] text-[var(--color-charcoal)]/50">
-                        {b.contactEmail ?? ""}
+                        {b.contactEmail ?? "—"}
                       </div>
+                      <div className="text-[11px] text-[var(--color-charcoal)]/60">
+                        {b.contactPhone ?? "No phone"}
+                      </div>
+                      {expandedId === b.id && (
+                        <div className="mt-2 max-w-[260px] whitespace-normal border-t border-[var(--color-oxblood)]/10 pt-2 text-[11px] leading-4 text-[var(--color-charcoal)]/70">
+                          <strong>Full address:</strong> {address || "Not provided"}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--color-charcoal)]/70">
                       {b.cook?.displayName ? (
@@ -315,6 +347,11 @@ export default function Page() {
                         <span className="inline-block rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600">
                           Unassigned
                         </span>
+                      )}
+                      {expandedId === b.id && (
+                        <div className="mt-2 max-w-[220px] whitespace-normal border-t border-[var(--color-oxblood)]/10 pt-2 text-[11px] leading-4 text-[var(--color-charcoal)]/70">
+                          <strong>Aligned availability:</strong> {alignedNames || "None recorded"}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs">
@@ -341,23 +378,41 @@ export default function Page() {
                       <StatusBadge status={b.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {canMarkPaid ? (
+                      <div className="flex flex-col items-end gap-1.5">
                         <button
                           type="button"
-                          disabled={processingId === b.id}
-                          onClick={() => void handleMarkAsPaid(b)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-oxblood)] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                          onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
+                          className="text-[11px] font-semibold text-[var(--color-oxblood)] underline underline-offset-2"
                         >
-                          <IconSparkles width={13} height={13} />
-                          {processingId === b.id ? "Approving..." : "Mark as Paid"}
+                          {expandedId === b.id ? "Hide details" : "Full details"}
                         </button>
-                      ) : b.status === "AWAITING_CHEF" ? (
-                        <span className="inline-block rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-                          Broadcasted
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
-                      )}
+                        {canRemindPayment ? (
+                          <button
+                            type="button"
+                            disabled={processingId === b.id}
+                            onClick={() => void handleSendPaymentReminder(b)}
+                            className="rounded-xl border border-amber-600 px-2.5 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+                          >
+                            {processingId === b.id ? "Sending..." : "Remind payment / proof"}
+                          </button>
+                        ) : canMarkPaid ? (
+                          <button
+                            type="button"
+                            disabled={processingId === b.id}
+                            onClick={() => void handleMarkAsPaid(b)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-oxblood)] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                          >
+                            <IconSparkles width={13} height={13} />
+                            {processingId === b.id ? "Approving..." : "Mark as Paid"}
+                          </button>
+                        ) : b.status === "AWAITING_CHEF" ? (
+                          <span className="inline-block rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+                            Broadcasted
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -801,6 +801,12 @@ const operationsBookingSchema = z.object({
       roles: z.array(z.string()),
     })
     .nullable(),
+  alignedChefs: z.array(z.object({
+    id: z.string(),
+    displayName: z.string(),
+    email: z.string(),
+    alignedAt: z.string(),
+  })).default([]),
   payment: z
     .object({
       id: z.string(),
@@ -827,6 +833,17 @@ export async function fetchOperationsBookings(
   });
 }
 
+export async function sendPaymentReminder(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<void> {
+  await requestData({
+    path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/payment-reminder`,
+    method: "POST",
+    schema: envelope(z.object({ bookingId: z.string(), queued: z.literal(true) })),
+    options,
+  });
+}
 export async function verifyBookingPayment(
   bookingId: string,
   note?: string | null,
