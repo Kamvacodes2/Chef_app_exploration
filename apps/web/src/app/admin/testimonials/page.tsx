@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   fetchOperationsTestimonials,
   moderateTestimonial,
@@ -25,7 +25,7 @@ export default function AdminTestimonialsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await fetchOperationsTestimonials({
@@ -33,16 +33,16 @@ export default function AdminTestimonialsPage() {
         search: searchQuery.trim() || undefined
       });
       setTestimonials(res.items);
-    } catch (err: any) {
-      setActionMessage({ type: "error", text: err.message || "Failed to load testimonials." });
+    } catch (err: unknown) {
+      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to load testimonials." });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab, searchQuery]);
 
   useEffect(() => {
     loadData();
-  }, [activeTab]);
+  }, [loadData]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +62,7 @@ export default function AdminTestimonialsPage() {
 
     try {
       setIsSaving(true);
-      const updated = await moderateTestimonial(selectedTestimonial.id, {
+      await moderateTestimonial(selectedTestimonial.id, {
         status: targetStatus,
         featuredOrder: targetStatus === "FEATURED" && modalFeaturedOrder !== "" ? Number(modalFeaturedOrder) : null,
         adminNotes: modalNotes.trim() || null
@@ -71,8 +71,8 @@ export default function AdminTestimonialsPage() {
       setActionMessage({ type: "success", text: `Testimonial updated to ${targetStatus}.` });
       setSelectedTestimonial(null);
       await loadData();
-    } catch (err: any) {
-      setActionMessage({ type: "error", text: err.message || "Failed to moderate testimonial." });
+    } catch (err: unknown) {
+      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to moderate testimonial." });
     } finally {
       setIsSaving(false);
     }
@@ -89,8 +89,8 @@ export default function AdminTestimonialsPage() {
       setActionMessage({ type: "success", text: "Testimonial deleted successfully." });
       setSelectedTestimonial(null);
       await loadData();
-    } catch (err: any) {
-      setActionMessage({ type: "error", text: err.message || "Failed to delete testimonial." });
+    } catch (err: unknown) {
+      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to delete testimonial." });
     } finally {
       setIsSaving(false);
     }
@@ -351,7 +351,7 @@ export default function AdminTestimonialsPage() {
                   </label>
                   <select
                     value={modalStatus}
-                    onChange={(e) => setModalStatus(e.target.value as any)}
+                    onChange={(e) => setModalStatus(e.target.value as "PENDING" | "APPROVED" | "FEATURED" | "REJECTED")}
                     className="w-full rounded-xl border border-stone-300 p-2.5 text-sm"
                   >
                     <option value="PENDING">PENDING (In Review)</option>

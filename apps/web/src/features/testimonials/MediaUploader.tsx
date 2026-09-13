@@ -40,12 +40,12 @@ export function MediaUploader({
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const objectUrlsRef = useRef<string[]>([]);
 
   // Clean up object URLs on unmount
   useEffect(() => {
     return () => {
-      photos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
-      if (video) URL.revokeObjectURL(video.previewUrl);
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -72,6 +72,7 @@ export function MediaUploader({
           continue;
         }
         const previewUrl = URL.createObjectURL(file);
+        objectUrlsRef.current.push(previewUrl);
         newPhotos.push({
           id: Math.random().toString(36).substring(2),
           file,
@@ -88,6 +89,7 @@ export function MediaUploader({
           URL.revokeObjectURL(newVideo.previewUrl);
         }
         const previewUrl = URL.createObjectURL(file);
+        objectUrlsRef.current.push(previewUrl);
         newVideo = {
           id: Math.random().toString(36).substring(2),
           file,

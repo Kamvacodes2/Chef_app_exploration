@@ -69,7 +69,6 @@ export function TestimonialShowcase() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [activePhotoUrl, setActivePhotoUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -84,9 +83,6 @@ export function TestimonialShowcase() {
       })
       .catch(() => {
         if (isMounted) setTestimonials(FALLBACK_TESTIMONIALS);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
       });
 
     return () => {

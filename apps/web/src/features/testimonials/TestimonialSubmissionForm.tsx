@@ -71,8 +71,8 @@ export function TestimonialSubmissionForm() {
       });
 
       setIsSuccess(true);
-    } catch (err: any) {
-      setFormError(err.message || "Failed to submit testimonial. Please try again.");
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Failed to submit testimonial. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
