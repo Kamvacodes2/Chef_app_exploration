@@ -62,7 +62,11 @@ export default function Page() {
   }
 
   async function handleSendPaymentReminder(booking: OperationsBooking) {
-    if (!window.confirm(`Send a payment/proof-of-payment reminder to ${booking.contactName ?? "the customer"} for ${booking.reference}?`)) {
+    if (
+      !window.confirm(
+        `Send a payment/proof-of-payment reminder to ${booking.contactName ?? "the customer"} for ${booking.reference}?`,
+      )
+    ) {
       return;
     }
     setProcessingId(booking.id);
@@ -88,12 +92,19 @@ export default function Page() {
           b.payment?.status === "VERIFIED" &&
           b.status !== "REQUESTED" &&
           b.status !== "NEEDS_REVIEW"
-        ) return false;
+        )
+          return false;
       } else if (filterTab === "awaiting_chef") {
         if (
           b.status !== "AWAITING_CHEF" &&
-          !(b.payment?.status === "VERIFIED" && !b.cook && b.status !== "CANCELLED" && b.status !== "COMPLETED")
-        ) return false;
+          !(
+            b.payment?.status === "VERIFIED" &&
+            !b.cook &&
+            b.status !== "CANCELLED" &&
+            b.status !== "COMPLETED"
+          )
+        )
+          return false;
       } else if (filterTab === "assigned") {
         if (!b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
       } else if (filterTab === "completed") {
@@ -279,10 +290,7 @@ export default function Page() {
                 const isDeclined = b.payment?.status === "DECLINED";
 
                 const canRemindPayment =
-                  !isPaid &&
-                  !isSubmitted &&
-                  b.status !== "CANCELLED" &&
-                  b.status !== "COMPLETED";
+                  !isPaid && !isSubmitted && b.status !== "CANCELLED" && b.status !== "COMPLETED";
 
                 const address = [b.unit, b.estate, b.street, b.serviceArea]
                   .filter((part): part is string => Boolean(part?.trim()))

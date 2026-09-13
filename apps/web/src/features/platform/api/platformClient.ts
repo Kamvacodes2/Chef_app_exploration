@@ -801,12 +801,16 @@ const operationsBookingSchema = z.object({
       roles: z.array(z.string()),
     })
     .nullable(),
-  alignedChefs: z.array(z.object({
-    id: z.string(),
-    displayName: z.string(),
-    email: z.string(),
-    alignedAt: z.string(),
-  })).default([]),
+  alignedChefs: z
+    .array(
+      z.object({
+        id: z.string(),
+        displayName: z.string(),
+        email: z.string(),
+        alignedAt: z.string(),
+      }),
+    )
+    .default([]),
   payment: z
     .object({
       id: z.string(),
