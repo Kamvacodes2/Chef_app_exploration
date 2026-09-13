@@ -210,6 +210,12 @@ describe("Chef portal sessions", () => {
     const saved = vi.fn();
     render(<ChefProfileEditor onSaved={saved} profile={chefProfile} />);
 
+    // Availability can be changed independently of the other profile fields.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Available for new bookings" }));
+    expect(screen.getByRole("checkbox", { name: "Available for new bookings" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Available for new bookings" }));
+    expect(screen.getByRole("checkbox", { name: "Available for new bookings" })).toBeChecked();
+
     // Selecting a region picks every suburb under it, Sandton included.
     fireEvent.click(screen.getByRole("button", { name: /JHB NORTH/ }));
 

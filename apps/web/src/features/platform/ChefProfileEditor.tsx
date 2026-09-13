@@ -93,6 +93,15 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
         }}
       >
         <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Profile & Availability</h2>
+        <label className="flex items-center gap-3 text-sm font-bold text-[var(--color-charcoal)]">
+          <input
+            checked={isAvailable}
+            className="h-4 w-4 accent-[var(--color-oxblood)]"
+            onChange={(event) => setIsAvailable(event.target.checked)}
+            type="checkbox"
+          />
+          Available for new bookings
+        </label>
         <div>
           <p className="mb-2 text-sm font-bold text-[var(--color-charcoal)]">Service areas</p>
           <ServiceAreaPicker error={null} onChange={setServiceAreas} selected={serviceAreas} />
