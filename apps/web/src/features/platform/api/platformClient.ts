@@ -620,9 +620,22 @@ const availableSessionSchema = z.object({
   unit: z.string().nullable(),
   street: z.string().nullable(),
   chefPayoutCents: z.number().int().nonnegative().nullish(),
+  /** PENDING until the customer's payment is confirmed, VERIFIED once confirmed. */
+  paymentStatus: z.enum(["PENDING", "SUBMITTED", "VERIFIED", "DECLINED"]).catch("PENDING"),
+  /** When this chef aligned availability for the session, if they have. */
+  claimedAt: z.string().nullish(),
+  /** Completed visits this customer has with the platform. */
+  repeatVisits: z.number().int().nonnegative().catch(0),
 });
 
 export type AvailableSession = z.infer<typeof availableSessionSchema>;
+
+export type RepeatCustomerSummary = z.infer<typeof repeatCustomerSummarySchema>;
+
+const repeatCustomerSummarySchema = z.object({
+  completedVisits: z.number().int().nonnegative(),
+  activePlan: z.string().nullable(),
+});
 
 export async function fetchAvailableSessions(
   options: PlatformRequestOptions = {},
@@ -633,6 +646,62 @@ export async function fetchAvailableSessions(
     schema: itemsEnvelope(availableSessionSchema),
     options,
     select: (data) => data.items,
+  });
+}
+
+/** "Align availability": first come, first served for still-unpaid sessions. */
+export async function alignSessionAvailability(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{ bookingId: string; reference: string; claimedAt: string }> {
+  return requestData({
+    path: `/api/v1/chef/sessions/${encodeURIComponent(bookingId)}/align`,
+    method: "POST",
+    schema: envelope(
+      z.object({
+        bookingId: z.string().min(1),
+        reference: z.string().min(1),
+        claimedAt: z.string().min(1),
+      }),
+    ),
+    options,
+  });
+}
+
+/** Walks back an availability claim up to 12:00 PM the day before the session. */
+export async function releaseSessionClaim(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<{
+  bookingId: string;
+  reference: string;
+  releasedAt: string;
+  rebroadcastOffers: number;
+}> {
+  return requestData({
+    path: `/api/v1/chef/sessions/${encodeURIComponent(bookingId)}/release`,
+    method: "POST",
+    schema: envelope(
+      z.object({
+        bookingId: z.string().min(1),
+        reference: z.string().min(1),
+        releasedAt: z.string().min(1),
+        rebroadcastOffers: z.number().int().nonnegative(),
+      }),
+    ),
+    options,
+  });
+}
+
+export async function fetchRepeatCustomerSummary(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<RepeatCustomerSummary> {
+  return requestData({
+    path: `/api/v1/chef/sessions/${encodeURIComponent(bookingId)}/repeat-customer`,
+    method: "GET",
+    schema: envelope(repeatCustomerSummarySchema),
+    options,
   });
 }
 

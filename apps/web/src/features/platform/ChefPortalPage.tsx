@@ -151,6 +151,18 @@ export function ChefPortalPage() {
                 );
                 void load();
               }}
+              onAligned={(reference) => {
+                setNotice(
+                  `Availability aligned for ${reference}. You're first in line — we'll match you automatically once payment is confirmed.`,
+                );
+                void load();
+              }}
+              onReleased={(reference, rebroadcastOffers) => {
+                setNotice(
+                  `Availability released for ${reference}.${rebroadcastOffers > 0 ? ` The session went back out to ${rebroadcastOffers} chef${rebroadcastOffers === 1 ? "" : "s"}.` : ""}`,
+                );
+                void load();
+              }}
               profile={profile}
               run={(name, action) => void run(name, action)}
               sessions={sessions}

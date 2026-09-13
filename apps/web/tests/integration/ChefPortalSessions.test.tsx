@@ -35,6 +35,8 @@ const api = vi.hoisted(() => {
     );
   return {
     acceptChefOffer: vi.fn(),
+    alignSessionAvailability: vi.fn(),
+    releaseSessionClaim: vi.fn(),
     availabilityDays,
     availabilityFromRecord,
     isWithinAvailability,
@@ -82,6 +84,9 @@ const session = {
   unit: null,
   street: null,
   chefPayoutCents: 34310,
+  paymentStatus: "VERIFIED",
+  claimedAt: null,
+  repeatVisits: 0,
 };
 
 describe("Chef portal sessions", () => {
@@ -116,6 +121,66 @@ describe("Chef portal sessions", () => {
     fireEvent.click(confirmButton);
 
     await waitFor(() => expect(api.claimAvailableSession).toHaveBeenCalledWith("booking-grabs-1"));
+  });
+
+  it("offers Align availability for unpaid sessions and surfaces the claim after confirming", async () => {
+    api.fetchAvailableSessions.mockResolvedValue([{ ...session, paymentStatus: "PENDING" }]);
+    api.alignSessionAvailability.mockResolvedValue({
+      bookingId: "booking-grabs-1",
+      reference: "CM-GRAB-01",
+      claimedAt: "2026-09-10T08:00:00.000Z",
+    });
+    render(<ChefPortalPage />);
+
+    await screen.findByText("Lamb curry and rice");
+    expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Align availability" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /I confirm I am available to cook this session/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yes, I confirm — take the session" }));
+
+    await waitFor(() =>
+      expect(api.alignSessionAvailability).toHaveBeenCalledWith("booking-grabs-1"),
+    );
+    expect(await screen.findByText(/Availability aligned for CM-GRAB-01/i)).toBeInTheDocument();
+  });
+
+  it("shows the aligned state with a release option for a session this chef has aligned", async () => {
+    api.fetchAvailableSessions.mockResolvedValue([
+      {
+        ...session,
+        paymentStatus: "PENDING",
+        claimedAt: "2026-09-10T08:00:00.000Z",
+      },
+    ]);
+    api.releaseSessionClaim.mockResolvedValue({
+      bookingId: "booking-grabs-1",
+      reference: "CM-GRAB-01",
+      releasedAt: "2026-09-10T09:00:00.000Z",
+      rebroadcastOffers: 3,
+    });
+    render(<ChefPortalPage />);
+
+    await screen.findByText("Availability aligned");
+    fireEvent.click(screen.getByRole("button", { name: "Release availability" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /I confirm I am available to cook this session/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yes, I confirm — take the session" }));
+
+    await waitFor(() => expect(api.releaseSessionClaim).toHaveBeenCalledWith("booking-grabs-1"));
+    expect(await screen.findByText(/Availability released for CM-GRAB-01/i)).toBeInTheDocument();
+    expect(screen.getByText(/back out to 3 chefs/i)).toBeInTheDocument();
+  });
+
+  it("flags repeat customers with their completed visit count", async () => {
+    api.fetchAvailableSessions.mockResolvedValue([{ ...session, repeatVisits: 4 }]);
+    render(<ChefPortalPage />);
+
+    await screen.findByText("Lamb curry and rice");
+    expect(screen.getByText(/Repeat customer · 4 completed visits/)).toBeInTheDocument();
   });
 
   it("warns when a session falls outside the chef's declared availability windows", async () => {
