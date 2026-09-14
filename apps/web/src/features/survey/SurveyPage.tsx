@@ -2,13 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { getChefmateApiUrl } from "@/lib/env";
-
-// This survey payload is fetched directly (no zod schema, no `platformRoleSchema`
-// normalization) from a separate, unauthenticated tokenized survey endpoint, so
-// it is not guaranteed to have passed through the platformClient compatibility
-// layer. "COOK" is kept here defensively as a legacy fallback value the backend
-// may still literally send on this independent path.
-type SurveyRole = "CUSTOMER" | "CHEF" | "COOK";
+import {
+  CUSTOMER_REVIEW_TAGS,
+  CHEF_SESSION_TAGS,
+  type CustomerSurveySubmission,
+  type CookSurveySubmission,
+  type SurveyMediaItem,
+  type SurveyRole,
+  type SurveyCompletionStatus,
+  type SurveyIngredientStatus,
+  type SurveySpicePreference,
+  type SurveyCleaningExpectation,
+} from "./surveyTypes";
+import { MediaUploader, type AttachedMedia } from "../testimonials/MediaUploader";
 
 interface SurveyDetails {
   readonly bookingReference: string;
@@ -22,6 +28,9 @@ interface StarRatingProps {
   readonly label: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
+  readonly size?: "lg" | "sm";
+  readonly helperText?: string;
+  readonly ariaLabelPrefix?: string;
 }
 
 const QUESTION_LABELS: Record<string, string> = {
@@ -33,29 +42,56 @@ function surveyUrl(token: string): string {
   return getChefmateApiUrl() + "/api/v1/surveys/" + encodeURIComponent(token);
 }
 
+function uploadMediaUrl(): string {
+  return getChefmateApiUrl() + "/api/v1/testimonials/upload-media";
+}
+
 function unavailableMessage(): string {
   return "This survey link is unavailable or has expired.";
 }
 
-function StarRating({ label, value, onChange }: StarRatingProps): ReactElement {
+function StarRating({
+  label,
+  value,
+  onChange,
+  size = "lg",
+  helperText,
+  ariaLabelPrefix,
+}: StarRatingProps): ReactElement {
   const selectedRating = Number(value);
+  const isLarge = size === "lg";
 
   return (
-    <fieldset className="flex flex-col items-center gap-3">
-      <legend className="font-display text-2xl text-[var(--color-oxblood)]">{label}</legend>
-      <div className="flex items-center justify-center gap-1" role="radiogroup" aria-label={label}>
+    <fieldset className="flex flex-col items-center gap-2">
+      <legend
+        className={
+          isLarge
+            ? "font-display text-2xl text-[var(--color-oxblood)]"
+            : "text-sm font-semibold text-[var(--color-oxblood)]"
+        }
+      >
+        {label}
+      </legend>
+      <div
+        className="flex items-center justify-center gap-1"
+        {...(isLarge ? { role: "radiogroup", "aria-label": label } : { "aria-label": label })}
+      >
         {[1, 2, 3, 4, 5].map((rating) => {
           const selected = rating <= selectedRating;
+          const buttonAriaLabel = ariaLabelPrefix
+            ? `${ariaLabelPrefix} ${rating} out of 5`
+            : `Rate ${rating} out of 5`;
           return (
             <button
               key={rating}
               type="button"
               onClick={() => onChange(String(rating))}
-              aria-label={"Rate " + rating + " out of 5"}
+              aria-label={buttonAriaLabel}
               aria-pressed={rating === selectedRating}
-              title={"Rate " + rating + " out of 5"}
+              title={buttonAriaLabel}
               className={
-                "flex h-12 w-12 items-center justify-center text-4xl leading-none transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)] " +
+                "flex items-center justify-center leading-none transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)] " +
+                (isLarge ? "h-12 w-12 text-4xl " : "h-8 w-8 text-2xl ") +
                 (selected ? "text-[var(--color-maize)]" : "text-[var(--color-oxblood)]/20")
               }
             >
@@ -65,7 +101,7 @@ function StarRating({ label, value, onChange }: StarRatingProps): ReactElement {
         })}
       </div>
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-oxblood)]/55">
-        {value ? value + " out of 5" : "Choose a rating"}
+        {value ? value + " out of 5" : (helperText ?? (isLarge ? "Choose a rating" : "Optional"))}
       </p>
     </fieldset>
   );
@@ -83,6 +119,40 @@ export function SurveyPage({
   const [details, setDetails] = useState<SurveyDetails | null>(null);
   const [ratings, setRatings] = useState<Record<string, string>>({});
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Customer specific states
+  const [cleaningRating, setCleaningRating] = useState<string>("");
+  const [punctualityRating, setPunctualityRating] = useState<string>("");
+  const [overallRating, setOverallRating] = useState<string>("");
+  const [photos, setPhotos] = useState<AttachedMedia[]>([]);
+  const [video, setVideo] = useState<AttachedMedia | null>(null);
+  const [socialConsent, setSocialConsent] = useState(false);
+  const [reviewerName, setReviewerName] = useState("");
+  const [reviewerRole, setReviewerRole] = useState("");
+  const [reviewerLocation, setReviewerLocation] = useState("");
+
+  // Chef specific states
+  const [customerRating, setCustomerRating] = useState<string>("");
+  const [sessionCompleted, setSessionCompleted] = useState<SurveyCompletionStatus | "">("");
+  const [mealsCompleted, setMealsCompleted] = useState<SurveyCompletionStatus | "">("");
+  const [cleaningCompleted, setCleaningCompleted] = useState<SurveyCompletionStatus | "">("");
+  const [ingredientsAvailable, setIngredientsAvailable] = useState<SurveyIngredientStatus | "">("");
+  const [ingredientNotes, setIngredientNotes] = useState("");
+  const [spicePreference, setSpicePreference] = useState<SurveySpicePreference | "">("");
+  const [allergyOrDietaryNotes, setAllergyOrDietaryNotes] = useState("");
+  const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState("");
+  const [cleaningExpectationLevel, setCleaningExpectationLevel] = useState<
+    SurveyCleaningExpectation | ""
+  >("");
+  const [cleaningNotes, setCleaningNotes] = useState("");
+  const [kitchenAccessNotes, setKitchenAccessNotes] = useState("");
+  const [parkingAccessNotes, setParkingAccessNotes] = useState("");
+  const [safetyConcerns, setSafetyConcerns] = useState(false);
+  const [safetyDetails, setSafetyDetails] = useState("");
+  const [supportFollowUpRequired, setSupportFollowUpRequired] = useState(false);
+  const [nextChefNotes, setNextChefNotes] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -136,6 +206,7 @@ export function SurveyPage({
     () => details?.questions.filter((question) => question !== "comment") ?? [],
     [details],
   );
+
   const canSubmit = useMemo(
     () =>
       Boolean(
@@ -146,9 +217,27 @@ export function SurveyPage({
       ),
     [details, ratingQuestions, ratings],
   );
-  const heading = ["CHEF", "COOK"].includes(details?.recipientRole ?? "CUSTOMER")
-    ? "How did the session go?"
-    : "How was your food?";
+
+  const isChef = ["CHEF", "COOK"].includes(details?.recipientRole ?? "CUSTOMER");
+  const heading = isChef ? "How did the session go?" : "How was your food?";
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((current) =>
+      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag],
+    );
+  };
+
+  async function uploadMediaFile(file: File): Promise<SurveyMediaItem> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(uploadMediaUrl(), {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Failed to upload " + file.name);
+    const json = (await response.json()) as { data: SurveyMediaItem };
+    return json.data;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -156,19 +245,94 @@ export function SurveyPage({
 
     setSubmitting(true);
     setError(null);
-    const response: Record<string, number | string | null> = {};
-    for (const question of ratingQuestions) {
-      response[question] = Number(ratings[question]);
-    }
-    response.comment = comment.trim() || null;
 
     try {
-      const request = await fetch(surveyUrl(token), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(response),
-      });
-      if (!request.ok) throw new Error("survey_submit_failed");
+      const firstQuestion = ratingQuestions[0];
+      const fallbackRating = firstQuestion ? ratings[firstQuestion] : undefined;
+
+      if (isChef) {
+        // Build cook survey payload
+        const response: CookSurveySubmission = {
+          sessionRating: Number(ratings.sessionRating ?? fallbackRating ?? 5),
+          comment: comment.trim() || null,
+        };
+
+        if (customerRating && !Number.isNaN(Number(customerRating))) {
+          response.customerRating = Number(customerRating);
+        }
+        if (sessionCompleted) response.sessionCompleted = sessionCompleted;
+        if (mealsCompleted) response.mealsCompleted = mealsCompleted;
+        if (cleaningCompleted) response.cleaningCompleted = cleaningCompleted;
+        if (ingredientsAvailable) response.ingredientsAvailable = ingredientsAvailable;
+        if (ingredientNotes.trim()) response.ingredientNotes = ingredientNotes.trim();
+        if (spicePreference) response.spicePreference = spicePreference;
+        if (allergyOrDietaryNotes.trim())
+          response.allergyOrDietaryNotes = allergyOrDietaryNotes.trim();
+        if (customerPreferenceNotes.trim())
+          response.customerPreferenceNotes = customerPreferenceNotes.trim();
+        if (cleaningExpectationLevel) response.cleaningExpectationLevel = cleaningExpectationLevel;
+        if (cleaningNotes.trim()) response.cleaningNotes = cleaningNotes.trim();
+        if (kitchenAccessNotes.trim()) response.kitchenAccessNotes = kitchenAccessNotes.trim();
+        if (parkingAccessNotes.trim()) response.parkingAccessNotes = parkingAccessNotes.trim();
+        if (safetyConcerns) {
+          response.safetyConcerns = true;
+          if (safetyDetails.trim()) response.safetyDetails = safetyDetails.trim();
+        }
+        if (supportFollowUpRequired) response.supportFollowUpRequired = true;
+        if (nextChefNotes.trim()) response.nextChefNotes = nextChefNotes.trim();
+        if (selectedTags.length > 0) response.tags = selectedTags;
+
+        const request = await fetch(surveyUrl(token), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(response),
+        });
+        if (!request.ok) throw new Error("survey_submit_failed");
+      } else {
+        // Upload any media files first
+        let uploadedMedia: SurveyMediaItem[] | undefined;
+        const allFiles: File[] = [];
+        photos.forEach((p) => allFiles.push(p.file));
+        if (video) allFiles.push(video.file);
+
+        if (allFiles.length > 0) {
+          uploadedMedia = [];
+          for (const file of allFiles) {
+            const item = await uploadMediaFile(file);
+            uploadedMedia.push(item);
+          }
+        }
+
+        // Build customer survey payload
+        const response: CustomerSurveySubmission = {
+          mealRating: Number(ratings.mealRating ?? fallbackRating ?? 5),
+          comment: comment.trim() || null,
+        };
+
+        if (cleaningRating && !Number.isNaN(Number(cleaningRating))) {
+          response.cleaningRating = Number(cleaningRating);
+        }
+        if (punctualityRating && !Number.isNaN(Number(punctualityRating))) {
+          response.punctualityRating = Number(punctualityRating);
+        }
+        if (overallRating && !Number.isNaN(Number(overallRating))) {
+          response.overallRating = Number(overallRating);
+        }
+        if (selectedTags.length > 0) response.tags = selectedTags;
+        if (uploadedMedia && uploadedMedia.length > 0) response.media = uploadedMedia;
+        if (socialConsent) response.socialConsent = true;
+        if (reviewerName.trim()) response.reviewerName = reviewerName.trim();
+        if (reviewerRole.trim()) response.reviewerRole = reviewerRole.trim();
+        if (reviewerLocation.trim()) response.reviewerLocation = reviewerLocation.trim();
+
+        const request = await fetch(surveyUrl(token), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(response),
+        });
+        if (!request.ok) throw new Error("survey_submit_failed");
+      }
+
       setSubmitted(true);
     } catch {
       setError("We could not save your feedback. Please try again.");
@@ -203,21 +367,25 @@ export function SurveyPage({
         <div className="max-w-md">
           <p className="font-brand text-3xl">chefmate</p>
           <h1 className="mt-8 font-display text-3xl">Thank you.</h1>
-          <p className="mt-3 text-sm text-[var(--color-bone)]/75">Your rating has been received.</p>
+          <p className="mt-3 text-sm text-[var(--color-bone)]/75">
+            Your rating and feedback have been recorded.
+          </p>
         </div>
       </main>
     );
   }
 
+  const tagsList = isChef ? CHEF_SESSION_TAGS : CUSTOMER_REVIEW_TAGS;
+
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[var(--color-oxblood)] px-5 py-10 sm:px-8">
-      <div className="w-full max-w-md">
+    <main className="flex min-h-dvh items-center justify-center bg-[var(--color-oxblood)] px-4 py-10 sm:px-8">
+      <div className="w-full max-w-xl">
         <p className="mb-6 text-center font-brand text-3xl text-[var(--color-bone)]">chefmate</p>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="survey-title"
-          className="border border-[var(--color-bone)]/15 bg-[var(--color-bone)] px-5 py-7 text-[var(--color-oxblood)] shadow-xl sm:px-8"
+          className="rounded-2xl border border-[var(--color-bone)]/15 bg-[var(--color-bone)] px-5 py-8 text-[var(--color-oxblood)] shadow-2xl sm:px-8"
         >
           <p className="text-center text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]/60">
             Order {details?.bookingReference}
@@ -226,7 +394,8 @@ export function SurveyPage({
             {heading}
           </h1>
 
-          <form className="mt-8 flex flex-col gap-7" onSubmit={(event) => void submit(event)}>
+          <form className="mt-8 flex flex-col gap-8" onSubmit={(event) => void submit(event)}>
+            {/* Primary Rating Question(s) */}
             {ratingQuestions.map((question) => (
               <StarRating
                 key={question}
@@ -236,6 +405,342 @@ export function SurveyPage({
               />
             ))}
 
+            {/* Quick Selection Tag Propositions */}
+            <div className="space-y-2">
+              <label className="block text-center text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]/70">
+                {isChef ? "Session Highlights" : "What made this experience stand out?"}
+              </label>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {tagsList.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      aria-pressed={isSelected}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                        isSelected
+                          ? "bg-[var(--color-oxblood)] text-[var(--color-bone)] shadow-sm scale-105"
+                          : "border border-[var(--color-oxblood)]/20 bg-white text-[var(--color-oxblood)]/80 hover:border-[var(--color-oxblood)]/50"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── CUSTOMER EXTENDED RATINGS & TESTIMONIAL ── */}
+            {!isChef && (
+              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/50 p-4 sm:p-6">
+                <p className="font-display text-lg text-[var(--color-oxblood)]">
+                  Detailed Experience{" "}
+                  <span className="text-xs font-normal text-stone-500">(Optional)</span>
+                </p>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <StarRating
+                    label="Cleanliness"
+                    value={cleaningRating}
+                    onChange={setCleaningRating}
+                    size="sm"
+                    ariaLabelPrefix="Rate Cleanliness"
+                  />
+                  <StarRating
+                    label="Punctuality"
+                    value={punctualityRating}
+                    onChange={setPunctualityRating}
+                    size="sm"
+                    ariaLabelPrefix="Rate Punctuality"
+                  />
+                  <StarRating
+                    label="Overall"
+                    value={overallRating}
+                    onChange={setOverallRating}
+                    size="sm"
+                    ariaLabelPrefix="Rate Overall"
+                  />
+                </div>
+
+                {/* Media Uploader */}
+                <div className="pt-2">
+                  <MediaUploader
+                    photos={photos}
+                    video={video}
+                    onPhotosChange={setPhotos}
+                    onVideoChange={setVideo}
+                    disabled={submitting}
+                  />
+                </div>
+
+                {/* Social Consent and Name */}
+                <div className="space-y-3 pt-2">
+                  <label className="flex items-start gap-3 cursor-pointer text-xs font-medium text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={socialConsent}
+                      onChange={(e) => setSocialConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[var(--color-oxblood)] focus:ring-[var(--color-oxblood)]"
+                    />
+                    <span>
+                      I give Chefmate permission to feature my story, photos, or video on Chefmate
+                      stories and marketing.
+                    </span>
+                  </label>
+
+                  {socialConsent && (
+                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-stone-700">
+                          Your Name
+                        </label>
+                        <input
+                          type="text"
+                          value={reviewerName}
+                          onChange={(e) => setReviewerName(e.target.value)}
+                          placeholder="e.g. Sindi M."
+                          className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-stone-700">
+                          Occasion / Role
+                        </label>
+                        <input
+                          type="text"
+                          value={reviewerRole}
+                          onChange={(e) => setReviewerRole(e.target.value)}
+                          placeholder="e.g. Birthday Host"
+                          className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-stone-700">
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          value={reviewerLocation}
+                          onChange={(e) => setReviewerLocation(e.target.value)}
+                          placeholder="e.g. Rosebank, JHB"
+                          className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── CHEF STRUCTURED SESSION & CUSTOMER KNOWLEDGE ── */}
+            {isChef && (
+              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/50 p-4 sm:p-6">
+                <p className="font-display text-lg text-[var(--color-oxblood)]">
+                  Session & Customer Intelligence
+                </p>
+
+                {/* Customer Rating */}
+                <StarRating
+                  label="Customer / Host Rating"
+                  value={customerRating}
+                  onChange={setCustomerRating}
+                  size="sm"
+                  ariaLabelPrefix="Rate Customer / Host"
+                />
+
+                {/* Completion Status Pills */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Session Completed?
+                    </label>
+                    <div className="flex gap-2">
+                      {(["YES", "PARTIAL", "NO"] as const).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() =>
+                            setSessionCompleted((cur) => (cur === status ? "" : status))
+                          }
+                          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                            sessionCompleted === status
+                              ? "bg-[var(--color-oxblood)] text-white"
+                              : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {status === "YES" ? "Yes" : status === "PARTIAL" ? "Partial" : "No"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      All Meals Cooked?
+                    </label>
+                    <div className="flex gap-2">
+                      {(["YES", "PARTIAL", "NO"] as const).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setMealsCompleted((cur) => (cur === status ? "" : status))}
+                          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                            mealsCompleted === status
+                              ? "bg-[var(--color-oxblood)] text-white"
+                              : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {status === "YES" ? "Yes" : status === "PARTIAL" ? "Partial" : "No"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Kitchen Cleaned?
+                    </label>
+                    <div className="flex gap-2">
+                      {(["YES", "PARTIAL", "NO"] as const).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() =>
+                            setCleaningCompleted((cur) => (cur === status ? "" : status))
+                          }
+                          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                            cleaningCompleted === status
+                              ? "bg-[var(--color-oxblood)] text-white"
+                              : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {status === "YES" ? "Yes" : status === "PARTIAL" ? "Partial" : "No"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Ingredients Ready?
+                    </label>
+                    <div className="flex gap-2">
+                      {(["YES", "SOME_MISSING", "NO"] as const).map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() =>
+                            setIngredientsAvailable((cur) => (cur === status ? "" : status))
+                          }
+                          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                            ingredientsAvailable === status
+                              ? "bg-[var(--color-oxblood)] text-white"
+                              : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {status === "YES"
+                            ? "All Ready"
+                            : status === "SOME_MISSING"
+                              ? "Missing Some"
+                              : "No"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dietary & Spice Preferences */}
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Customer Spice Preference
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {(["MILD", "MEDIUM", "HOT", "NO_SPICE"] as const).map((spice) => (
+                        <button
+                          key={spice}
+                          type="button"
+                          onClick={() => setSpicePreference((cur) => (cur === spice ? "" : spice))}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                            spicePreference === spice
+                              ? "bg-[var(--color-oxblood)] text-white"
+                              : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {spice === "NO_SPICE"
+                            ? "No Spice"
+                            : spice.charAt(0) + spice.slice(1).toLowerCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700">
+                      Dietary or Allergy Discoveries (to inform next chefs)
+                    </label>
+                    <input
+                      type="text"
+                      value={allergyOrDietaryNotes}
+                      onChange={(e) => setAllergyOrDietaryNotes(e.target.value)}
+                      placeholder="e.g. Host mentioned mild lactose sensitivity"
+                      className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700">
+                      Kitchen & Equipment Notes
+                    </label>
+                    <input
+                      type="text"
+                      value={kitchenAccessNotes}
+                      onChange={(e) => setKitchenAccessNotes(e.target.value)}
+                      placeholder="e.g. Gas stove, sharp knives provided, extra pans in lower drawer"
+                      className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700">
+                      Pro-Tips for Next Assigned Chef
+                    </label>
+                    <input
+                      type="text"
+                      value={nextChefNotes}
+                      onChange={(e) => setNextChefNotes(e.target.value)}
+                      placeholder="e.g. Prefer plating at the dining table; loved dessert presentation"
+                      className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[var(--color-oxblood)]"
+                    />
+                  </div>
+
+                  {/* Safety Alert Toggle */}
+                  <label className="flex items-center gap-3 cursor-pointer pt-2 text-xs font-semibold text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={safetyConcerns}
+                      onChange={(e) => setSafetyConcerns(e.target.checked)}
+                      className="h-4 w-4 rounded border-stone-300 text-red-600 focus:ring-red-500"
+                    />
+                    <span>Report safety / access concern for platform review</span>
+                  </label>
+
+                  {safetyConcerns && (
+                    <textarea
+                      value={safetyDetails}
+                      onChange={(e) => setSafetyDetails(e.target.value)}
+                      placeholder="Please describe the safety concern in detail..."
+                      rows={2}
+                      className="mt-2 w-full rounded-lg border border-red-300 bg-white p-2 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* General Free-Form Comment */}
             <label className="flex flex-col gap-2 text-sm font-semibold">
               Anything else?{" "}
               <span className="font-normal text-[var(--color-oxblood)]/55">(optional)</span>
@@ -243,8 +748,13 @@ export function SurveyPage({
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
                 maxLength={2000}
-                rows={4}
-                className="resize-y border border-[var(--color-oxblood)]/25 bg-[var(--color-warm-white)] p-3 text-sm text-[var(--color-oxblood)] outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-maize)]"
+                rows={3}
+                placeholder={
+                  isChef
+                    ? "Additional notes about the visit..."
+                    : "Tell us about the flavours, dishes, or special moments..."
+                }
+                className="resize-y rounded-xl border border-[var(--color-oxblood)]/25 bg-[var(--color-warm-white)] p-3 text-sm text-[var(--color-oxblood)] outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-maize)]"
               />
             </label>
 
@@ -257,7 +767,7 @@ export function SurveyPage({
             <button
               type="submit"
               disabled={!canSubmit || submitting}
-              className="h-12 bg-[var(--color-oxblood)] px-5 font-display text-sm text-[var(--color-bone)] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-12 rounded-xl bg-[var(--color-oxblood)] px-5 font-display text-sm text-[var(--color-bone)] transition-opacity hover:bg-[var(--color-oxblood)]/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitting ? "Saving..." : "Save rating"}
             </button>
