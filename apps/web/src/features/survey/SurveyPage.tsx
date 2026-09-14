@@ -798,7 +798,7 @@ export function SurveyPage({
 
             {/* General Free-Form Comment */}
             <label className="flex flex-col gap-2 text-sm font-semibold">
-              Anything else?{" "}
+              {isChef ? "Anything else?" : "Describe what you liked about your experience"}{" "}
               <span className="font-normal text-[var(--color-oxblood)]/55">(optional)</span>
               <textarea
                 value={comment}
