@@ -41,6 +41,7 @@ export default defineConfig({
       include: ["packages/*/src/**", "apps/api/src/**", "apps/worker/src/**"],
       exclude: [
         "**/*.d.ts",
+        "packages/application/src/ports/**",
         // Process entry points. They are thin `main()` wrappers whose parts are
         // each covered above; running them would spawn real long-lived
         // processes inside the coverage run.

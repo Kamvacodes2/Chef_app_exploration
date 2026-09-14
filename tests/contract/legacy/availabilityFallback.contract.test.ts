@@ -44,28 +44,27 @@ describe("legacy contract: availability is advisory, not authoritative", () => {
 
   function freezeAndStub(fetchImpl: () => Promise<Response>): void {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.setSystemTime(new Date("2026-08-15T13:19:00.000Z"));
+    vi.setSystemTime(new Date("2026-08-15T08:30:00.000Z"));
     vi.stubEnv("NEXT_PUBLIC_CHEFMATE_API_URL", LEGACY_BASE_URL);
     vi.stubGlobal("fetch", vi.fn(fetchImpl));
   }
 
   it("keeps the local 24h lead-time fallback when the availability request fails", async () => {
-    // Use a booking date that clears the local 24h lead-time window so the
-    // afternoon period button is enabled and the fallback can be observed.
-    // Frozen now = 2026-08-15T13:19Z (15:19 JHB) → tomorrow 16:00 is
-    // 24h41m away and the only afternoon slot that clears the window.
+    // Use a booking date that clears the 12:00 PM cutoff and 24h lead-time window.
+    // Frozen now = 2026-08-15T08:30Z (10:30 JHB) → tomorrow 11:00 is 24h30m away
+    // and clears the 24h lead-time window, while 10:00 and 09:00 are within 24h.
     freezeAndStub(async () => {
       throw new TypeError("Failed to fetch");
     });
 
     renderScheduleAtDate("2026-08-16");
-    fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
+    fireEvent.click(screen.getByRole("button", { name: /morning/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "16:00" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "11:00" })).toBeEnabled();
     });
-    expect(screen.getByRole("button", { name: "15:00" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "14:00" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "10:00" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "09:00" })).toBeDisabled();
     // The swallowed failure surfaces no error text to the customer.
     expect(screen.queryByText(/availability request failed/i)).not.toBeInTheDocument();
   });
@@ -76,17 +75,17 @@ describe("legacy contract: availability is advisory, not authoritative", () => {
         body: {
           data: {
             date: "2026-08-16",
-            slots: [{ period: "afternoon", time: "16:00", label: "4:00 PM", available: false }],
+            slots: [{ period: "morning", time: "11:00", label: "11:00 AM", available: false }],
           },
         },
       }),
     );
 
     renderScheduleAtDate("2026-08-16");
-    fireEvent.click(screen.getByRole("button", { name: /afternoon/i }));
+    fireEvent.click(screen.getByRole("button", { name: /morning/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "16:00" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "11:00" })).toBeDisabled();
     });
   });
 });

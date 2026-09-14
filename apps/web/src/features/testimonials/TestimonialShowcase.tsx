@@ -110,7 +110,7 @@ export function TestimonialShowcase() {
           >
             Loved by Busy Households Across South Africa
           </h2>
-          <p className="mt-3 max-w-2xl text-base text-stone-600">
+          <p className="mt-3 max-w-2xl text-base text-stone-700">
             See how Chefmate private chefs transform weeknight dinners, special celebrations, and
             family gatherings.
           </p>
@@ -129,9 +129,15 @@ export function TestimonialShowcase() {
               >
                 <div>
                   {/* Star Rating */}
-                  <div className="flex items-center gap-1 text-amber-500 text-lg">
+                  <div
+                    role="img"
+                    className="flex items-center gap-1 text-amber-600 text-lg"
+                    aria-label={`${item.rating} out of 5 stars`}
+                  >
                     {Array.from({ length: item.rating }).map((_, i) => (
-                      <span key={i}>★</span>
+                      <span key={i} aria-hidden="true">
+                        ★
+                      </span>
                     ))}
                   </div>
 
@@ -139,7 +145,7 @@ export function TestimonialShowcase() {
                   <h3 className="mt-4 font-display text-xl font-bold text-[var(--color-oxblood)]">
                     &ldquo;{item.title}&rdquo;
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-stone-700">{item.narrative}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-stone-800">{item.narrative}</p>
 
                   {/* Media attachments */}
                   {(photos.length > 0 || video) && (
@@ -151,7 +157,8 @@ export function TestimonialShowcase() {
                             key={photo.id}
                             type="button"
                             onClick={() => setActivePhotoUrl(url)}
-                            className="relative h-14 w-14 overflow-hidden rounded-xl border border-stone-300 shadow-sm transition hover:scale-105"
+                            aria-label={`View full photo ${photo.originalFilename}`}
+                            className="relative h-14 w-14 overflow-hidden rounded-xl border border-stone-300 shadow-sm transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-oxblood)]"
                           >
                             <img
                               src={url}
@@ -168,9 +175,10 @@ export function TestimonialShowcase() {
                           onClick={() =>
                             setActiveVideoUrl(getTestimonialMediaUrl(video.storageKey))
                           }
-                          className="flex items-center gap-1.5 rounded-xl bg-[var(--color-oxblood)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-oxblood)]/90"
+                          aria-label="Watch customer video testimonial"
+                          className="flex items-center gap-1.5 rounded-xl bg-[var(--color-oxblood)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)]"
                         >
-                          <span>▶</span> Watch Video
+                          <span aria-hidden="true">▶</span> Watch Video
                         </button>
                       )}
                     </div>
@@ -187,7 +195,7 @@ export function TestimonialShowcase() {
                       <div className="font-semibold text-sm text-[var(--color-oxblood)]">
                         {item.reviewerName}
                       </div>
-                      <div className="text-xs text-stone-500">
+                      <div className="text-xs font-medium text-stone-700">
                         {[item.reviewerRole, item.reviewerLocation].filter(Boolean).join(" • ")}
                       </div>
                     </div>
