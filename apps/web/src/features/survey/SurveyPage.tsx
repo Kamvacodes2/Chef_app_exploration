@@ -31,6 +31,7 @@ interface StarRatingProps {
   readonly size?: "lg" | "sm";
   readonly helperText?: string;
   readonly ariaLabelPrefix?: string;
+  readonly layout?: "stacked" | "row";
 }
 
 const QUESTION_LABELS: Record<string, string> = {
@@ -57,9 +58,53 @@ function StarRating({
   size = "lg",
   helperText,
   ariaLabelPrefix,
+  layout = size === "lg" ? "stacked" : "row",
 }: StarRatingProps): ReactElement {
   const selectedRating = Number(value);
   const isLarge = size === "lg";
+  const isRow = layout === "row";
+
+  if (isRow) {
+    return (
+      <div className="flex flex-col gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between first:pt-1 last:pb-1">
+        <div>
+          <span className="text-sm font-semibold text-[var(--color-oxblood)]">{label}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-1.5"
+            {...(isLarge ? { role: "radiogroup", "aria-label": label } : { "aria-label": label })}
+          >
+            {[1, 2, 3, 4, 5].map((rating) => {
+              const selected = rating <= selectedRating;
+              const buttonAriaLabel = ariaLabelPrefix
+                ? `${ariaLabelPrefix} ${rating} out of 5`
+                : `Rate ${rating} out of 5`;
+              return (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => onChange(String(rating))}
+                  aria-label={buttonAriaLabel}
+                  aria-pressed={rating === selectedRating}
+                  title={buttonAriaLabel}
+                  className={
+                    "flex h-9 w-9 items-center justify-center text-2xl leading-none transition-transform hover:scale-115 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-oxblood)] " +
+                    (selected ? "text-[var(--color-maize)]" : "text-[var(--color-oxblood)]/20")
+                  }
+                >
+                  <span aria-hidden="true">{selected ? "\u2605" : "\u2606"}</span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="min-w-[70px] text-right text-xs font-semibold uppercase tracking-wider text-[var(--color-oxblood)]/55">
+            {value ? `${value} out of 5` : (helperText ?? "Optional")}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <fieldset className="flex flex-col items-center gap-2">
@@ -434,18 +479,24 @@ export function SurveyPage({
 
             {/* ── CUSTOMER EXTENDED RATINGS & TESTIMONIAL ── */}
             {!isChef && (
-              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/50 p-4 sm:p-6">
-                <p className="font-display text-lg text-[var(--color-oxblood)]">
-                  Detailed Experience{" "}
-                  <span className="text-xs font-normal text-stone-500">(Optional)</span>
-                </p>
+              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/70 p-5 shadow-sm sm:p-7">
+                <div>
+                  <p className="font-display text-lg text-[var(--color-oxblood)]">
+                    Detailed Experience{" "}
+                    <span className="text-xs font-normal text-stone-500">(Optional)</span>
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    Rate specific parts of your booking to celebrate what your chef did best.
+                  </p>
+                </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="flex flex-col divide-y divide-[var(--color-oxblood)]/10 rounded-xl border border-stone-200/80 bg-white px-4 py-1">
                   <StarRating
                     label="Cleanliness"
                     value={cleaningRating}
                     onChange={setCleaningRating}
                     size="sm"
+                    layout="row"
                     ariaLabelPrefix="Rate Cleanliness"
                   />
                   <StarRating
@@ -453,6 +504,7 @@ export function SurveyPage({
                     value={punctualityRating}
                     onChange={setPunctualityRating}
                     size="sm"
+                    layout="row"
                     ariaLabelPrefix="Rate Punctuality"
                   />
                   <StarRating
@@ -460,6 +512,7 @@ export function SurveyPage({
                     value={overallRating}
                     onChange={setOverallRating}
                     size="sm"
+                    layout="row"
                     ariaLabelPrefix="Rate Overall"
                   />
                 </div>
@@ -536,19 +589,22 @@ export function SurveyPage({
 
             {/* ── CHEF STRUCTURED SESSION & CUSTOMER KNOWLEDGE ── */}
             {isChef && (
-              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/50 p-4 sm:p-6">
+              <div className="space-y-6 rounded-xl border border-[var(--color-oxblood)]/10 bg-white/70 p-5 shadow-sm sm:p-7">
                 <p className="font-display text-lg text-[var(--color-oxblood)]">
                   Session & Customer Intelligence
                 </p>
 
                 {/* Customer Rating */}
-                <StarRating
-                  label="Customer / Host Rating"
-                  value={customerRating}
-                  onChange={setCustomerRating}
-                  size="sm"
-                  ariaLabelPrefix="Rate Customer / Host"
-                />
+                <div className="rounded-xl border border-stone-200/80 bg-white px-4 py-1">
+                  <StarRating
+                    label="Customer / Host Rating"
+                    value={customerRating}
+                    onChange={setCustomerRating}
+                    size="sm"
+                    layout="row"
+                    ariaLabelPrefix="Rate Customer / Host"
+                  />
+                </div>
 
                 {/* Completion Status Pills */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
