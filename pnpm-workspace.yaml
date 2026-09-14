@@ -34,14 +34,14 @@ allowBuilds:
 #            GHSA-5p4m-2wfm-xmqj (high, quadratic CPU in !!omap). Patched in 4.3.1.
 overrides:
   postcss: ^8.5.18
-  sharp: ^0.35.0
+  sharp: ^0.35.4
   fastify: ^5.12.1
   fast-uri@3: ^3.1.6
   fast-uri@4: ^4.1.3
   browserslist: ^4.28.7
   brace-expansion@1: ^1.1.18
   brace-expansion@5: ^5.0.9
-  js-yaml: ^4.3.1
+  js-yaml: ^4.3.2
   #   nanoid:  next → postcss reaches nanoid@3.3.17, vulnerable to
   #            GHSA-2v37-7h3g-55p8 (high, unbounded loop when size is 0).
   #            Patched in 3.3.18.

@@ -43,7 +43,7 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-node-pnpm
       - name: Apply migrations from empty
         run: pnpm db:migrate
@@ -51,7 +51,7 @@ jobs:
         run: pnpm test:ci:coverage
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: |

@@ -10,7 +10,7 @@ export const testimonialMediaSchema = z.object({
   mimeType: z.string(),
   fileSizeBytes: z.number(),
   displayOrder: z.number(),
-  createdAt: z.string()
+  createdAt: z.string(),
 });
 
 export const testimonialSchema = z.object({
@@ -29,24 +29,26 @@ export const testimonialSchema = z.object({
   moderatedByUserId: z.string().nullable().optional(),
   media: z.array(testimonialMediaSchema).default([]),
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
 });
 
 export const publicTestimonialsResponseSchema = z.object({
-  data: z.array(testimonialSchema)
+  data: z.array(testimonialSchema),
 });
 
 export const operationsTestimonialsResponseSchema = z.object({
   data: z.array(testimonialSchema),
-  meta: z.object({
-    total: z.number(),
-    limit: z.number().optional(),
-    offset: z.number().optional()
-  }).optional()
+  meta: z
+    .object({
+      total: z.number(),
+      limit: z.number().optional(),
+      offset: z.number().optional(),
+    })
+    .optional(),
 });
 
 export const singleTestimonialResponseSchema = z.object({
-  data: testimonialSchema
+  data: testimonialSchema,
 });
 
 export type TestimonialMedia = z.infer<typeof testimonialMediaSchema>;
@@ -56,7 +58,7 @@ export class TestimonialApiError extends Error {
   constructor(
     message: string,
     readonly code: string = "unknown_error",
-    readonly status: number = 500
+    readonly status: number = 500,
   ) {
     super(message);
     this.name = "TestimonialApiError";
@@ -71,10 +73,12 @@ export function getTestimonialMediaUrl(storageKey: string): string {
   return `${getBaseUrl()}/api/v1/testimonials/media/${encodeURIComponent(storageKey)}`;
 }
 
-export async function fetchPublicTestimonials(options: {
-  featuredOnly?: boolean;
-  limit?: number;
-} = {}): Promise<Testimonial[]> {
+export async function fetchPublicTestimonials(
+  options: {
+    featuredOnly?: boolean;
+    limit?: number;
+  } = {},
+): Promise<Testimonial[]> {
   const params = new URLSearchParams();
   if (options.featuredOnly) params.set("featuredOnly", "true");
   if (options.limit) params.set("limit", String(options.limit));
@@ -82,11 +86,15 @@ export async function fetchPublicTestimonials(options: {
   const query = params.toString() ? `?${params.toString()}` : "";
   const response = await fetch(`${getBaseUrl()}/api/v1/testimonials/public${query}`, {
     method: "GET",
-    headers: { "Accept": "application/json" }
+    headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
-    throw new TestimonialApiError(`Failed to fetch testimonials (${response.status})`, "fetch_failed", response.status);
+    throw new TestimonialApiError(
+      `Failed to fetch testimonials (${response.status})`,
+      "fetch_failed",
+      response.status,
+    );
   }
 
   const json = await response.json();
@@ -99,7 +107,7 @@ export async function fetchPublicTestimonials(options: {
 
 export function submitTestimonialWithProgress(
   formData: FormData,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
 ): Promise<Testimonial> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -131,24 +139,30 @@ export function submitTestimonialWithProgress(
           reject(new TestimonialApiError(message, code, xhr.status));
         }
       } catch {
-        reject(new TestimonialApiError(`Server error (${xhr.status})`, "invalid_response", xhr.status));
+        reject(
+          new TestimonialApiError(`Server error (${xhr.status})`, "invalid_response", xhr.status),
+        );
       }
     };
 
     xhr.onerror = () => {
-      reject(new TestimonialApiError("Network error occurred during submission.", "network_error", 0));
+      reject(
+        new TestimonialApiError("Network error occurred during submission.", "network_error", 0),
+      );
     };
 
     xhr.send(formData);
   });
 }
 
-export async function fetchOperationsTestimonials(filters: {
-  status?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<{ items: Testimonial[]; total: number }> {
+export async function fetchOperationsTestimonials(
+  filters: {
+    status?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<{ items: Testimonial[]; total: number }> {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
   if (filters.search) params.set("search", filters.search);
@@ -159,11 +173,15 @@ export async function fetchOperationsTestimonials(filters: {
   const response = await fetch(`${getBaseUrl()}/api/v1/operations/testimonials${query}`, {
     method: "GET",
     credentials: "include",
-    headers: { "Accept": "application/json" }
+    headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
-    throw new TestimonialApiError(`Failed to fetch moderation queue (${response.status})`, "fetch_failed", response.status);
+    throw new TestimonialApiError(
+      `Failed to fetch moderation queue (${response.status})`,
+      "fetch_failed",
+      response.status,
+    );
   }
 
   const json = await response.json();
@@ -171,7 +189,7 @@ export async function fetchOperationsTestimonials(filters: {
   if (parsed.success) {
     return {
       items: parsed.data.data,
-      total: parsed.data.meta?.total ?? parsed.data.data.length
+      total: parsed.data.meta?.total ?? parsed.data.data.length,
     };
   }
   return { items: (json?.data as Testimonial[]) || [], total: json?.meta?.total ?? 0 };
@@ -183,21 +201,28 @@ export async function moderateTestimonial(
     status: "PENDING" | "APPROVED" | "REJECTED" | "FEATURED";
     featuredOrder?: number | null;
     adminNotes?: string | null;
-  }
+  },
 ): Promise<Testimonial> {
-  const response = await fetch(`${getBaseUrl()}/api/v1/operations/testimonials/${encodeURIComponent(id)}/moderate`, {
-    method: "PATCH",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json"
+  const response = await fetch(
+    `${getBaseUrl()}/api/v1/operations/testimonials/${encodeURIComponent(id)}/moderate`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(update),
     },
-    body: JSON.stringify(update)
-  });
+  );
 
   if (!response.ok) {
     const json = await response.json().catch(() => ({}));
-    throw new TestimonialApiError(json?.error?.message || "Failed to update testimonial", json?.error?.code || "update_failed", response.status);
+    throw new TestimonialApiError(
+      json?.error?.message || "Failed to update testimonial",
+      json?.error?.code || "update_failed",
+      response.status,
+    );
   }
 
   const json = await response.json();
@@ -205,12 +230,19 @@ export async function moderateTestimonial(
 }
 
 export async function deleteOperationsTestimonial(id: string): Promise<void> {
-  const response = await fetch(`${getBaseUrl()}/api/v1/operations/testimonials/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    credentials: "include"
-  });
+  const response = await fetch(
+    `${getBaseUrl()}/api/v1/operations/testimonials/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
 
   if (!response.ok) {
-    throw new TestimonialApiError(`Failed to delete testimonial (${response.status})`, "delete_failed", response.status);
+    throw new TestimonialApiError(
+      `Failed to delete testimonial (${response.status})`,
+      "delete_failed",
+      response.status,
+    );
   }
 }

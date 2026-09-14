@@ -3,7 +3,7 @@ import { TestimonialSubmissionForm } from "@/features/testimonials/TestimonialSu
 
 export const metadata: Metadata = {
   title: "Share Your Experience | Chefmate",
-  description: "Share your Chefmate private chef experience with photos and video reviews."
+  description: "Share your Chefmate private chef experience with photos and video reviews.",
 };
 
 export default function ShareExperiencePage() {

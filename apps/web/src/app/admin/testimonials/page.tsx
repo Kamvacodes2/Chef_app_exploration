@@ -6,7 +6,7 @@ import {
   moderateTestimonial,
   deleteOperationsTestimonial,
   getTestimonialMediaUrl,
-  type Testimonial
+  type Testimonial,
 } from "@/features/testimonials/api/testimonialClient";
 
 type TabType = "ALL" | "PENDING" | "APPROVED" | "FEATURED" | "REJECTED";
@@ -19,22 +19,30 @@ export default function AdminTestimonialsPage() {
   const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
 
   // Moderation form state in modal
-  const [modalStatus, setModalStatus] = useState<"PENDING" | "APPROVED" | "FEATURED" | "REJECTED">("APPROVED");
+  const [modalStatus, setModalStatus] = useState<"PENDING" | "APPROVED" | "FEATURED" | "REJECTED">(
+    "APPROVED",
+  );
   const [modalNotes, setModalNotes] = useState("");
   const [modalFeaturedOrder, setModalFeaturedOrder] = useState<number | "">("");
   const [isSaving, setIsSaving] = useState(false);
-  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await fetchOperationsTestimonials({
         status: activeTab === "ALL" ? undefined : activeTab,
-        search: searchQuery.trim() || undefined
+        search: searchQuery.trim() || undefined,
       });
       setTestimonials(res.items);
     } catch (err: unknown) {
-      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to load testimonials." });
+      setActionMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to load testimonials.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -64,22 +72,32 @@ export default function AdminTestimonialsPage() {
       setIsSaving(true);
       await moderateTestimonial(selectedTestimonial.id, {
         status: targetStatus,
-        featuredOrder: targetStatus === "FEATURED" && modalFeaturedOrder !== "" ? Number(modalFeaturedOrder) : null,
-        adminNotes: modalNotes.trim() || null
+        featuredOrder:
+          targetStatus === "FEATURED" && modalFeaturedOrder !== ""
+            ? Number(modalFeaturedOrder)
+            : null,
+        adminNotes: modalNotes.trim() || null,
       });
 
       setActionMessage({ type: "success", text: `Testimonial updated to ${targetStatus}.` });
       setSelectedTestimonial(null);
       await loadData();
     } catch (err: unknown) {
-      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to moderate testimonial." });
+      setActionMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to moderate testimonial.",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this testimonial and all attached media?")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete this testimonial and all attached media?",
+      )
+    ) {
       return;
     }
 
@@ -90,7 +108,10 @@ export default function AdminTestimonialsPage() {
       setSelectedTestimonial(null);
       await loadData();
     } catch (err: unknown) {
-      setActionMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to delete testimonial." });
+      setActionMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to delete testimonial.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -104,7 +125,8 @@ export default function AdminTestimonialsPage() {
             Testimonials & Customer Reviews
           </h1>
           <p className="text-sm text-stone-500">
-            Moderate public multi-media submissions, verify authentic experiences, and curate homepage social proof.
+            Moderate public multi-media submissions, verify authentic experiences, and curate
+            homepage social proof.
           </p>
         </div>
       </div>
@@ -130,7 +152,7 @@ export default function AdminTestimonialsPage() {
               { key: "APPROVED", label: "Approved" },
               { key: "FEATURED", label: "Featured on Homepage" },
               { key: "REJECTED", label: "Rejected" },
-              { key: "ALL", label: "All Reviews" }
+              { key: "ALL", label: "All Reviews" },
             ] as const
           ).map((tab) => (
             <button
@@ -166,9 +188,7 @@ export default function AdminTestimonialsPage() {
 
       {/* Testimonials List Table */}
       {isLoading ? (
-        <div className="py-12 text-center text-sm text-stone-500">
-          Loading testimonial queue...
-        </div>
+        <div className="py-12 text-center text-sm text-stone-500">Loading testimonial queue...</div>
       ) : testimonials.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 p-12 text-center text-stone-500">
           No testimonials found in this view.
@@ -233,10 +253,10 @@ export default function AdminTestimonialsPage() {
                           item.status === "APPROVED"
                             ? "bg-emerald-100 text-emerald-800"
                             : item.status === "FEATURED"
-                            ? "bg-amber-100 text-amber-800 border border-amber-300"
-                            : item.status === "REJECTED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-stone-100 text-stone-800"
+                              ? "bg-amber-100 text-amber-800 border border-amber-300"
+                              : item.status === "REJECTED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-stone-100 text-stone-800"
                         }`}
                       >
                         {item.status}
@@ -272,7 +292,8 @@ export default function AdminTestimonialsPage() {
                   Moderate Testimonial
                 </h2>
                 <p className="text-xs text-stone-500">
-                  ID: {selectedTestimonial.id} • Submitted: {new Date(selectedTestimonial.createdAt).toLocaleString()}
+                  ID: {selectedTestimonial.id} • Submitted:{" "}
+                  {new Date(selectedTestimonial.createdAt).toLocaleString()}
                 </p>
               </div>
               <button
@@ -296,11 +317,11 @@ export default function AdminTestimonialsPage() {
                   </span>
                 </div>
                 <div className="text-xs text-stone-500 mt-0.5">
-                  {[selectedTestimonial.reviewerRole, selectedTestimonial.reviewerLocation].filter(Boolean).join(" • ")}
+                  {[selectedTestimonial.reviewerRole, selectedTestimonial.reviewerLocation]
+                    .filter(Boolean)
+                    .join(" • ")}
                 </div>
-                <h4 className="mt-3 font-semibold text-stone-900">
-                  {selectedTestimonial.title}
-                </h4>
+                <h4 className="mt-3 font-semibold text-stone-900">{selectedTestimonial.title}</h4>
                 <p className="mt-2 text-sm leading-relaxed text-stone-700">
                   {selectedTestimonial.narrative}
                 </p>
@@ -317,8 +338,15 @@ export default function AdminTestimonialsPage() {
                       const url = getTestimonialMediaUrl(media.storageKey);
                       if (media.mediaType === "IMAGE") {
                         return (
-                          <div key={media.id} className="relative aspect-video overflow-hidden rounded-xl bg-stone-100 border border-stone-200">
-                            <img src={url} alt={media.originalFilename} className="h-full w-full object-cover" />
+                          <div
+                            key={media.id}
+                            className="relative aspect-video overflow-hidden rounded-xl bg-stone-100 border border-stone-200"
+                          >
+                            <img
+                              src={url}
+                              alt={media.originalFilename}
+                              className="h-full w-full object-cover"
+                            />
                             <a
                               href={url}
                               target="_blank"
@@ -331,10 +359,14 @@ export default function AdminTestimonialsPage() {
                         );
                       }
                       return (
-                        <div key={media.id} className="col-span-2 rounded-xl bg-stone-900 p-2 text-white">
+                        <div
+                          key={media.id}
+                          className="col-span-2 rounded-xl bg-stone-900 p-2 text-white"
+                        >
                           <video src={url} controls className="max-h-48 w-full rounded-lg" />
                           <div className="mt-1 text-center text-xs text-stone-400">
-                            {media.originalFilename} ({Math.round(media.fileSizeBytes / (1024 * 1024))}MB)
+                            {media.originalFilename} (
+                            {Math.round(media.fileSizeBytes / (1024 * 1024))}MB)
                           </div>
                         </div>
                       );
@@ -346,12 +378,14 @@ export default function AdminTestimonialsPage() {
               {/* Status Selector & Featured Order */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Status
-                  </label>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Status</label>
                   <select
                     value={modalStatus}
-                    onChange={(e) => setModalStatus(e.target.value as "PENDING" | "APPROVED" | "FEATURED" | "REJECTED")}
+                    onChange={(e) =>
+                      setModalStatus(
+                        e.target.value as "PENDING" | "APPROVED" | "FEATURED" | "REJECTED",
+                      )
+                    }
                     className="w-full rounded-xl border border-stone-300 p-2.5 text-sm"
                   >
                     <option value="PENDING">PENDING (In Review)</option>
@@ -363,14 +397,17 @@ export default function AdminTestimonialsPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Featured Display Priority <span className="text-stone-400">(Lower = earlier)</span>
+                    Featured Display Priority{" "}
+                    <span className="text-stone-400">(Lower = earlier)</span>
                   </label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g. 1"
                     value={modalFeaturedOrder}
-                    onChange={(e) => setModalFeaturedOrder(e.target.value === "" ? "" : Number(e.target.value))}
+                    onChange={(e) =>
+                      setModalFeaturedOrder(e.target.value === "" ? "" : Number(e.target.value))
+                    }
                     className="w-full rounded-xl border border-stone-300 p-2.5 text-sm"
                   />
                 </div>

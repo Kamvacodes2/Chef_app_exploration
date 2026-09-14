@@ -34,7 +34,7 @@ export function MediaUploader({
   video,
   onPhotosChange,
   onVideoChange,
-  disabled = false
+  disabled = false,
 }: MediaUploaderProps) {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -78,7 +78,7 @@ export function MediaUploader({
           file,
           type: "IMAGE",
           previewUrl,
-          sizeFormatted: formatBytes(file.size)
+          sizeFormatted: formatBytes(file.size),
         });
       } else if (isVideo) {
         if (file.size > MAX_VIDEO_BYTES) {
@@ -95,10 +95,12 @@ export function MediaUploader({
           file,
           type: "VIDEO",
           previewUrl,
-          sizeFormatted: formatBytes(file.size)
+          sizeFormatted: formatBytes(file.size),
         };
       } else {
-        setErrorMessage(`Unsupported file format for "${file.name}". Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.`);
+        setErrorMessage(
+          `Unsupported file format for "${file.name}". Please upload JPG, PNG, WEBP, MP4, MOV, or WEBM.`,
+        );
       }
     }
 
@@ -128,7 +130,8 @@ export function MediaUploader({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className="block text-sm font-semibold text-[var(--color-oxblood)]">
-          Photos & Video Review <span className="text-xs font-normal text-stone-500">(Optional)</span>
+          Photos & Video Review{" "}
+          <span className="text-xs font-normal text-stone-500">(Optional)</span>
         </label>
         <span className="text-xs text-stone-500">
           Photos (up to 5, max 15MB) • Video (1 max, up to 100MB)
@@ -229,7 +232,12 @@ export function MediaUploader({
                   aria-label="Remove photo"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -259,7 +267,12 @@ export function MediaUploader({
                 aria-label="Remove video"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>

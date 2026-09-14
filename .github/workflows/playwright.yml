@@ -23,9 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-node-pnpm
-      - uses: actions/cache@v6
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -34,7 +34,7 @@ jobs:
         run: pnpm test:ci:playwright
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/web/playwright-report
@@ -42,7 +42,7 @@ jobs:
           if-no-files-found: ignore
       - name: Upload Playwright traces, screenshots and videos
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
           path: apps/web/test-results

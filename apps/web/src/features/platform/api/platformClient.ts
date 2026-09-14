@@ -424,7 +424,7 @@ export async function listApplicationDocuments(
   options: PlatformRequestOptions = {},
 ): Promise<readonly ApplicationDocument[]> {
   const response = await send(
-    `/operations/chef-applications/${encodeURIComponent(applicationId)}/documents`,
+    `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/documents`,
     "GET",
     undefined,
     options,
@@ -438,7 +438,8 @@ export async function listApplicationDocuments(
 }
 
 export function applicationDocumentDownloadUrl(applicationId: string, documentId: string): string {
-  return `/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/documents/${encodeURIComponent(documentId)}/download`;
+  const baseUrl = getChefmateApiUrl().trim().replace(/\/$/, "");
+  return `${baseUrl}/api/v1/operations/chef-applications/${encodeURIComponent(applicationId)}/documents/${encodeURIComponent(documentId)}/download`;
 }
 export type PlatformUser = z.infer<typeof platformUserSchema>;
 export type ChefSummary = z.infer<typeof chefSummarySchema>;

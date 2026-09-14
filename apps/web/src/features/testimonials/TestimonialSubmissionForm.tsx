@@ -10,7 +10,7 @@ const RATING_DESCRIPTIONS: Record<number, string> = {
   2: "Needs Improvement",
   3: "Good & Reliable",
   4: "Very Satisfied",
-  5: "Extraordinary Culinary Experience"
+  5: "Extraordinary Culinary Experience",
 };
 
 export function TestimonialSubmissionForm() {
@@ -72,7 +72,9 @@ export function TestimonialSubmissionForm() {
 
       setIsSuccess(true);
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : "Failed to submit testimonial. Please try again.");
+      setFormError(
+        err instanceof Error ? err.message : "Failed to submit testimonial. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +90,8 @@ export function TestimonialSubmissionForm() {
           Thank You for Sharing!
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-stone-600">
-          Your story and media have been received. We review every submission with love before featuring it on our community wall.
+          Your story and media have been received. We review every submission with love before
+          featuring it on our community wall.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
@@ -193,9 +196,7 @@ export function TestimonialSubmissionForm() {
             <label htmlFor="narrative" className="block text-sm font-semibold text-stone-800">
               Your Story <span className="text-red-500">*</span>
             </label>
-            <span className="text-xs text-stone-500">
-              {narrative.length} / 2000 chars (min 20)
-            </span>
+            <span className="text-xs text-stone-500">{narrative.length} / 2000 chars (min 20)</span>
           </div>
           <textarea
             id="narrative"
@@ -247,7 +248,10 @@ export function TestimonialSubmissionForm() {
           </div>
 
           <div>
-            <label htmlFor="reviewerLocation" className="block text-sm font-semibold text-stone-800">
+            <label
+              htmlFor="reviewerLocation"
+              className="block text-sm font-semibold text-stone-800"
+            >
               City / Suburb <span className="text-xs font-normal text-stone-500">(Optional)</span>
             </label>
             <input
@@ -286,7 +290,8 @@ export function TestimonialSubmissionForm() {
               className="mt-1 h-4 w-4 rounded border-stone-300 text-[var(--color-oxblood)] focus:ring-[var(--color-oxblood)]"
             />
             <span className="text-xs leading-relaxed text-stone-700">
-              I agree that Chefmate may feature my review, name, photos, and video on their website, social media, and digital marketing materials. <span className="text-red-500">*</span>
+              I agree that Chefmate may feature my review, name, photos, and video on their website,
+              social media, and digital marketing materials. <span className="text-red-500">*</span>
             </span>
           </label>
         </div>

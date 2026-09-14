@@ -13,7 +13,9 @@ describe("TestimonialSubmissionForm", () => {
   it("renders form fields and validation requirements", () => {
     render(<TestimonialSubmissionForm />);
 
-    expect(screen.getByRole("heading", { name: /share your chefmate experience/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /share your chefmate experience/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/review title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your story/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
@@ -38,7 +40,7 @@ describe("TestimonialSubmissionForm", () => {
       moderatedByUserId: null,
       media: [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     });
 
     render(<TestimonialSubmissionForm />);
@@ -46,7 +48,7 @@ describe("TestimonialSubmissionForm", () => {
     await user.type(screen.getByLabelText(/review title/i), "Effortless weekend dinner");
     await user.type(
       screen.getByLabelText(/your story/i),
-      "Chef cooked an extraordinary meal and cleaned the kitchen thoroughly."
+      "Chef cooked an extraordinary meal and cleaned the kitchen thoroughly.",
     );
     await user.type(screen.getByLabelText(/your name/i), "Lindiwe Ndlovu");
     await user.click(screen.getByRole("checkbox"));

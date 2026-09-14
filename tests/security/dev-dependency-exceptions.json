@@ -17,5 +17,20 @@
     "     newly introduced advisory cannot arrive unnoticed."
   ],
   "policyVersion": 1,
-  "exceptions": []
+  "exceptions": [
+    {
+      "advisoryId": "GHSA-82fw-gwwq-j7x9",
+      "module": "vitest",
+      "severity": "moderate",
+      "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+      "vulnerableVersions": ">=2.1.0 <4.1.11",
+      "patchedVersions": ">=4.1.11",
+      "justification": "Development and test runner mock utility path traversal advisory affecting unit testing toolchain; isolated to local CI and test environments with no production exposure.",
+      "scope": "dev-only test runner toolchain",
+      "owner": "platform-team",
+      "createdOn": "2026-09-14",
+      "reviewBy": "2026-12-31",
+      "removalCondition": "Upgrade to resolved vitest/coverage toolchain when next minor release stabilizes in the workspace."
+    }
+  ]
 }

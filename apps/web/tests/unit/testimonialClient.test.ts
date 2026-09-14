@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchPublicTestimonials,
   fetchOperationsTestimonials,
   moderateTestimonial,
   deleteOperationsTestimonial,
   getTestimonialMediaUrl,
-  TestimonialApiError
 } from "../../src/features/testimonials/api/testimonialClient";
 
 describe("Testimonial API Client", () => {
@@ -36,22 +35,22 @@ describe("Testimonial API Client", () => {
         moderatedByUserId: null,
         media: [],
         createdAt: "2026-09-13T10:00:00Z",
-        updatedAt: "2026-09-13T10:00:00Z"
-      }
+        updatedAt: "2026-09-13T10:00:00Z",
+      },
     ];
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ data: mockData })
-    } as any);
+      json: async () => ({ data: mockData }),
+    } as unknown as Response);
 
     const result = await fetchPublicTestimonials({ featuredOnly: true });
     expect(result).toHaveLength(1);
     expect(result[0]?.title).toBe("Superb dinner");
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("featuredOnly=true"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -73,22 +72,22 @@ describe("Testimonial API Client", () => {
         moderatedByUserId: null,
         media: [],
         createdAt: "2026-09-13T10:00:00Z",
-        updatedAt: "2026-09-13T10:00:00Z"
-      }
+        updatedAt: "2026-09-13T10:00:00Z",
+      },
     ];
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ data: mockData, meta: { total: 1 } })
-    } as any);
+      json: async () => ({ data: mockData, meta: { total: 1 } }),
+    } as unknown as Response);
 
     const result = await fetchOperationsTestimonials({ status: "PENDING", search: "Sipho" });
     expect(result.items).toHaveLength(1);
     expect(result.total).toBe(1);
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("status=PENDING&search=Sipho"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -100,23 +99,23 @@ describe("Testimonial API Client", () => {
         data: {
           id: "t1",
           status: "FEATURED",
-          featuredOrder: 1
-        }
-      })
-    } as any);
+          featuredOrder: 1,
+        },
+      }),
+    } as unknown as Response);
 
     const result = await moderateTestimonial("t1", {
       status: "FEATURED",
       featuredOrder: 1,
-      adminNotes: "Featured review"
+      adminNotes: "Featured review",
     });
 
     expect(result.status).toBe("FEATURED");
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/operations/testimonials/t1/moderate"),
       expect.objectContaining({
-        method: "PATCH"
-      })
+        method: "PATCH",
+      }),
     );
   });
 
@@ -124,15 +123,15 @@ describe("Testimonial API Client", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ data: { success: true } })
-    } as any);
+      json: async () => ({ data: { success: true } }),
+    } as unknown as Response);
 
     await deleteOperationsTestimonial("t1");
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/operations/testimonials/t1"),
       expect.objectContaining({
-        method: "DELETE"
-      })
+        method: "DELETE",
+      }),
     );
   });
 });

@@ -5,14 +5,15 @@ import Link from "next/link";
 import {
   fetchPublicTestimonials,
   getTestimonialMediaUrl,
-  type Testimonial
+  type Testimonial,
 } from "./api/testimonialClient";
 
 const FALLBACK_TESTIMONIALS: Testimonial[] = [
   {
     id: "fallback-1",
     title: "Effortless dinner party for 8 guests",
-    narrative: "Chef Sanelisiwe made our anniversary dinner completely stress-free. The braised lamb shank was restaurant-quality, and the kitchen was left immaculate.",
+    narrative:
+      "Chef Sanelisiwe made our anniversary dinner completely stress-free. The braised lamb shank was restaurant-quality, and the kitchen was left immaculate.",
     rating: 5,
     reviewerName: "Lindiwe Ndlovu",
     reviewerRole: "Dinner Party Host",
@@ -25,12 +26,13 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     moderatedByUserId: null,
     media: [],
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "fallback-2",
     title: "Weeknight lifesaver for busy parents",
-    narrative: "Having fresh, wholesome meals prepared in our home weekly has given us back 2 hours every evening with our kids. Unbelievable value.",
+    narrative:
+      "Having fresh, wholesome meals prepared in our home weekly has given us back 2 hours every evening with our kids. Unbelievable value.",
     rating: 5,
     reviewerName: "Mark van der Merwe",
     reviewerRole: "Working Father of 3",
@@ -43,12 +45,13 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     moderatedByUserId: null,
     media: [],
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   },
   {
     id: "fallback-3",
     title: "A five-star restaurant in our dining room",
-    narrative: "Chef Luko's attention to detail, plating, and flavour balance blew everyone away. We are booking every month now.",
+    narrative:
+      "Chef Luko's attention to detail, plating, and flavour balance blew everyone away. We are booking every month now.",
     rating: 5,
     reviewerName: "Priya Naidoo",
     reviewerRole: "Food Enthusiast",
@@ -61,8 +64,8 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     moderatedByUserId: null,
     media: [],
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
+    updatedAt: new Date().toISOString(),
+  },
 ];
 
 export function TestimonialShowcase() {
@@ -108,7 +111,8 @@ export function TestimonialShowcase() {
             Loved by Busy Households Across South Africa
           </h2>
           <p className="mt-3 max-w-2xl text-base text-stone-600">
-            See how Chefmate private chefs transform weeknight dinners, special celebrations, and family gatherings.
+            See how Chefmate private chefs transform weeknight dinners, special celebrations, and
+            family gatherings.
           </p>
         </div>
 
@@ -135,9 +139,7 @@ export function TestimonialShowcase() {
                   <h3 className="mt-4 font-display text-xl font-bold text-[var(--color-oxblood)]">
                     &ldquo;{item.title}&rdquo;
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-stone-700">
-                    {item.narrative}
-                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-stone-700">{item.narrative}</p>
 
                   {/* Media attachments */}
                   {(photos.length > 0 || video) && (
@@ -163,7 +165,9 @@ export function TestimonialShowcase() {
                       {video && (
                         <button
                           type="button"
-                          onClick={() => setActiveVideoUrl(getTestimonialMediaUrl(video.storageKey))}
+                          onClick={() =>
+                            setActiveVideoUrl(getTestimonialMediaUrl(video.storageKey))
+                          }
                           className="flex items-center gap-1.5 rounded-xl bg-[var(--color-oxblood)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-oxblood)]/90"
                         >
                           <span>▶</span> Watch Video

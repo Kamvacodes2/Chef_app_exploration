@@ -26,16 +26,12 @@ function PolicyCard({
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badgeColor}`}>
           {audience}
         </span>
-        <span className="text-xs text-[var(--color-charcoal)]/50">
-          Effective: {effectiveDate}
-        </span>
+        <span className="text-xs text-[var(--color-charcoal)]/50">Effective: {effectiveDate}</span>
       </div>
       <h2 className="mt-3 text-lg font-bold text-[var(--color-charcoal)] transition-colors group-hover:text-[var(--color-oxblood)]">
         {title} →
       </h2>
-      <p className="mt-2 text-xs leading-relaxed text-[var(--color-charcoal)]/70">
-        {description}
-      </p>
+      <p className="mt-2 text-xs leading-relaxed text-[var(--color-charcoal)]/70">{description}</p>
     </Link>
   );
 }
@@ -60,8 +56,9 @@ export default function LegalIndexPage() {
           Chef Mate Legal Policies
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-[var(--color-charcoal)]/80">
-          Transparency, trust, and consumer safety are foundational to Chef Mate. Below are the binding
-          legal policies, statutory terms, and regulatory manuals governing our private chef marketplace.
+          Transparency, trust, and consumer safety are foundational to Chef Mate. Below are the
+          binding legal policies, statutory terms, and regulatory manuals governing our private chef
+          marketplace.
         </p>
       </header>
 
@@ -140,14 +137,22 @@ export default function LegalIndexPage() {
       </div>
 
       <footer className="mt-10 rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)]/30 p-5 text-xs text-[var(--color-charcoal)]/70">
-        <p className="font-bold text-[var(--color-charcoal)]">Need legal or regulatory assistance?</p>
+        <p className="font-bold text-[var(--color-charcoal)]">
+          Need legal or regulatory assistance?
+        </p>
         <p className="mt-1">
           Contact our Legal &amp; Compliance Team at{" "}
-          <a className="font-semibold text-[var(--color-oxblood)] underline" href="mailto:privacy@chefmate.co.za">
+          <a
+            className="font-semibold text-[var(--color-oxblood)] underline"
+            href="mailto:privacy@chefmate.co.za"
+          >
             privacy@chefmate.co.za
           </a>{" "}
           or Customer Support at{" "}
-          <a className="font-semibold text-[var(--color-oxblood)] underline" href="mailto:support@chefmate.co.za">
+          <a
+            className="font-semibold text-[var(--color-oxblood)] underline"
+            href="mailto:support@chefmate.co.za"
+          >
             support@chefmate.co.za
           </a>
           .

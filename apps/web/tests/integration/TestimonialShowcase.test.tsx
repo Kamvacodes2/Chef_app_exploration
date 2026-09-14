@@ -35,7 +35,7 @@ describe("TestimonialShowcase", () => {
             mimeType: "image/jpeg",
             fileSizeBytes: 500000,
             displayOrder: 0,
-            createdAt: "2026-09-13T10:00:00Z"
+            createdAt: "2026-09-13T10:00:00Z",
           },
           {
             id: "m-2",
@@ -46,12 +46,12 @@ describe("TestimonialShowcase", () => {
             mimeType: "video/mp4",
             fileSizeBytes: 5000000,
             displayOrder: 1,
-            createdAt: "2026-09-13T10:00:00Z"
-          }
+            createdAt: "2026-09-13T10:00:00Z",
+          },
         ],
         createdAt: "2026-09-13T10:00:00Z",
-        updatedAt: "2026-09-13T10:00:00Z"
-      }
+        updatedAt: "2026-09-13T10:00:00Z",
+      },
     ]);
 
     render(<TestimonialShowcase />);
