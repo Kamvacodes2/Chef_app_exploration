@@ -63,4 +63,23 @@ describe("TestimonialShowcase", () => {
       expect(screen.getByAltText(/paella.jpg/i)).toBeInTheDocument();
     });
   });
+
+  it("renders the interactive 'Experienced Chefmate before? Share your story' CTA when no testimonials are present", async () => {
+    vi.spyOn(client, "fetchPublicTestimonials").mockResolvedValue([]);
+
+    render(<TestimonialShowcase />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", {
+          name: /experienced chefmate before\? share your story/i,
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", {
+          name: /experienced chefmate before\? share your story/i,
+        }),
+      ).toHaveAttribute("href", "/share-experience");
+    });
+  });
 });

@@ -226,7 +226,7 @@ export function TestimonialSubmissionForm() {
               disabled={isSubmitting}
               value={reviewerName}
               onChange={(e) => setReviewerName(e.target.value)}
-              placeholder="e.g., Lindiwe Ndlovu"
+              placeholder="e.g., Jane Doe"
               className="mt-1.5 w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 placeholder-stone-400 shadow-sm focus:border-[var(--color-oxblood)] focus:ring-1 focus:ring-[var(--color-oxblood)]"
             />
           </div>
