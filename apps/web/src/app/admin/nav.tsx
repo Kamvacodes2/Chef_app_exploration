@@ -19,6 +19,18 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconLayoutDashboard width={18} height={18} />,
   },
   {
+    id: "calendar",
+    label: "Calendar",
+    path: "/admin/calendar",
+    icon: <IconCalendar width={18} height={18} />,
+  },
+  {
+    id: "bookings",
+    label: "Bookings",
+    path: "/admin/bookings",
+    icon: <IconClipboardList width={18} height={18} />,
+  },
+  {
     id: "customers",
     label: "Customers",
     path: "/admin/customers",
@@ -35,18 +47,6 @@ export const ADMIN_NAV: readonly NavItem[] = [
     label: "Applications",
     path: "/admin/applications",
     icon: <IconClipboardList width={18} height={18} />,
-  },
-  {
-    id: "bookings",
-    label: "Bookings",
-    path: "/admin/bookings",
-    icon: <IconCalendar width={18} height={18} />,
-  },
-  {
-    id: "calendar",
-    label: "Schedule Calendar",
-    path: "/admin/calendar",
-    icon: <IconCalendar width={18} height={18} />,
   },
   {
     id: "recipes",
