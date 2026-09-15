@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import {
   fetchOperationsBookings,
   sendPaymentReminder,
@@ -8,7 +9,7 @@ import {
   type OperationsBooking,
 } from "@/features/platform/api/platformClient";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { IconCheck, IconSearch, IconSparkles } from "@/components/ui/icons";
+import { IconCalendar, IconCheck, IconSearch, IconSparkles } from "@/components/ui/icons";
 
 type FilterTab = "all" | "unassigned" | "awaiting_chef" | "assigned" | "completed";
 
@@ -149,6 +150,13 @@ export default function Page() {
             Manage orders, approve unassigned requests, verify payments, and broadcast to chefs.
           </p>
         </div>
+        <Link
+          href="/admin/calendar"
+          className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-oxblood)] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 self-start sm:self-auto"
+        >
+          <IconCalendar width={16} height={16} />
+          <span>📅 Weekly Calendar View</span>
+        </Link>
       </div>
 
       {/* Notification banner */}

@@ -190,6 +190,14 @@ export function IconX(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconChevronLeft(props: SVGProps<SVGSVGElement>) {
+  return (
+    <SvgIcon {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </SvgIcon>
+  );
+}
+
 export function IconChevronRight(props: SVGProps<SVGSVGElement>) {
   return (
     <SvgIcon {...props}>
