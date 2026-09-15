@@ -112,14 +112,10 @@ function EditOrderModal({
     isKnownMain ? "" : booking.mainMeal.name,
   );
 
-  const initialSideSlugs = booking.meals
-    .filter((m) => m.kind === "side")
-    .map((m) => m.slug);
+  const initialSideSlugs = booking.meals.filter((m) => m.kind === "side").map((m) => m.slug);
   const [selectedSides, setSelectedSides] = useState<string[]>(initialSideSlugs);
 
-  const initialHasOats = booking.meals.some(
-    (m) => m.kind === "addon" && m.slug.includes("oats"),
-  );
+  const initialHasOats = booking.meals.some((m) => m.kind === "addon" && m.slug.includes("oats"));
   const [hasOatsAddon, setHasOatsAddon] = useState<boolean>(initialHasOats);
 
   // Dietary and instructions
@@ -162,11 +158,14 @@ function EditOrderModal({
   const handleSave = () => {
     const mainMealSlug =
       selectedMainSlug === "custom"
-        ? (customMainName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "custom-meal")
+        ? customMainName
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-") || "custom-meal"
         : selectedMainSlug;
     const mainName =
       selectedMainSlug === "custom"
-        ? (customMainName.trim() || "Custom Meal Request")
+        ? customMainName.trim() || "Custom Meal Request"
         : (POPULAR_MEALS.find((m) => m.slug === selectedMainSlug)?.name ?? selectedMainSlug);
 
     const input: ModifyCustomerBookingInput = {
@@ -189,7 +188,8 @@ function EditOrderModal({
     onConfirm(input);
   };
 
-  const canSave = (date && timeSlot) && (selectedMainSlug !== "custom" || customMainName.trim().length > 0);
+  const canSave =
+    date && timeSlot && (selectedMainSlug !== "custom" || customMainName.trim().length > 0);
 
   return (
     <div
@@ -247,7 +247,9 @@ function EditOrderModal({
                 {slotsError ? (
                   <p className="text-xs text-red-700 bg-red-50 p-2 rounded-lg">{slotsError}</p>
                 ) : slots === null ? (
-                  <p className="text-xs text-[var(--color-charcoal)]/60 pt-2">Loading available slots...</p>
+                  <p className="text-xs text-[var(--color-charcoal)]/60 pt-2">
+                    Loading available slots...
+                  </p>
                 ) : slots.length === 0 ? (
                   <p className="text-xs text-[var(--color-charcoal)]/70 bg-amber-50 p-2 rounded-lg">
                     No slots available on this date (min 24h notice).
@@ -318,7 +320,9 @@ function EditOrderModal({
             </h4>
             <div className="mt-3 space-y-3">
               <div>
-                <p className="text-xs font-bold text-[var(--color-charcoal)] mb-2">Included Sides</p>
+                <p className="text-xs font-bold text-[var(--color-charcoal)] mb-2">
+                  Included Sides
+                </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {AVAILABLE_SIDES.map((side) => {
                     const checked = selectedSides.includes(side.slug);
@@ -505,7 +509,9 @@ function BookingCard({
         </span>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-oxblood)]/5 pt-3">
-        <p className="text-xs text-[var(--color-charcoal)]/50 font-medium">Ref {booking.reference}</p>
+        <p className="text-xs text-[var(--color-charcoal)]/50 font-medium">
+          Ref {booking.reference}
+        </p>
         {canModify ? (
           <button
             className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-4 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"

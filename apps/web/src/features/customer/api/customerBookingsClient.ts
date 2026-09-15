@@ -169,9 +169,7 @@ export async function modifyCustomerBooking(
     },
   );
   if (!response.ok) {
-    throw new Error(
-      await readApiErrorMessage(response, "Chefmate could not update your booking."),
-    );
+    throw new Error(await readApiErrorMessage(response, "Chefmate could not update your booking."));
   }
   const parsed = z.object({ data: customerBookingSchema }).parse(await response.json());
   return parsed.data;

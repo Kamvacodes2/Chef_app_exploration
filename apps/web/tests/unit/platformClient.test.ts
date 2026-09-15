@@ -711,7 +711,9 @@ describe("platformClient", () => {
     };
     const fetchImpl = mockFetch({ data: payload });
 
-    await expect(fetchChefEarnings({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(payload);
+    await expect(fetchChefEarnings({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(
+      payload,
+    );
   });
 
   it("fetches finance summary and pending chef payouts", async () => {
@@ -751,8 +753,12 @@ describe("platformClient", () => {
     const fetchSummaryImpl = mockFetch({ data: financeSummaryData });
     const fetchPayoutsImpl = mockFetch({ data: { items: pendingPayoutsData } });
 
-    await expect(fetchFinanceSummary({ baseUrl: "http://api.test", fetchImpl: fetchSummaryImpl })).resolves.toEqual(financeSummaryData);
-    await expect(fetchPendingChefPayouts({ baseUrl: "http://api.test", fetchImpl: fetchPayoutsImpl })).resolves.toEqual(pendingPayoutsData);
+    await expect(
+      fetchFinanceSummary({ baseUrl: "http://api.test", fetchImpl: fetchSummaryImpl }),
+    ).resolves.toEqual(financeSummaryData);
+    await expect(
+      fetchPendingChefPayouts({ baseUrl: "http://api.test", fetchImpl: fetchPayoutsImpl }),
+    ).resolves.toEqual(pendingPayoutsData);
   });
 
   it("settles a chef payout", async () => {
@@ -769,7 +775,11 @@ describe("platformClient", () => {
     const fetchImpl = mockFetch({ data: settleData });
 
     await expect(
-      settleChefPayout("cook-1", { payoutReference: "EFT-20260915-DEE" }, { baseUrl: "http://api.test", fetchImpl }),
+      settleChefPayout(
+        "cook-1",
+        { payoutReference: "EFT-20260915-DEE" },
+        { baseUrl: "http://api.test", fetchImpl },
+      ),
     ).resolves.toEqual(settleData);
   });
 });

@@ -23,7 +23,10 @@ function formatDate(value: string): string {
 
 function defaultReference(chefName: string): string {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const cleanName = chefName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 8);
+  const cleanName = chefName
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 8);
   return `EFT-${dateStr}-${cleanName || "CHEF"}`;
 }
 
@@ -44,10 +47,7 @@ export function AdminFinancePage() {
     setBusy(true);
     setError(null);
     try {
-      const [s, p] = await Promise.all([
-        fetchFinanceSummary(),
-        fetchPendingChefPayouts(),
-      ]);
+      const [s, p] = await Promise.all([fetchFinanceSummary(), fetchPendingChefPayouts()]);
       setSummary(s);
       setPendingPayouts(p);
     } catch (caught) {
@@ -70,7 +70,9 @@ export function AdminFinancePage() {
   const handleConfirmSettle = async () => {
     if (!settlingChef) return;
     if (!payoutReference.trim()) {
-      setSettleError("Please provide a bank payout reference (e.g. EFT batch or transfer reference).");
+      setSettleError(
+        "Please provide a bank payout reference (e.g. EFT batch or transfer reference).",
+      );
       return;
     }
     setSettleBusy(true);
@@ -112,10 +114,7 @@ export function AdminFinancePage() {
         </div>
       ) : null}
       {error ? (
-        <div
-          className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900"
-          role="alert"
-        >
+        <div className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-900" role="alert">
           {error}
         </div>
       ) : null}
@@ -187,9 +186,12 @@ export function AdminFinancePage() {
         {pendingPayouts.length === 0 ? (
           <div className="mt-6 rounded-2xl bg-[var(--color-warm-cream)] p-6 text-center text-sm text-[var(--color-charcoal)]/70">
             <p className="text-2xl">🎉</p>
-            <p className="mt-2 font-bold text-[var(--color-oxblood)]">All chef payouts are settled!</p>
+            <p className="mt-2 font-bold text-[var(--color-oxblood)]">
+              All chef payouts are settled!
+            </p>
             <p className="mt-1 text-xs text-[var(--color-charcoal)]/60">
-              When chefs complete visits, their payable balance will appear here for Monday confirmation.
+              When chefs complete visits, their payable balance will appear here for Monday
+              confirmation.
             </p>
           </div>
         ) : (
@@ -224,7 +226,9 @@ export function AdminFinancePage() {
                         </div>
                         <div>
                           <span className="text-[var(--color-charcoal)]/50">Account ending: </span>
-                          <strong className="font-mono">••••{payout.bankAccount.accountNumberLast4}</strong>
+                          <strong className="font-mono">
+                            ••••{payout.bankAccount.accountNumberLast4}
+                          </strong>
                         </div>
                         <div>
                           <span className="text-[var(--color-charcoal)]/50">Branch: </span>
@@ -308,10 +312,22 @@ export function AdminFinancePage() {
               </div>
               {settlingChef.bankAccount ? (
                 <div className="mt-2 text-xs text-[var(--color-charcoal)]/80 space-y-0.5">
-                  <p>Bank: <strong>{settlingChef.bankAccount.bankName}</strong></p>
-                  <p>Account Holder: <strong>{settlingChef.bankAccount.accountHolder}</strong></p>
-                  <p>Account: <strong className="font-mono">••••{settlingChef.bankAccount.accountNumberLast4}</strong></p>
-                  <p>Branch Code: <strong className="font-mono">{settlingChef.bankAccount.branchCode}</strong></p>
+                  <p>
+                    Bank: <strong>{settlingChef.bankAccount.bankName}</strong>
+                  </p>
+                  <p>
+                    Account Holder: <strong>{settlingChef.bankAccount.accountHolder}</strong>
+                  </p>
+                  <p>
+                    Account:{" "}
+                    <strong className="font-mono">
+                      ••••{settlingChef.bankAccount.accountNumberLast4}
+                    </strong>
+                  </p>
+                  <p>
+                    Branch Code:{" "}
+                    <strong className="font-mono">{settlingChef.bankAccount.branchCode}</strong>
+                  </p>
                 </div>
               ) : null}
             </div>

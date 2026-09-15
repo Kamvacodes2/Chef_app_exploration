@@ -38,7 +38,10 @@ export function AvailabilityEditor({ windows, onChange }: AvailabilityEditorProp
   };
 
   const addDefaultWindow = (): void => {
-    onChange([...windows, { days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], from: "07:00", to: "19:00" }]);
+    onChange([
+      ...windows,
+      { days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], from: "07:00", to: "19:00" },
+    ]);
   };
 
   const removeWindow = (index: number): void => {
@@ -76,7 +79,9 @@ export function AvailabilityEditor({ windows, onChange }: AvailabilityEditorProp
             <legend className="sr-only">Availability window {index + 1}</legend>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <p className="text-xs font-bold text-[var(--color-oxblood)]">Schedule Window {index + 1}</p>
+                <p className="text-xs font-bold text-[var(--color-oxblood)]">
+                  Schedule Window {index + 1}
+                </p>
                 <div className="flex gap-1 text-[11px]">
                   <button
                     className="text-[var(--color-oxblood)]/70 underline hover:text-[var(--color-oxblood)]"

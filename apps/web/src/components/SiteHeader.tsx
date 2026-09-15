@@ -75,8 +75,7 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
     </>
   );
 
-  const isChefOrAdmin =
-    user?.roles?.some((r) => ["ADMIN", "SUPPORT", "CHEF"].includes(r)) ?? false;
+  const isChefOrAdmin = user?.roles?.some((r) => ["ADMIN", "SUPPORT", "CHEF"].includes(r)) ?? false;
 
   const bookChefAction = (
     <Link

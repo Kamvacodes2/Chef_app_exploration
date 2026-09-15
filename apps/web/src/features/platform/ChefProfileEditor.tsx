@@ -43,7 +43,9 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
     }
     const hasActiveDays = windows.some((w) => w.days.length > 0);
     if (!hasActiveDays && isAvailable) {
-      setError("Please select at least one day of the week in your availability schedule below so you can receive bookings.");
+      setError(
+        "Please select at least one day of the week in your availability schedule below so you can receive bookings.",
+      );
       return;
     }
     setBusy(true);

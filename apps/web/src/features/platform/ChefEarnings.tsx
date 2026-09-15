@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { StatCard } from "@/components/ui/StatCard";
-import {
-  fetchChefEarnings,
-  type ChefEarningsSummary,
-} from "./api/platformClient";
+import { fetchChefEarnings, type ChefEarningsSummary } from "./api/platformClient";
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -123,7 +120,8 @@ export function ChefEarnings() {
 
         {summary.items.length === 0 ? (
           <p className="mt-6 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm text-[var(--color-charcoal)]/70">
-            No completed earnings yet. Once you complete bookings, your earnings ledger will appear here.
+            No completed earnings yet. Once you complete bookings, your earnings ledger will appear
+            here.
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto">

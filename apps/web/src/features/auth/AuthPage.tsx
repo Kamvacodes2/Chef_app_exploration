@@ -241,7 +241,8 @@ export function AuthPage() {
                       className="mt-1 h-4 w-4 rounded border-[var(--color-oxblood)]/30 text-[var(--color-oxblood)] accent-[var(--color-oxblood)] focus:ring-[var(--color-terracotta)]"
                     />
                     <span>
-                      I agree to receive marketing communications, seasonal menu updates, and promotional offers from Chefmate.
+                      I agree to receive marketing communications, seasonal menu updates, and
+                      promotional offers from Chefmate.
                     </span>
                   </label>
                 </div>

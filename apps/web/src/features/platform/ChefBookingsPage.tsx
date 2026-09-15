@@ -73,12 +73,8 @@ export function ChefBookingsPage() {
     });
   };
 
-  const activeBookings = bookings.filter(
-    (b) => !["COMPLETED", "CANCELLED"].includes(b.status),
-  );
-  const pastBookings = bookings.filter((b) =>
-    ["COMPLETED", "CANCELLED"].includes(b.status),
-  );
+  const activeBookings = bookings.filter((b) => !["COMPLETED", "CANCELLED"].includes(b.status));
+  const pastBookings = bookings.filter((b) => ["COMPLETED", "CANCELLED"].includes(b.status));
 
   const currentList = tab === "active" ? activeBookings : pastBookings;
 
