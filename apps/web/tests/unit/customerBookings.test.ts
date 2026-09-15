@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   fetchCustomerBookings,
   fetchCustomerSubscription,
+  modifyCustomerBooking,
 } from "@/features/customer/api/customerBookingsClient";
 
 function jsonResponse(body: unknown): Response {
@@ -70,5 +71,55 @@ describe("customerBookingsClient", () => {
       fetchImpl,
     });
     expect(subscription).toBeNull();
+  });
+
+  it("sends order and schedule modifications and returns updated booking", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, init) => {
+      const parsedBody = JSON.parse((init?.body as string) ?? "{}");
+      return jsonResponse({
+        data: {
+          id: "booking-123",
+          reference: "CM00475",
+          status: "REQUESTED",
+          type: "SUBSCRIPTION",
+          mainMeal: { slug: parsedBody.mainMealSlug, name: parsedBody.mainName },
+          meals: [
+            { kind: "main", slug: parsedBody.mainMealSlug, name: parsedBody.mainName },
+            { kind: "addon", slug: "overnight-oats-trio", name: "Overnight Oats Trio" },
+          ],
+          customRequest: parsedBody.customRequest,
+          address: parsedBody.address,
+          scheduledDate: parsedBody.scheduledDate,
+          timeSlot: parsedBody.timeSlot,
+          createdAt: "2026-09-15T00:00:00.000Z",
+        },
+      });
+    });
+
+    const modified = await modifyCustomerBooking(
+      "booking-123",
+      {
+        scheduledDate: "2026-09-20",
+        timeSlot: "18:00",
+        mainMealSlug: "sa-roast-chicken-seven-colours",
+        mainName: "SA Roast Chicken (Seven Colours)",
+        sideSlugs: ["side-seven-colours"],
+        breakfastAddOnSlug: "overnight-oats-trio",
+        customRequest: "No spicy peppers",
+        address: {
+          street: "97 Waterfall Ave",
+          unit: "Unit 1",
+          estate: "Craighall",
+          serviceArea: "Craighall",
+        },
+      },
+      { baseUrl: "https://api.test", fetchImpl },
+    );
+
+    expect(modified.reference).toBe("CM00475");
+    expect(modified.scheduledDate).toBe("2026-09-20");
+    expect(modified.mainMeal.name).toBe("SA Roast Chicken (Seven Colours)");
+    expect(modified.customRequest).toBe("No spicy peppers");
+    expect(modified.address?.street).toBe("97 Waterfall Ave");
   });
 });

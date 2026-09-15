@@ -75,14 +75,21 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
     </>
   );
 
-  const ctaActions = (
+  const isChefOrAdmin =
+    user?.roles?.some((r) => ["ADMIN", "SUPPORT", "CHEF"].includes(r)) ?? false;
+
+  const bookChefAction = (
+    <Link
+      href="/#order-flow"
+      className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-oxblood)] px-3 text-xs font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-5 sm:text-sm"
+    >
+      Book a chef
+    </Link>
+  );
+
+  const desktopCtaActions = (
     <>
-      <Link
-        href="/#order-flow"
-        className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-oxblood)] px-3 text-xs font-bold text-white transition hover:bg-[var(--color-oxblood)]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:px-5 sm:text-sm"
-      >
-        Book a chef
-      </Link>
+      {!isChefOrAdmin ? bookChefAction : null}
       {user ? (
         <>
           {dashboardHref ? (
@@ -94,6 +101,21 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
             Log out
           </button>
         </>
+      ) : (
+        <a href="/login" className={ctaClassName}>
+          Login
+        </a>
+      )}
+    </>
+  );
+
+  const mobileMenuActions = (
+    <>
+      {!isChefOrAdmin ? bookChefAction : null}
+      {user ? (
+        <button className={ctaClassName} onClick={handleLogout} type="button">
+          Log out
+        </button>
       ) : (
         <a href="/login" className={ctaClassName}>
           Login
@@ -127,7 +149,7 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
               {navLinks}
             </nav>
             <div className="hidden shrink-0 items-center gap-1.5 sm:gap-2 md:flex">
-              {ctaActions}
+              {desktopCtaActions}
             </div>
             {/* Mobile dashboard shortcut, sitting to the left of the hamburger
                 and only rendered for a signed-in user with a dashboard. */}
@@ -191,7 +213,7 @@ export function SiteHeader({ variant = "marketing" }: SiteHeaderProps) {
           >
             {navLinks}
           </nav>
-          <div className="mt-4 flex w-full items-center gap-2">{ctaActions}</div>
+          <div className="mt-4 flex w-full items-center gap-2">{mobileMenuActions}</div>
         </div>
       ) : null}
     </header>

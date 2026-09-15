@@ -584,7 +584,9 @@ export interface AvailabilityData {
 export function availabilityFromRecord(
   record: Record<string, unknown> | null | undefined,
 ): AvailabilityData {
-  if (!record || typeof record !== "object") return { notes: "", windows: [] };
+  if (!record || typeof record !== "object") {
+    return { notes: "", windows: [] };
+  }
   const rawWindows = Array.isArray(record.windows) ? record.windows : [];
   const windows = rawWindows.flatMap((candidate): AvailabilityWindow[] => {
     if (!candidate || typeof candidate !== "object") return [];
@@ -595,8 +597,8 @@ export function availabilityFromRecord(
         )
       : [];
     if (days.length === 0) return [];
-    const from = typeof entry.from === "string" ? entry.from : "09:00";
-    const to = typeof entry.to === "string" ? entry.to : "17:00";
+    const from = typeof entry.from === "string" && entry.from ? entry.from : "09:00";
+    const to = typeof entry.to === "string" && entry.to ? entry.to : "17:00";
     return [{ days, from, to }];
   });
   const notes = typeof record.notes === "string" ? record.notes : "";
@@ -1333,6 +1335,142 @@ export async function fetchDiscountCampaignReport(
     path: "/api/v1/discount-campaigns/admin/report",
     method: "GET",
     schema: envelope(z.array(discountCampaignReportRowSchema)),
+    options,
+  });
+}
+
+// ── Chef Earnings & Admin Finance ─────────────────────────────────
+
+const chefPortalEarningItemSchema = z.object({
+  id: z.string().min(1),
+  bookingRequestId: z.string().min(1),
+  bookingReference: z.string().min(1),
+  mainName: z.string().min(1),
+  serviceArea: z.string().nullable(),
+  scheduledDate: z.string().min(1),
+  timeSlot: z.string().min(1),
+  chefPayoutCents: z.number().int().nonnegative(),
+  status: z.enum(["PENDING", "PAID"]),
+  payoutReference: z.string().nullable(),
+  payoutProcessingDate: z.string(),
+  paidAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+const chefPortalPayoutItemSchema = z.object({
+  id: z.string().min(1),
+  payoutReference: z.string().min(1),
+  totalCents: z.number().int().nonnegative(),
+  paidAt: z.string(),
+  earningCount: z.number().int().nonnegative(),
+});
+
+const chefEarningsSummarySchema = z.object({
+  totalEarnedCents: z.number().int().nonnegative(),
+  pendingPayoutCents: z.number().int().nonnegative(),
+  paidOutCents: z.number().int().nonnegative(),
+  nextPayoutDescription: z.string(),
+  items: z.array(chefPortalEarningItemSchema),
+  payouts: z.array(chefPortalPayoutItemSchema),
+});
+
+export type ChefPortalEarningItem = z.infer<typeof chefPortalEarningItemSchema>;
+export type ChefPortalPayoutItem = z.infer<typeof chefPortalPayoutItemSchema>;
+export type ChefEarningsSummary = z.infer<typeof chefEarningsSummarySchema>;
+
+const financeSummarySchema = z.object({
+  customerCollectedCents: z.number().int().nonnegative(),
+  customerOutstandingCents: z.number().int().nonnegative(),
+  chefPayableCents: z.number().int().nonnegative(),
+  chefPaidCents: z.number().int().nonnegative(),
+  platformRevenueCents: z.number().int().nonnegative(),
+});
+
+const chefPayoutBankAccountSchema = z.object({
+  bankName: z.string(),
+  accountHolder: z.string(),
+  accountNumberLast4: z.string(),
+  branchCode: z.string(),
+  accountType: z.string().nullable(),
+});
+
+const pendingChefPayoutSchema = z.object({
+  cookUserId: z.string().min(1),
+  cookDisplayName: z.string().min(1),
+  cookEmail: z.string().email(),
+  bankAccount: chefPayoutBankAccountSchema.nullable().optional(),
+  totalCents: z.number().int().nonnegative(),
+  earnings: z.array(
+    z.object({
+      id: z.string().min(1),
+      bookingRequestId: z.string().min(1),
+      bookingReference: z.string().min(1),
+      chefPayoutCents: z.number().int().nonnegative(),
+      status: z.string(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+
+const chefPayoutRecordSchema = z.object({
+  id: z.string().min(1),
+  cookUserId: z.string().min(1),
+  cookDisplayName: z.string().min(1),
+  payoutReference: z.string().min(1),
+  totalCents: z.number().int().nonnegative(),
+  earningCount: z.number().int().nonnegative(),
+  paidAt: z.string(),
+  paidByUserId: z.string().min(1),
+});
+
+export type FinanceSummary = z.infer<typeof financeSummarySchema>;
+export type PendingChefPayout = z.infer<typeof pendingChefPayoutSchema>;
+export type ChefPayoutRecord = z.infer<typeof chefPayoutRecordSchema>;
+
+export async function fetchChefEarnings(
+  options: PlatformRequestOptions = {},
+): Promise<ChefEarningsSummary> {
+  return requestData({
+    path: "/api/v1/chef/earnings",
+    method: "GET",
+    schema: envelope(chefEarningsSummarySchema),
+    options,
+  });
+}
+
+export async function fetchFinanceSummary(
+  options: PlatformRequestOptions = {},
+): Promise<FinanceSummary> {
+  return requestData({
+    path: "/api/v1/operations/finance/summary",
+    method: "GET",
+    schema: envelope(financeSummarySchema),
+    options,
+  });
+}
+
+export async function fetchPendingChefPayouts(
+  options: PlatformRequestOptions = {},
+): Promise<readonly PendingChefPayout[]> {
+  return requestData({
+    path: "/api/v1/operations/finance/chef-payouts",
+    method: "GET",
+    schema: itemsEnvelope(pendingChefPayoutSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function settleChefPayout(
+  cookUserId: string,
+  input: { readonly payoutReference: string },
+  options: PlatformRequestOptions = {},
+): Promise<ChefPayoutRecord> {
+  return requestData({
+    path: `/api/v1/operations/finance/chefs/${encodeURIComponent(cookUserId)}/payouts`,
+    method: "POST",
+    body: input,
+    schema: envelope(chefPayoutRecordSchema),
     options,
   });
 }

@@ -29,8 +29,16 @@ export function AvailabilityEditor({ windows, onChange }: AvailabilityEditorProp
     updateWindow(windowIndex, { days: [...days] });
   };
 
+  const setPresetDays = (index: number, days: readonly AvailabilityDay[]): void => {
+    updateWindow(index, { days: [...days] });
+  };
+
   const addWindow = (): void => {
     onChange([...windows, { days: [], from: "09:00", to: "17:00" }]);
+  };
+
+  const addDefaultWindow = (): void => {
+    onChange([...windows, { days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], from: "07:00", to: "19:00" }]);
   };
 
   const removeWindow = (index: number): void => {
@@ -45,20 +53,56 @@ export function AvailabilityEditor({ windows, onChange }: AvailabilityEditorProp
       </p>
 
       {windows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[var(--color-oxblood)]/25 p-3 text-sm text-[var(--color-charcoal)]/60">
-          No availability windows set. Add one below to tell Chefmate when you usually cook.
-        </p>
+        <div className="rounded-2xl border border-dashed border-[var(--color-oxblood)]/25 p-4 text-center">
+          <p className="text-sm font-semibold text-[var(--color-charcoal)]/70">
+            No availability schedule configured yet.
+          </p>
+          <button
+            className="mt-3 rounded-xl bg-[var(--color-oxblood)] px-4 py-2 text-xs font-bold text-white shadow-sm"
+            onClick={addDefaultWindow}
+            type="button"
+          >
+            + Set Default Working Hours (Mon–Sat, 07:00–19:00)
+          </button>
+        </div>
       ) : null}
 
       <div className="space-y-3">
         {windows.map((window, index) => (
           <fieldset
-            className="rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-3"
+            className="rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-3.5"
             key={index}
           >
             <legend className="sr-only">Availability window {index + 1}</legend>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-bold text-[var(--color-oxblood)]">Window {index + 1}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold text-[var(--color-oxblood)]">Schedule Window {index + 1}</p>
+                <div className="flex gap-1 text-[11px]">
+                  <button
+                    className="text-[var(--color-oxblood)]/70 underline hover:text-[var(--color-oxblood)]"
+                    onClick={() => setPresetDays(index, ["MON", "TUE", "WED", "THU", "FRI"])}
+                    type="button"
+                  >
+                    Mon–Fri
+                  </button>
+                  <span>·</span>
+                  <button
+                    className="text-[var(--color-oxblood)]/70 underline hover:text-[var(--color-oxblood)]"
+                    onClick={() => setPresetDays(index, ["MON", "TUE", "WED", "THU", "FRI", "SAT"])}
+                    type="button"
+                  >
+                    Mon–Sat
+                  </button>
+                  <span>·</span>
+                  <button
+                    className="text-[var(--color-oxblood)]/70 underline hover:text-[var(--color-oxblood)]"
+                    onClick={() => setPresetDays(index, availabilityDays)}
+                    type="button"
+                  >
+                    Everyday
+                  </button>
+                </div>
+              </div>
               <button
                 aria-label={`Remove window ${index + 1}`}
                 className="text-xs font-bold text-[var(--color-oxblood)] underline-offset-2 hover:underline"

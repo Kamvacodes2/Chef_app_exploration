@@ -55,6 +55,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconSparkles width={18} height={18} />,
   },
   {
+    id: "finance",
+    label: "Finance & Payouts",
+    path: "/admin/finance",
+    icon: <IconDollarSign width={18} height={18} />,
+  },
+  {
     id: "discounts",
     label: "Discounts",
     path: "/admin/discount-campaigns",

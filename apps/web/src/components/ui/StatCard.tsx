@@ -12,12 +12,21 @@ export function StatCard({
   valueColor = "text-[var(--color-oxblood)]",
 }: StatCardProps) {
   return (
-    <article className="rounded-3xl bg-white p-5 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
+    <article className="min-w-0 overflow-hidden rounded-2xl bg-white p-3.5 shadow-[0_10px_30px_rgba(70,33,24,0.06)] sm:rounded-3xl sm:p-5 sm:shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-charcoal)]/60 sm:text-xs sm:tracking-[0.2em] line-clamp-2">
         {label}
       </p>
-      <p className={`mt-2 text-3xl font-black ${valueColor}`}>{value}</p>
-      {subtitle ? <p className="mt-1 text-xs text-[var(--color-charcoal)]/50">{subtitle}</p> : null}
+      <p
+        className={`mt-1 text-base font-black tracking-tight sm:mt-2 sm:text-2xl lg:text-3xl ${valueColor} truncate`}
+        title={typeof value === "string" ? value : String(value)}
+      >
+        {value}
+      </p>
+      {subtitle ? (
+        <p className="mt-1 text-[10px] text-[var(--color-charcoal)]/50 sm:text-xs truncate">
+          {subtitle}
+        </p>
+      ) : null}
     </article>
   );
 }

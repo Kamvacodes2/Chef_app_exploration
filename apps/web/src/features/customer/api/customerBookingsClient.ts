@@ -31,6 +31,15 @@ const customerBookingSchema = z.object({
   type: z.enum(["STANDARD", "CUSTOM", "GIFT", "SUBSCRIPTION"]),
   mainMeal: z.object({ slug: z.string(), name: z.string().min(1) }),
   meals: z.array(bookingMealSchema),
+  customRequest: z.string().nullable().optional(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      unit: z.string().nullable().optional(),
+      estate: z.string().nullable().optional(),
+      serviceArea: z.string().optional(),
+    })
+    .optional(),
   scheduledDate: z.string().min(1),
   timeSlot: z.string().min(1),
   createdAt: z.string(),
@@ -117,6 +126,51 @@ export async function rescheduleCustomerBooking(
   if (!response.ok) {
     throw new Error(
       await readApiErrorMessage(response, "Chefmate could not reschedule your booking."),
+    );
+  }
+  const parsed = z.object({ data: customerBookingSchema }).parse(await response.json());
+  return parsed.data;
+}
+
+export interface ModifyCustomerBookingInput {
+  readonly scheduledDate?: string;
+  readonly timeSlot?: string;
+  readonly mainMealSlug?: string;
+  readonly mainName?: string;
+  readonly sideSlugs?: readonly string[];
+  readonly breakfastAddOnSlug?: string | null;
+  readonly dessertSlug?: string | null;
+  readonly customRequest?: string | null;
+  readonly address?: {
+    readonly street?: string;
+    readonly unit?: string | null;
+    readonly estate?: string | null;
+    readonly serviceArea?: string;
+  };
+  readonly reason?: string | null;
+}
+
+export async function modifyCustomerBooking(
+  bookingId: string,
+  input: ModifyCustomerBookingInput,
+  options: CustomerBookingsRequestOptions = {},
+): Promise<CustomerBooking> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      `/api/v1/account/booking-requests/${encodeURIComponent(bookingId)}/modify`,
+    ),
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate could not update your booking."),
     );
   }
   const parsed = z.object({ data: customerBookingSchema }).parse(await response.json());

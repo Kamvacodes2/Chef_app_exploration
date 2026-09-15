@@ -61,7 +61,7 @@ export function AdminOverview() {
         </p>
       </div>
 
-      {/* Action required banner */}
+      {/* Action required banners */}
       {(dashboard?.chefApplicationsCount ?? 0) > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4">
           <div>
@@ -81,6 +81,28 @@ export function AdminOverview() {
             className="whitespace-nowrap rounded-xl bg-amber-600 px-4 py-2 text-sm text-white transition-opacity hover:opacity-90"
           >
             Review Now
+          </Link>
+        </div>
+      ) : null}
+
+      {(dashboard?.chefPayableCents ?? 0) > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border-l-4 border-emerald-600 bg-emerald-50 p-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Monday Payouts Ready
+            </p>
+            <p className="font-semibold text-[var(--color-charcoal)]">
+              {formatZar(dashboard?.chefPayableCents ?? 0)} in pending chef earnings
+            </p>
+            <p className="text-sm text-[var(--color-charcoal)]/70">
+              Chefs are ready for weekly bank transfer payout confirmation.
+            </p>
+          </div>
+          <Link
+            href="/admin/finance"
+            className="whitespace-nowrap rounded-xl bg-emerald-700 px-4 py-2 text-sm text-white transition-opacity hover:opacity-90 font-bold"
+          >
+            Process Payouts
           </Link>
         </div>
       ) : null}
@@ -122,6 +144,11 @@ export function AdminOverview() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
+              label: "Monday Payouts",
+              desc: `${formatZar(dashboard?.chefPayableCents ?? 0)} pending`,
+              path: "/admin/finance",
+            },
+            {
               label: "Manage Chefs",
               desc: `${dashboard?.chefsCount ?? 0} chefs`,
               path: "/admin/chefs",
@@ -135,11 +162,6 @@ export function AdminOverview() {
               label: "All Bookings",
               desc: `${dashboard?.bookingsThisMonthCount ?? 0} this month`,
               path: "/admin/bookings",
-            },
-            {
-              label: "Featured Meals",
-              desc: "Manage popular picks",
-              path: "/admin/featured-meals",
             },
           ].map((action) => (
             <Link

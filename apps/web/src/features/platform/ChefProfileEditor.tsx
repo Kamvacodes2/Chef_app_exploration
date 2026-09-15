@@ -30,12 +30,20 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   const [busy, setBusy] = useState(false);
   const [bankBusy, setBankBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [bankError, setBankError] = useState<string | null>(null);
+  const [bankNotice, setBankNotice] = useState<string | null>(null);
 
   const save = async (): Promise<void> => {
     setError(null);
+    setNotice(null);
     if (serviceAreas.length === 0) {
       setError("Select at least one service area so we know where you can cook.");
+      return;
+    }
+    const hasActiveDays = windows.some((w) => w.days.length > 0);
+    if (!hasActiveDays && isAvailable) {
+      setError("Please select at least one day of the week in your availability schedule below so you can receive bookings.");
       return;
     }
     setBusy(true);
@@ -51,6 +59,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
         maxTravelKm,
         availability: { notes, windows },
       });
+      setNotice("✓ Profile and availability schedule saved successfully!");
       onSaved(updated);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Chefmate could not save your profile.");
@@ -62,6 +71,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   const saveBank = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setBankError(null);
+    setBankNotice(null);
     setBankBusy(true);
     const formData = new FormData(event.currentTarget);
     try {
@@ -72,6 +82,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
         accountNumber: text(formData, "accountNumber"),
         accountType: text(formData, "accountType") || null,
       });
+      setBankNotice("✓ Bank details updated successfully!");
       onSaved({ ...profile, bankAccount });
       event.currentTarget.reset();
     } catch (caught) {
@@ -155,6 +166,15 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
           />
         </label>
 
+        {notice ? (
+          <p
+            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 shadow-sm"
+            role="status"
+          >
+            {notice}
+          </p>
+        ) : null}
+
         {error ? (
           <p
             className="rounded-xl border border-[var(--color-terracotta)]/35 bg-[var(--color-terracotta)]/10 px-3 py-2 text-sm font-medium text-[var(--color-oxblood)]"
@@ -165,7 +185,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
         ) : null}
 
         <button
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 transition hover:bg-[var(--color-oxblood)]/90"
           disabled={busy}
           type="submit"
         >
@@ -224,6 +244,14 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
               name="accountType"
             />
           </label>
+          {bankNotice ? (
+            <p
+              className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 shadow-sm"
+              role="status"
+            >
+              {bankNotice}
+            </p>
+          ) : null}
           {bankError ? (
             <p
               className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-900"

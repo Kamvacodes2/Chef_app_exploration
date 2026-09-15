@@ -15,6 +15,10 @@ import {
   fetchCustomers,
   fetchPopularMeals,
   fetchPolicyStatus,
+  fetchChefEarnings,
+  fetchFinanceSummary,
+  fetchPendingChefPayouts,
+  settleChefPayout,
   inviteChefApplication,
   logWhatsAppPreview,
   markChefApplicationInterviewConducted,
@@ -670,6 +674,103 @@ describe("platformClient", () => {
     await expect(fetchChefApplications({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(
       [expect.objectContaining({ ...application, phone: "" })],
     );
+  });
+
+  it("fetches chef earnings summary correctly", async () => {
+    const payload = {
+      totalEarnedCents: 150000,
+      pendingPayoutCents: 50000,
+      paidOutCents: 100000,
+      nextPayoutDescription: "Settled every Monday",
+      items: [
+        {
+          id: "earning-1",
+          bookingRequestId: "booking-1",
+          bookingReference: "BK-123",
+          mainName: "Braised Short Ribs",
+          serviceArea: "Sandton",
+          scheduledDate: "2026-09-14",
+          timeSlot: "18:00",
+          chefPayoutCents: 50000,
+          status: "PENDING" as const,
+          payoutReference: null,
+          payoutProcessingDate: "2026-09-21",
+          paidAt: null,
+          createdAt: "2026-09-14T19:00:00.000Z",
+        },
+      ],
+      payouts: [
+        {
+          id: "payout-1",
+          payoutReference: "EFT-20260907-DEE",
+          totalCents: 100000,
+          paidAt: "2026-09-07T10:00:00.000Z",
+          earningCount: 2,
+        },
+      ],
+    };
+    const fetchImpl = mockFetch({ data: payload });
+
+    await expect(fetchChefEarnings({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual(payload);
+  });
+
+  it("fetches finance summary and pending chef payouts", async () => {
+    const financeSummaryData = {
+      customerCollectedCents: 500000,
+      customerOutstandingCents: 0,
+      chefPayableCents: 150000,
+      chefPaidCents: 350000,
+      platformRevenueCents: 150000,
+    };
+    const pendingPayoutsData = [
+      {
+        cookUserId: "cook-1",
+        cookDisplayName: "Chef Dee",
+        cookEmail: "dineolucia70@gmail.com",
+        bankAccount: {
+          bankName: "Capitec",
+          accountHolder: "Dineo Lepedi",
+          accountNumberLast4: "7890",
+          branchCode: "470010",
+          accountType: "SAVINGS",
+        },
+        totalCents: 150000,
+        earnings: [
+          {
+            id: "earning-1",
+            bookingRequestId: "booking-1",
+            bookingReference: "BK-123",
+            chefPayoutCents: 150000,
+            status: "PENDING",
+            createdAt: "2026-09-14T18:00:00.000Z",
+          },
+        ],
+      },
+    ];
+
+    const fetchSummaryImpl = mockFetch({ data: financeSummaryData });
+    const fetchPayoutsImpl = mockFetch({ data: { items: pendingPayoutsData } });
+
+    await expect(fetchFinanceSummary({ baseUrl: "http://api.test", fetchImpl: fetchSummaryImpl })).resolves.toEqual(financeSummaryData);
+    await expect(fetchPendingChefPayouts({ baseUrl: "http://api.test", fetchImpl: fetchPayoutsImpl })).resolves.toEqual(pendingPayoutsData);
+  });
+
+  it("settles a chef payout", async () => {
+    const settleData = {
+      id: "payout-123",
+      cookUserId: "cook-1",
+      cookDisplayName: "Chef Dee",
+      payoutReference: "EFT-20260915-DEE",
+      totalCents: 150000,
+      earningCount: 1,
+      paidAt: "2026-09-15T08:00:00.000Z",
+      paidByUserId: "admin-1",
+    };
+    const fetchImpl = mockFetch({ data: settleData });
+
+    await expect(
+      settleChefPayout("cook-1", { payoutReference: "EFT-20260915-DEE" }, { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toEqual(settleData);
   });
 });
 
