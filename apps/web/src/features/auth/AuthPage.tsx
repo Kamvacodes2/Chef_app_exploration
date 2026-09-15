@@ -16,6 +16,9 @@ export function AuthPage() {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
 
   const isRegistering = mode === "register";
 
@@ -28,6 +31,12 @@ export function AuthPage() {
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setError(null);
+
+    if (isRegistering && (!acceptTerms || !acceptPrivacy)) {
+      setError("Please accept the Customer Terms and Conditions and Privacy Policy to continue.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -173,6 +182,70 @@ export function AuthPage() {
                   </span>
                 ) : null}
               </label>
+
+              {isRegistering ? (
+                <div className="space-y-3 pt-1 text-sm text-[var(--color-charcoal)]/85">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      id="accept-terms"
+                      name="acceptTerms"
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(event) => setAcceptTerms(event.target.checked)}
+                      required
+                      className="mt-1 h-4 w-4 rounded border-[var(--color-oxblood)]/30 text-[var(--color-oxblood)] accent-[var(--color-oxblood)] focus:ring-[var(--color-terracotta)]"
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <Link
+                        href="/legal/customer-terms"
+                        target="_blank"
+                        className="font-semibold text-[var(--color-oxblood)] underline-offset-4 hover:underline"
+                      >
+                        Customer Terms and Conditions
+                      </Link>
+                      <span className="text-[var(--color-oxblood)]"> *</span>
+                    </span>
+                  </label>
+
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      id="accept-privacy"
+                      name="acceptPrivacy"
+                      type="checkbox"
+                      checked={acceptPrivacy}
+                      onChange={(event) => setAcceptPrivacy(event.target.checked)}
+                      required
+                      className="mt-1 h-4 w-4 rounded border-[var(--color-oxblood)]/30 text-[var(--color-oxblood)] accent-[var(--color-oxblood)] focus:ring-[var(--color-terracotta)]"
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <Link
+                        href="/legal/privacy"
+                        target="_blank"
+                        className="font-semibold text-[var(--color-oxblood)] underline-offset-4 hover:underline"
+                      >
+                        Privacy Policy
+                      </Link>
+                      <span className="text-[var(--color-oxblood)]"> *</span>
+                    </span>
+                  </label>
+
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      id="accept-marketing"
+                      name="acceptMarketing"
+                      type="checkbox"
+                      checked={acceptMarketing}
+                      onChange={(event) => setAcceptMarketing(event.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[var(--color-oxblood)]/30 text-[var(--color-oxblood)] accent-[var(--color-oxblood)] focus:ring-[var(--color-terracotta)]"
+                    />
+                    <span>
+                      I agree to receive marketing communications, seasonal menu updates, and promotional offers from Chefmate.
+                    </span>
+                  </label>
+                </div>
+              ) : null}
 
               {error ? (
                 <p

@@ -124,7 +124,7 @@ describe("AuthPage", () => {
     expect(screen.queryByRole("link", { name: "Book a chef" })).not.toBeInTheDocument();
   });
 
-  it("creates customer accounts through the backend auth client", async () => {
+  it("creates customer accounts through the backend auth client when terms are accepted", async () => {
     authApi.createCustomerAccount.mockResolvedValue(customer);
     render(<AuthPage />);
 
@@ -138,6 +138,20 @@ describe("AuthPage", () => {
     fireEvent.change(screen.getByLabelText(/^Password/), {
       target: { value: "A-strong-password-2026" },
     });
+
+    // Check terms and privacy checkboxes
+    const termsCheckbox = screen.getByRole("checkbox", { name: /Customer Terms and Conditions/i });
+    const privacyCheckbox = screen.getByRole("checkbox", { name: /Privacy Policy/i });
+    const marketingCheckbox = screen.getByRole("checkbox", { name: /marketing communications/i });
+
+    expect(termsCheckbox).toBeRequired();
+    expect(privacyCheckbox).toBeRequired();
+    expect(marketingCheckbox).not.toBeRequired();
+
+    fireEvent.click(termsCheckbox);
+    fireEvent.click(privacyCheckbox);
+    fireEvent.click(marketingCheckbox);
+
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     await waitFor(() =>
@@ -150,6 +164,29 @@ describe("AuthPage", () => {
     await expect(screen.findByRole("status")).resolves.toHaveTextContent(
       "Signed in as Test Customer.",
     );
+  });
+
+  it("requires terms and privacy acceptance before registration", async () => {
+    render(<AuthPage />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Create account" }));
+    fireEvent.change(screen.getByLabelText("Your name"), {
+      target: { value: customer.displayName },
+    });
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: customer.email },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "A-strong-password-2026" },
+    });
+
+    const form = screen.getByRole("button", { name: "Create account" }).closest("form")!;
+    fireEvent.submit(form);
+
+    await expect(screen.findByRole("alert")).resolves.toHaveTextContent(
+      "Please accept the Customer Terms and Conditions and Privacy Policy to continue.",
+    );
+    expect(authApi.createCustomerAccount).not.toHaveBeenCalled();
   });
 
   it("offers a forgot-password link from the sign-in form", () => {
