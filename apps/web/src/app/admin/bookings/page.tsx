@@ -402,16 +402,7 @@ export default function Page() {
                         >
                           {expandedId === b.id ? "Hide details" : "Full details"}
                         </button>
-                        {canRemindPayment ? (
-                          <button
-                            type="button"
-                            disabled={processingId === b.id}
-                            onClick={() => void handleSendPaymentReminder(b)}
-                            className="rounded-xl border border-amber-600 px-2.5 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
-                          >
-                            {processingId === b.id ? "Sending..." : "Remind payment / proof"}
-                          </button>
-                        ) : canMarkPaid ? (
+                        {canMarkPaid && (
                           <button
                             type="button"
                             disabled={processingId === b.id}
@@ -421,13 +412,26 @@ export default function Page() {
                             <IconSparkles width={13} height={13} />
                             {processingId === b.id ? "Approving..." : "Mark as Paid"}
                           </button>
-                        ) : b.status === "AWAITING_CHEF" ? (
-                          <span className="inline-block rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-                            Broadcasted
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
                         )}
+                        {canRemindPayment && (
+                          <button
+                            type="button"
+                            disabled={processingId === b.id}
+                            onClick={() => void handleSendPaymentReminder(b)}
+                            className="rounded-xl border border-amber-600 px-2.5 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+                          >
+                            {processingId === b.id ? "Sending..." : "Remind payment / proof"}
+                          </button>
+                        )}
+                        {!canMarkPaid &&
+                          !canRemindPayment &&
+                          (b.status === "AWAITING_CHEF" ? (
+                            <span className="inline-block rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+                              Broadcasted
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
+                          ))}
                       </div>
                     </td>
                   </tr>

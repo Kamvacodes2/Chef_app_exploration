@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   fetchChefs,
   fetchOperationsBookings,
+  verifyBookingPayment,
   type ChefSummary,
   type OperationsBooking,
 } from "@/features/platform/api/platformClient";
@@ -16,6 +17,7 @@ import {
   IconChevronRight,
   IconClock,
   IconSearch,
+  IconSparkles,
   IconUser,
   IconUsers,
   IconX,
@@ -150,6 +152,7 @@ export function AdminCalendarPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<CalendarViewMode>("grid");
   const [selectedBooking, setSelectedBooking] = useState<OperationsBooking | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -160,6 +163,38 @@ export function AdminCalendarPage() {
       // Ok if error or empty
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleModalMarkPaid = async (booking: OperationsBooking) => {
+    const confirmText = `Approve booking ${booking.reference} and mark as Paid?\n\nThis will:\n1. Transition the booking to Awaiting Chef\n2. Broadcast the session to all chefs immediately\n3. Email the customer their grocery & ingredient list PDF`;
+    if (!window.confirm(confirmText)) return;
+
+    setProcessingId(booking.id);
+    try {
+      await verifyBookingPayment(booking.id, "Approved and marked paid by admin from calendar");
+      await loadData();
+      setSelectedBooking((prev) =>
+        prev?.id === booking.id
+          ? {
+              ...prev,
+              status: "AWAITING_CHEF",
+              payment: prev.payment
+                ? { ...prev.payment, status: "VERIFIED" }
+                : {
+                    id: "new",
+                    status: "VERIFIED",
+                    method: "BANK_TRANSFER",
+                    amountCents: 0,
+                    verifiedAt: new Date().toISOString(),
+                  },
+            }
+          : prev,
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to mark booking as paid.");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -946,20 +981,38 @@ export function AdminCalendarPage() {
             </div>
 
             {/* Modal Actions */}
-            <div className="mt-6 flex justify-between border-t border-[var(--color-oxblood)]/10 pt-4">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-oxblood)]/10 pt-4">
               <Link
                 href={`/admin/bookings`}
                 className="rounded-xl border border-[var(--color-oxblood)]/20 px-4 py-2 text-xs font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)] transition"
               >
                 Open in Table View →
               </Link>
-              <button
-                type="button"
-                onClick={() => setSelectedBooking(null)}
-                className="rounded-xl bg-[var(--color-oxblood)] px-5 py-2 text-xs font-bold text-white transition hover:opacity-90"
-              >
-                Done
-              </button>
+              <div className="flex items-center gap-2">
+                {!selectedBooking.cook &&
+                  selectedBooking.status !== "CANCELLED" &&
+                  selectedBooking.status !== "COMPLETED" &&
+                  (selectedBooking.payment?.status !== "VERIFIED" ||
+                    selectedBooking.status === "REQUESTED" ||
+                    selectedBooking.status === "NEEDS_REVIEW") && (
+                    <button
+                      type="button"
+                      disabled={processingId === selectedBooking.id}
+                      onClick={() => void handleModalMarkPaid(selectedBooking)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-50"
+                    >
+                      <IconSparkles width={13} height={13} />
+                      {processingId === selectedBooking.id ? "Approving..." : "Mark as Paid"}
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedBooking(null)}
+                  className="rounded-xl bg-[var(--color-oxblood)] px-5 py-2 text-xs font-bold text-white transition hover:opacity-90"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>
