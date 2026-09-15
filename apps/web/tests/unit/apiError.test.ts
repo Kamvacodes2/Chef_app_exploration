@@ -7,6 +7,7 @@ describe("ChefmateApiError", () => {
     expect(err.status).toBe(404);
     expect(err.message).toBe("Not found");
     expect(err.name).toBe("ChefmateApiError");
+    expect(err.code).toBeUndefined();
   });
 
   it("stores optional code", () => {
@@ -15,6 +16,7 @@ describe("ChefmateApiError", () => {
       message: "Invalid",
     });
     expect(err.code).toBe("BAD_REQUEST");
+    expect(err.status).toBe(400);
   });
 });
 
@@ -25,6 +27,14 @@ describe("readApiErrorDetails", () => {
     } as unknown as Response;
     const result = await readApiErrorDetails(response, "Fallback");
     expect(result.message).toBe("Fallback");
+  });
+
+  it("returns fallback on invalid schema", async () => {
+    const response = {
+      json: () => Promise.resolve([1, 2, 3]),
+    } as unknown as Response;
+    const result = await readApiErrorDetails(response, "Fallback message");
+    expect(result.message).toBe("Fallback message");
   });
 
   it("parses message from body", async () => {
@@ -47,12 +57,33 @@ describe("readApiErrorDetails", () => {
     expect(result.message).toBe("Invalid input");
   });
 
-  it("handles string error field", async () => {
+  it("handles string error field with top-level code", async () => {
     const response = {
-      json: () => Promise.resolve({ error: "Server error" }),
+      json: () => Promise.resolve({ error: "Server error", code: "SERVER_ERROR" }),
     } as unknown as Response;
     const result = await readApiErrorDetails(response, "Fallback");
+    expect(result.code).toBe("SERVER_ERROR");
     expect(result.message).toBe("Server error");
+  });
+
+  it("falls back when error object has no message", async () => {
+    const response = {
+      json: () => Promise.resolve({ error: {} }),
+    } as unknown as Response;
+    const result = await readApiErrorDetails(response, "Fallback text");
+    expect(result.message).toBe("Fallback text");
+  });
+
+  it("prefers top-level message over nested error object", async () => {
+    const response = {
+      json: () =>
+        Promise.resolve({
+          message: "Top level message",
+          error: { message: "Nested message" },
+        }),
+    } as unknown as Response;
+    const result = await readApiErrorDetails(response, "Fallback text");
+    expect(result.message).toBe("Top level message");
   });
 });
 

@@ -3,6 +3,7 @@ import {
   fetchCustomerBookings,
   fetchCustomerSubscription,
   modifyCustomerBooking,
+  rescheduleCustomerBooking,
 } from "@/features/customer/api/customerBookingsClient";
 
 function jsonResponse(body: unknown): Response {
@@ -121,5 +122,97 @@ describe("customerBookingsClient", () => {
     expect(modified.mainMeal.name).toBe("SA Roast Chicken (Seven Colours)");
     expect(modified.customRequest).toBe("No spicy peppers");
     expect(modified.address?.street).toBe("97 Waterfall Ave");
+  });
+
+  it("reschedules a booking successfully", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, init) => {
+      const parsedBody = JSON.parse((init?.body as string) ?? "{}");
+      return jsonResponse({
+        data: {
+          id: "booking-123",
+          reference: "CM00475",
+          status: "REQUESTED",
+          type: "STANDARD",
+          mainMeal: { slug: "burger-bowl", name: "Big Mac Burger Bowls" },
+          meals: [{ kind: "main", slug: "burger-bowl", name: "Big Mac Burger Bowls" }],
+          scheduledDate: parsedBody.scheduledDate,
+          timeSlot: parsedBody.timeSlot,
+          createdAt: "2026-09-15T00:00:00.000Z",
+        },
+      });
+    });
+
+    const rescheduled = await rescheduleCustomerBooking(
+      "booking-123",
+      { scheduledDate: "2026-09-25", timeSlot: "17:00", reason: "Rescheduling" },
+      { baseUrl: "https://api.test", fetchImpl },
+    );
+
+    expect(rescheduled.scheduledDate).toBe("2026-09-25");
+    expect(rescheduled.timeSlot).toBe("17:00");
+  });
+
+  it("throws descriptive error when fetchCustomerBookings fails", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: false,
+          json: async () => ({ message: "Unauthorized access" }),
+        }) as unknown as Response,
+    );
+
+    await expect(fetchCustomerBookings({ baseUrl: "https://api.test", fetchImpl })).rejects.toThrow(
+      "Unauthorized access",
+    );
+  });
+
+  it("throws descriptive error when fetchCustomerSubscription fails", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: false,
+          json: async () => ({ message: "Subscription not found" }),
+        }) as unknown as Response,
+    );
+
+    await expect(
+      fetchCustomerSubscription({ baseUrl: "https://api.test", fetchImpl }),
+    ).rejects.toThrow("Subscription not found");
+  });
+
+  it("throws descriptive error when rescheduleCustomerBooking fails", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: false,
+          json: async () => ({ message: "Chef unavailable at this time" }),
+        }) as unknown as Response,
+    );
+
+    await expect(
+      rescheduleCustomerBooking(
+        "booking-123",
+        { scheduledDate: "2026-09-25", timeSlot: "17:00" },
+        { baseUrl: "https://api.test", fetchImpl },
+      ),
+    ).rejects.toThrow("Chef unavailable at this time");
+  });
+
+  it("throws descriptive error when modifyCustomerBooking fails", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: false,
+          json: async () => ({ message: "Cannot modify completed order" }),
+        }) as unknown as Response,
+    );
+
+    await expect(
+      modifyCustomerBooking(
+        "booking-123",
+        { scheduledDate: "2026-09-25" },
+        { baseUrl: "https://api.test", fetchImpl },
+      ),
+    ).rejects.toThrow("Cannot modify completed order");
   });
 });
