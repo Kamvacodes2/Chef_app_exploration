@@ -3,6 +3,7 @@ node_modules
 out
 dist
 coverage
+apps/web/.coverage.*
 playwright-report
 test-results
 .env*

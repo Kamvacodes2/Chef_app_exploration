@@ -272,6 +272,11 @@ describe("Chef portal sessions", () => {
         accountType: "Savings",
       }),
     );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "✓ Bank details updated successfully!",
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Account number")).toHaveValue("1234561234");
   });
   it("blocks saving until a service area is selected", async () => {
     api.updateChefProfile.mockResolvedValue(chefProfile);

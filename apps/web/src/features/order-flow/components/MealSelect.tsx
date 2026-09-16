@@ -9,21 +9,15 @@ import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
 import { defaultCategorySlugForGoal } from "../constants/goalMealDefaults";
 import { useOrder } from "../state/OrderContext";
 
-/**
- * Meal discovery step. The catalog browser does the discovery work; this step
- * keeps the order-flow contract: selecting a meal stores an `OrderMenuItem`
- * whose `id` is the catalog slug (submitted as `mainSlug`), and guests can
- * always fall back to a custom request.
- */
 export function MealSelect(): ReactElement {
   const { state, selectMain, setCustomRequest, clearCustomRequest } = useOrder();
   const [customOpen, setCustomOpen] = useState(false);
   const [customText, setCustomText] = useState("");
+  const [customLink, setCustomLink] = useState("");
   const customRef = useRef<HTMLTextAreaElement>(null);
 
   const openCustomRequest = useCallback(() => {
     setCustomOpen(true);
-    // Focus lands on the textarea so the escape hatch is usable by keyboard.
     requestAnimationFrame(() => customRef.current?.focus());
   }, []);
 
@@ -35,9 +29,6 @@ export function MealSelect(): ReactElement {
   );
 
   const selectedSlug = state.customRequest === null ? (state.main?.id ?? null) : null;
-  // The Goal step's choice pre-selects a starting category chip here — a soft
-  // default, not a filter. `MealBrowser` reads this only once on mount, so
-  // it never fights the customer's own chip choices.
   const initialCategorySlug = defaultCategorySlugForGoal(state.goalId);
 
   return (
@@ -75,7 +66,6 @@ export function MealSelect(): ReactElement {
         >
           Can&apos;t find what you want?
         </button>
-
         <AnimatePresence>
           {customOpen && (
             <motion.div
@@ -100,12 +90,30 @@ export function MealSelect(): ReactElement {
                   placeholder="e.g. Ouma's chicken curry, a TikTok pasta bake, or something saved from Pinterest"
                   className="w-full resize-none rounded-2xl bg-white/95 p-3 text-sm text-[var(--color-oxblood)] placeholder:text-[var(--color-oxblood)]/40 focus:outline focus:outline-2 focus:outline-[var(--color-bone)]"
                 />
+                <label
+                  htmlFor="custom-request-link"
+                  className="text-xs font-semibold uppercase tracking-wider text-[var(--color-bone)]/80"
+                >
+                  Recipe link (optional)
+                </label>
+                <input
+                  id="custom-request-link"
+                  type="url"
+                  value={customLink}
+                  onChange={(event) => setCustomLink(event.target.value)}
+                  placeholder="https://www.tiktok.com/... or https://www.example.com/recipe"
+                  className="w-full rounded-2xl bg-white/95 p-3 text-sm text-[var(--color-oxblood)] placeholder:text-[var(--color-oxblood)]/40 focus:outline focus:outline-2 focus:outline-[var(--color-bone)]"
+                />
+                <p className="text-xs leading-5 text-[var(--color-bone)]/60">
+                  Add the recipe URL so the chef can review exactly what you mean.
+                </p>
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setCustomOpen(false);
                       setCustomText("");
+                      setCustomLink("");
                       clearCustomRequest();
                     }}
                     className="rounded-xl px-4 py-2 text-sm text-[var(--color-bone)]/70 hover:text-[var(--color-bone)]"
@@ -114,8 +122,16 @@ export function MealSelect(): ReactElement {
                   </button>
                   <button
                     type="button"
-                    disabled={customText.trim().length < 3}
-                    onClick={() => setCustomRequest(customText.trim())}
+                    disabled={
+                      customText.trim().length < 3 ||
+                      (customLink.trim().length > 0 && !/^https?:\/\/\S+$/i.test(customLink.trim()))
+                    }
+                    onClick={() => {
+                      const text = customText.trim();
+                      const link = customLink.trim();
+                      if (link) setCustomRequest(text, link);
+                      else setCustomRequest(text);
+                    }}
                     className="rounded-xl bg-[var(--color-bone)] px-5 py-2 text-sm font-bold text-[var(--color-oxblood)] transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
                   >
                     Request this

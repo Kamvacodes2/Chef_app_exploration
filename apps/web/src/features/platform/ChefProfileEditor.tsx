@@ -72,10 +72,11 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
 
   const saveBank = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    const form = event.currentTarget;
     setBankError(null);
     setBankNotice(null);
     setBankBusy(true);
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     try {
       const bankAccount = await updateChefBankDetails({
         accountHolder: text(formData, "accountHolder"),
@@ -86,7 +87,6 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
       });
       setBankNotice("✓ Bank details updated successfully!");
       onSaved({ ...profile, bankAccount });
-      event.currentTarget.reset();
     } catch (caught) {
       setBankError(
         caught instanceof Error ? caught.message : "Chefmate could not save your bank details.",

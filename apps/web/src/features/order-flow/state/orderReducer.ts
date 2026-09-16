@@ -85,6 +85,8 @@ export interface OrderState {
   readonly sides: readonly OrderMenuItem[];
   readonly dessert: OrderMenuItem | null;
   readonly customRequest: string | null;
+  /** Optional recipe URL supplied with a custom dish request. */
+  readonly customRequestLink: string | null;
   /** Free breakfast add-on (overnight oats) offered to subscription plans: null = not asked, true = yes, false = no thanks. */
   readonly breakfastAddOn: boolean | null;
   readonly date: string | null;
@@ -122,6 +124,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   sides: Object.freeze([]),
   dessert: null,
   customRequest: null,
+  customRequestLink: null,
   breakfastAddOn: null,
   date: null,
   time: null,
@@ -177,7 +180,7 @@ export type OrderAction =
   | { type: "TOGGLE_SIDE"; item: OrderMenuItem }
   | { type: "SELECT_DESSERT"; item: OrderMenuItem }
   | { type: "SKIP_DESSERT" }
-  | { type: "SET_CUSTOM_REQUEST"; text: string }
+  | { type: "SET_CUSTOM_REQUEST"; text: string; link?: string | null }
   | { type: "CLEAR_CUSTOM_REQUEST" }
   | { type: "SET_BREAKFAST_ADD_ON"; value: boolean }
   | { type: "SET_DATE"; date: string | null }
@@ -730,6 +733,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         ...state,
         main: action.item,
         customRequest: null,
+        customRequestLink: null,
         // A meal can only fill one slot: picking it as the main clears it from
         // the optional second-meal slot picked at the next step.
         secondFavoriteMealId:
@@ -773,10 +777,16 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         paletteId: "persimmon",
         goalTags: Object.freeze([]),
       };
-      return { ...state, customRequest: action.text, main: customMain, step: "sides" };
+      return {
+        ...state,
+        customRequest: action.text,
+        customRequestLink: action.link ?? null,
+        main: customMain,
+        step: "sides",
+      };
     }
     case "CLEAR_CUSTOM_REQUEST":
-      return { ...state, customRequest: null, main: null };
+      return { ...state, customRequest: null, customRequestLink: null, main: null };
     case "SET_BREAKFAST_ADD_ON":
       return { ...state, breakfastAddOn: action.value };
     case "SET_DATE":

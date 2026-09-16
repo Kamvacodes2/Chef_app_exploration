@@ -1,0 +1,60 @@
+name: Merge gate
+
+# This is the single check to require in branch protection for main. It runs the
+# complete local/CI pipeline, including the anti-silent-skip preflight, so a PR
+# cannot merge when any required Git test, typecheck, build, browser, security,
+# database, or accessibility suite fails.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: merge-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  DEPLOY_ENV: ci
+  POSTGRES_USER: chefmate_ci
+  POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
+  POSTGRES_DB: chefmate_ci
+  DATABASE_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/chefmate_ci
+  CHEFMATE_TEST_PG_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/postgres
+  KMS_LOCAL_DEV_KEY: ci-only-not-a-real-key-value
+  NEXT_PUBLIC_CHEFMATE_API_URL: http://127.0.0.1:4000
+
+jobs:
+  all-checks:
+    name: All checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: chefmate_ci
+          POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
+          POSTGRES_DB: chefmate_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chefmate_ci -d chefmate_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Install Playwright browsers
+        uses: ./.github/actions/setup-playwright
+
+      - name: Run complete merge gate
+        run: pnpm test:ci

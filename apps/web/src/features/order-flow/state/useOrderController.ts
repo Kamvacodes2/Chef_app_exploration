@@ -89,7 +89,7 @@ export interface OrderController {
   readonly toggleSide: (item: OrderMenuItem) => void;
   readonly selectDessert: (item: OrderMenuItem) => void;
   readonly skipDessert: () => void;
-  readonly setCustomRequest: (text: string) => void;
+  readonly setCustomRequest: (text: string, link?: string | null) => void;
   readonly clearCustomRequest: () => void;
   readonly setBreakfastAddOn: (value: boolean) => void;
   readonly setDate: (date: string | null) => void;
@@ -210,6 +210,7 @@ export function useOrderController(): OrderController {
         sides: state.sides,
         dessert: state.dessert,
         customRequest: state.customRequest,
+        customRequestLink: state.customRequestLink,
         appliedGift: state.appliedGift,
         planId: state.planId,
         preferredDays: state.preferredDays,
@@ -236,6 +237,7 @@ export function useOrderController(): OrderController {
       state.appliedGift,
       state.breakfastAddOn,
       state.customRequest,
+      state.customRequestLink,
       state.dessert,
       state.dayMealsDeferred,
       state.dayMealAssignments,
@@ -484,7 +486,11 @@ export function useOrderController(): OrderController {
     toggleSide: useCallback((item) => dispatch({ type: "TOGGLE_SIDE", item }), []),
     selectDessert: useCallback((item) => dispatch({ type: "SELECT_DESSERT", item }), []),
     skipDessert: useCallback(() => dispatch({ type: "SKIP_DESSERT" }), []),
-    setCustomRequest: useCallback((text) => dispatch({ type: "SET_CUSTOM_REQUEST", text }), []),
+    setCustomRequest: useCallback(
+      (text: string, link: string | null = null) =>
+        dispatch({ type: "SET_CUSTOM_REQUEST", text, link }),
+      [],
+    ),
     clearCustomRequest: useCallback(() => dispatch({ type: "CLEAR_CUSTOM_REQUEST" }), []),
     setBreakfastAddOn: useCallback(
       (value) => dispatch({ type: "SET_BREAKFAST_ADD_ON", value }),
