@@ -33,6 +33,9 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
   const [notice, setNotice] = useState<string | null>(null);
   const [bankError, setBankError] = useState<string | null>(null);
   const [bankNotice, setBankNotice] = useState<string | null>(null);
+  const [bankAccountPreview, setBankAccountPreview] = useState(profile.bankAccount);
+  const [showAccountNumber, setShowAccountNumber] = useState(profile.bankAccount === null);
+  const [accountNumber, setAccountNumber] = useState("");
 
   const save = async (): Promise<void> => {
     setError(null);
@@ -86,6 +89,9 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
         accountType: text(formData, "accountType") || null,
       });
       setBankNotice("✓ Bank details updated successfully!");
+      setBankAccountPreview(bankAccount);
+      setAccountNumber("");
+      setShowAccountNumber(false);
       onSaved({ ...profile, bankAccount });
     } catch (caught) {
       setBankError(
@@ -197,9 +203,9 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
 
       <section className="rounded-2xl border border-[var(--color-oxblood)]/10 p-5">
         <h3 className="text-lg font-black text-[var(--color-oxblood)]">Bank details</h3>
-        {profile.bankAccount ? (
+        {bankAccountPreview ? (
           <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">
-            {profile.bankAccount.bankName} account ending {profile.bankAccount.accountNumberLast4}
+            {bankAccountPreview.bankName} account ending {bankAccountPreview.accountNumberLast4}
           </p>
         ) : null}
         <form className="mt-4 grid gap-3" onSubmit={saveBank}>
@@ -232,12 +238,38 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
           </label>
           <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
             Account number
-            <input
-              className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
-              name="accountNumber"
-              required
-            />
+            {showAccountNumber ? (
+              <input
+                className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-sm"
+                name="accountNumber"
+                onChange={(event) => setAccountNumber(event.target.value)}
+                placeholder={
+                  bankAccountPreview
+                    ? `Enter a new account number (ending ${bankAccountPreview.accountNumberLast4})`
+                    : "Enter account number"
+                }
+                required
+                type="password"
+                value={accountNumber}
+              />
+            ) : (
+              <span
+                aria-label="Account number"
+                className="flex min-h-10 items-center rounded-xl border border-[var(--color-oxblood)]/20 bg-gray-50 px-3 font-mono text-sm tracking-wider text-[var(--color-charcoal)]/75"
+              >
+                ••••{bankAccountPreview?.accountNumberLast4}
+              </span>
+            )}
           </label>
+          {bankAccountPreview ? (
+            <button
+              className="justify-self-start text-xs font-bold text-[var(--color-oxblood)] underline underline-offset-2"
+              onClick={() => setShowAccountNumber((visible) => !visible)}
+              type="button"
+            >
+              {showAccountNumber ? "Hide account number" : "Change account number"}
+            </button>
+          ) : null}
           <label className="grid gap-1 text-sm font-bold text-[var(--color-charcoal)]">
             Account type
             <input
@@ -264,7 +296,7 @@ export function ChefProfileEditor({ profile, onSaved }: ChefProfileEditorProps) 
           ) : null}
           <button
             className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--color-oxblood)] px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={bankBusy}
+            disabled={bankBusy || (bankAccountPreview !== null && !showAccountNumber)}
             type="submit"
           >
             {bankBusy ? "Saving bank details..." : "Save bank details"}
