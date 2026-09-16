@@ -24,6 +24,7 @@ export interface BookingRequestPayload {
   readonly sideSlugs: readonly string[];
   readonly dessertSlug: string | null;
   readonly customRequest: string | null;
+  readonly customRequestLink?: string | null;
   readonly scheduledDate: string;
   readonly timeSlot: string;
   readonly address: Address;
@@ -177,6 +178,7 @@ export function buildBookingRequestPayload(
     sideSlugs: state.sides.map((side) => side.id),
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
+    customRequestLink: state.customRequestLink,
     scheduledDate: state.date,
     timeSlot: state.time,
     address: {

@@ -209,8 +209,13 @@ describe("order flow end-to-end", () => {
   it("a custom request replaces the selected main", () => {
     let s: OrderState = INITIAL_ORDER_STATE;
     s = orderReducer(s, { type: "SELECT_MAIN", item: main });
-    s = orderReducer(s, { type: "SET_CUSTOM_REQUEST", text: "Ouma's chicken curry" });
+    s = orderReducer(s, {
+      type: "SET_CUSTOM_REQUEST",
+      text: "Ouma's chicken curry",
+      link: "https://recipes.example.test/oumas-curry",
+    });
     expect(s.customRequest).toBe("Ouma's chicken curry");
+    expect(s.customRequestLink).toBe("https://recipes.example.test/oumas-curry");
     expect(s.main?.id).toBe("custom-request");
     expect(selectCanContinue({ ...s, step: "meal" })).toBe(true);
   });

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readdirSync, existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
 import { scrubString } from "../packages/observability/src/index.js";
 import { migrate } from "../packages/database/src/index.js";
@@ -126,6 +126,34 @@ const say = (message: string): void => {
   process.stdout.write(`${scrubString(message)}\n`);
 };
 
+/**
+ * Coverage reporters clean their output directories before writing. A previous
+ * containerized run can leave root-owned output behind, which would otherwise
+ * make the agentic CI flow fail with EACCES before any test runs. Keep generated
+ * output disposable: remove it when possible, or move the locked directory out
+ * of the way and create a fresh writable one.
+ */
+function prepareCoverageDirectories(): void {
+  for (const relative of ["coverage", "apps/web/coverage"]) {
+    const directory = path.join(repoRoot, relative);
+    if (!existsSync(directory)) {
+      mkdirSync(directory, { recursive: true });
+      continue;
+    }
+
+    try {
+      rmSync(directory, { recursive: true, force: true });
+    } catch {
+      const quarantine = path.join(
+        path.dirname(directory),
+        `.${path.basename(directory)}.stale-${Date.now()}`,
+      );
+      renameSync(directory, quarantine);
+    }
+    mkdirSync(directory, { recursive: true });
+  }
+}
+
 function countTestFiles(dir: string, suffix: string): number {
   const absolute = path.join(repoRoot, dir);
   if (!existsSync(absolute)) {
@@ -217,6 +245,7 @@ async function main(): Promise<void> {
    * provisioned below, and every other value the children require is set
    * explicitly.
    */
+  prepareCoverageDirectories();
   preflight();
 
   let database: DisposablePostgres | undefined;

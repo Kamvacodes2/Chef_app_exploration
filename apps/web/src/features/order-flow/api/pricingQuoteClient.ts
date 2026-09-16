@@ -37,6 +37,7 @@ export interface PricingQuotePayload {
   readonly sideSlugs: readonly string[];
   readonly dessertSlug: string | null;
   readonly customRequest: string | null;
+  readonly customRequestLink?: string | null;
   readonly giftCode: string | null;
   readonly planSelection?: ChefmatePlanSelection;
   /**
@@ -75,6 +76,7 @@ export function buildPricingQuotePayload(
     | "sides"
     | "dessert"
     | "customRequest"
+    | "customRequestLink"
     | "appliedGift"
     | "planId"
     | "preferredDays"
@@ -105,6 +107,7 @@ export function buildPricingQuotePayload(
     sideSlugs: state.sides.map((side) => side.id),
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
+    ...(state.customRequestLink ? { customRequestLink: state.customRequestLink } : {}),
     giftCode: state.appliedGift?.code ?? null,
     ...(state.breakfastAddOn ? { breakfastAddOnSlug: OVERNIGHT_OATS_SLUG } : {}),
     ...(planSelection
