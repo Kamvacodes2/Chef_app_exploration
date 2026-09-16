@@ -276,7 +276,30 @@ describe("Chef portal sessions", () => {
       "✓ Bank details updated successfully!",
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Account number")).toHaveValue("1234561234");
+    expect(screen.getByLabelText("Account number")).toHaveTextContent("••••1234");
+    expect(screen.getByRole("button", { name: "Change account number" })).toBeInTheDocument();
+  });
+
+  it("shows the masked last four digits after a profile reload and only reveals a blank replacement field", () => {
+    const profileWithBankAccount = {
+      ...chefProfile,
+      bankAccount: {
+        accountHolder: "Test Chef",
+        bankName: "Capitec",
+        branchCode: "470010",
+        accountNumberLast4: "1234",
+        accountType: "Savings",
+        updatedAt: "2026-09-13T08:00:00.000Z",
+      },
+    };
+    render(<ChefProfileEditor onSaved={vi.fn()} profile={profileWithBankAccount} />);
+
+    expect(screen.getByLabelText("Account number")).toHaveTextContent("••••1234");
+    expect(screen.queryByDisplayValue("1234561234")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Change account number" }));
+    expect(screen.getByLabelText("Account number")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Hide account number" })).toBeInTheDocument();
   });
   it("blocks saving until a service area is selected", async () => {
     api.updateChefProfile.mockResolvedValue(chefProfile);
