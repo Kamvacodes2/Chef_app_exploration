@@ -17,3 +17,9 @@ next-env.d.ts
 tests/db/.scratch-migrations
 .pnpm-store/
 .local-dev/
+
+# Quarantined dependency trees left by containerized deploy runs. The release
+# harness dot-renames them in place; tsc/vitest skip hidden dirs and Prettier
+# ignores them via .prettierignore.
+node_modules.stale-*
+.node_modules.stale-*

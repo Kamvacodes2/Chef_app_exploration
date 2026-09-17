@@ -32,6 +32,7 @@ Use the `Task` tool to launch the required specialist agents in sequence (or in 
 | Bug fix | `planner -> tdd-guide -> code-reviewer` |
 | Refactoring | `architect -> tdd-guide -> code-reviewer` |
 | Security-sensitive work | `security-reviewer -> code-reviewer -> architect` |
+| Merge + deploy after implementation | `gitflow-orchestrator` (delegates to `gitflow-gatekeeper` -> `release-deployer`) |
 | Custom need | Build a custom agent chain with explicit handoffs |
 | Simple single-file task | Direct delegation to one agent (skip orchestration) |
 
@@ -130,6 +131,17 @@ If you accidentally start implementing, stop immediately and delegate.
 | `chief-of-staff` | Communication triage | Multi-channel comms drafting |
 | `loop-operator` | Autonomous loop execution | Long-running autonomous tasks |
 | `harness-optimizer` | Harness config tuning | Reliability, cost, throughput optimization |
+
+### GitFlow Release Automation
+| Agent | Specialty | Delegate When |
+|-------|-----------|---------------|
+| `gitflow-orchestrator` | End-to-end release flow | After implementation passes validation — merge + deploy through the gates |
+| `gitflow-gatekeeper` | Quality gates & merging | Branch, PR, required checks, gated squash merge |
+| `release-deployer` | Staging/production deploys | After a gated merge — deploy `main` with health verification |
+
+The scripted counterpart of this chain lives in the sibling repository:
+`chefmate_backend/harness/` (`release.sh` + `lib.sh`) for fully
+non-interactive runs — it releases either repo by `--repo frontend|backend`.
 
 ---
 
