@@ -13,6 +13,8 @@ apps/web/next-env.d.ts
 .agents
 .claude
 .codex
+node_modules.stale-*
+.node_modules.stale-*
 
 # Prose, not code. `plans/` is the execution blueprint and the progress ledger;
 # `docs/` holds the ADRs and contract characterization. Re-wrapping human-authored
