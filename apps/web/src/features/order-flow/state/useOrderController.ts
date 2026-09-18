@@ -333,7 +333,7 @@ export function useOrderController(): OrderController {
         idempotencyKeyRef.current = createIdempotencyKey();
       }
 
-      let confirmation = await submitBookingRequestPayload(payload, {
+      const confirmation = await submitBookingRequestPayload(payload, {
         idempotencyKey: idempotencyKeyRef.current,
       }).catch(async (error: unknown) => {
         if (!isStaleIdempotencyError(error)) throw error;
@@ -346,19 +346,14 @@ export function useOrderController(): OrderController {
       if (confirmation.payment?.method === "PAYSTACK") {
         const existingAuthorizationUrl = confirmation.payment.paystack?.authorizationUrl;
         if (existingAuthorizationUrl) {
-          setBookingConfirmation(confirmation);
-          dispatch({ type: "CONFIRM" });
+          // Navigate directly to Paystack. Rendering the local confirmation
+          // first briefly exposes the legacy bank-transfer UI before the
+          // browser leaves the page.
           window.location.assign(existingAuthorizationUrl);
           return;
         }
 
         const checkout = await initializePaystackCheckout(confirmation.reference);
-        confirmation = {
-          ...confirmation,
-          payment: checkout.payment,
-        };
-        setBookingConfirmation(confirmation);
-        dispatch({ type: "CONFIRM" });
         window.location.assign(checkout.authorizationUrl);
         return;
       }
