@@ -30,6 +30,10 @@ export function MealSelect(): ReactElement {
 
   const selectedSlug = state.customRequest === null ? (state.main?.id ?? null) : null;
   const initialCategorySlug = defaultCategorySlugForGoal(state.goalId);
+  const initialMealSlug =
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.hash.split("?", 2)[1] ?? "").get("meal");
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -53,6 +57,7 @@ export function MealSelect(): ReactElement {
 
       <MealBrowser
         selectedSlug={selectedSlug}
+        initialMealSlug={initialMealSlug}
         onSelectMeal={handleSelectMeal}
         onRequestCustom={openCustomRequest}
         initialCategorySlug={initialCategorySlug}

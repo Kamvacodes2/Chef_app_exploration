@@ -17,6 +17,8 @@ import { mealCalories, searchHaystack } from "./mealPresentation";
 export interface MealBrowserProps {
   /** Catalog slug of the currently selected main, if any. */
   readonly selectedSlug: string | null;
+  /** Optional deep-linked meal to focus before the customer starts browsing. */
+  readonly initialMealSlug?: string | null;
   /** Selects a meal and advances the order flow. */
   readonly onSelectMeal: (meal: BrowserMeal) => void;
   /** Opens the "can't find it" custom-request escape hatch. */
@@ -46,6 +48,7 @@ interface CatalogState {
  */
 export function MealBrowser({
   selectedSlug,
+  initialMealSlug = null,
   onSelectMeal,
   onRequestCustom,
   initialCategorySlug = null,
@@ -59,6 +62,7 @@ export function MealBrowser({
     () => initialCategorySlug ?? ALL_CATEGORIES,
   );
   const [selectedCalorieIndex, setSelectedCalorieIndex] = useState(0);
+  const [focusedMealSlug, setFocusedMealSlug] = useState<string | null>(initialMealSlug);
   const [catalog, setCatalog] = useState<CatalogState>({ meals: [], categories: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -83,7 +87,11 @@ export function MealBrowser({
     ])
       .then(([meals, categories]) => {
         if (controller.signal.aborted) return;
-        setCatalog({ meals: meals.filter((meal) => meal.isActive !== false), categories });
+        const activeMeals = meals.filter((meal) => meal.isActive !== false);
+        setCatalog({ meals: activeMeals, categories });
+        if (focusedMealSlug && !activeMeals.some((meal) => meal.slug === focusedMealSlug)) {
+          setFocusedMealSlug(null);
+        }
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -96,21 +104,20 @@ export function MealBrowser({
       });
 
     return () => controller.abort();
-  }, [reloadToken]);
+  }, [focusedMealSlug, reloadToken]);
 
   const calorieFilter = CALORIE_FILTERS[selectedCalorieIndex] ?? CALORIE_FILTERS[0]!;
   const query = debouncedSearch.trim().toLowerCase();
 
   /** Meals matching search + calories, before the category chip narrows them. */
-  const filteredMeals = useMemo(
-    () =>
-      catalog.meals.filter(
-        (meal) =>
-          (query.length === 0 || searchHaystack(meal).includes(query)) &&
-          matchesCalorieFilter(calorieFilter, mealCalories(meal)),
-      ),
-    [calorieFilter, catalog.meals, query],
-  );
+  const filteredMeals = useMemo(() => {
+    const matches = catalog.meals.filter(
+      (meal) =>
+        (query.length === 0 || searchHaystack(meal).includes(query)) &&
+        matchesCalorieFilter(calorieFilter, mealCalories(meal)),
+    );
+    return focusedMealSlug ? matches.filter((meal) => meal.slug === focusedMealSlug) : matches;
+  }, [calorieFilter, catalog.meals, focusedMealSlug, query]);
 
   /** Only categories that still have a match are offered as chips. */
   const availableCategories = useMemo(() => {
@@ -158,6 +165,7 @@ export function MealBrowser({
 
   const confirmFromDrawer = useCallback(
     (meal: BrowserMeal) => {
+      setFocusedMealSlug(null);
       setDetailMeal(null);
       onSelectMeal(meal);
     },
@@ -174,7 +182,10 @@ export function MealBrowser({
           id="meal-search"
           type="search"
           value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
+          onChange={(event) => {
+            setFocusedMealSlug(null);
+            setSearchInput(event.target.value);
+          }}
           placeholder="Search meals, ingredients or cravings"
           className="min-h-14 w-full rounded-2xl border border-white/20 bg-[var(--color-bone)] px-6 pr-20 text-sm font-semibold text-[var(--color-oxblood)] shadow-lg placeholder:text-[var(--color-oxblood)]/45 focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-[var(--color-bone)]"
         />
@@ -190,14 +201,20 @@ export function MealBrowser({
         <Chip
           label="All"
           active={selectedCategory === ALL_CATEGORIES}
-          onClick={() => setSelectedCategory(ALL_CATEGORIES)}
+          onClick={() => {
+            setFocusedMealSlug(null);
+            setSelectedCategory(ALL_CATEGORIES);
+          }}
         />
         {availableCategories.map((category) => (
           <Chip
             key={category.slug}
             label={category.name}
             active={selectedCategory === category.slug}
-            onClick={() => setSelectedCategory(category.slug)}
+            onClick={() => {
+              setFocusedMealSlug(null);
+              setSelectedCategory(category.slug);
+            }}
           />
         ))}
       </ChipRail>
@@ -208,7 +225,10 @@ export function MealBrowser({
             key={filter.id}
             label={filter.label}
             active={selectedCalorieIndex === index}
-            onClick={() => setSelectedCalorieIndex(index)}
+            onClick={() => {
+              setFocusedMealSlug(null);
+              setSelectedCalorieIndex(index);
+            }}
           />
         ))}
       </ChipRail>
