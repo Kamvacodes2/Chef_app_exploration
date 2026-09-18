@@ -28,8 +28,18 @@ export function MealSelect(): ReactElement {
     [selectMain],
   );
 
-  const selectedSlug = state.customRequest === null ? (state.main?.id ?? null) : null;
   const initialCategorySlug = defaultCategorySlugForGoal(state.goalId);
+
+  // Deep-linked meal highlight: the confirmation badge only sets state.main
+  // text, so also drive MealBrowser.selectedSlug directly from the initial
+  // hash slug once the meal step opens.
+  const initialSelectedSlug =
+    typeof window === "undefined"
+      ? state.customRequest === null
+        ? (state.main?.id ?? null)
+        : null
+      : (new URLSearchParams(window.location.hash.split("?", 2)[1] ?? "").get("meal") ??
+        (state.customRequest === null ? (state.main?.id ?? null) : null));
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -52,7 +62,7 @@ export function MealSelect(): ReactElement {
       </div>
 
       <MealBrowser
-        selectedSlug={selectedSlug}
+        selectedSlug={initialSelectedSlug}
         onSelectMeal={handleSelectMeal}
         onRequestCustom={openCustomRequest}
         initialCategorySlug={initialCategorySlug}
