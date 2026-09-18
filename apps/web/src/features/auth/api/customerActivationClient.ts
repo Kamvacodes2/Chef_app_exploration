@@ -6,6 +6,7 @@ const userSchema = z.object({
   id: z.string().min(1),
   email: z.string().email(),
   displayName: z.string().min(1),
+  phone: z.string().nullable().optional(),
   roles: z.array(z.string()),
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
   emailVerifiedAt: z.string().nullable(),
@@ -37,6 +38,27 @@ export async function consumeCustomerActivation(
   );
   if (!response.ok) {
     throw new Error(await readApiErrorMessage(response, "This activation link could not be used."));
+  }
+  return responseSchema.parse(await response.json()).data.user;
+}
+
+export async function updateCustomerProfile(
+  displayName: string,
+  phone: string,
+  options: CustomerActivationRequestOptions = {},
+): Promise<ActivatedCustomer> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    apiUrl(options.baseUrl ?? getChefmateApiUrl(), "/api/v1/auth/customer-profile"),
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName, phone }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, "Chefmate could not save your details."));
   }
   return responseSchema.parse(await response.json()).data.user;
 }

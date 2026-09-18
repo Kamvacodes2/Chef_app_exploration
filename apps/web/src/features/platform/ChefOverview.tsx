@@ -20,6 +20,7 @@ import {
   type AvailableSession,
 } from "@/features/platform/api/platformClient";
 import { ChefUnassignedSessionsPanel } from "./ChefUnassignedSessionsPanel";
+import { TrialWorkspace } from "@/features/trials/TrialWorkspace";
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -165,6 +166,8 @@ export function ChefOverview() {
         run={(name, action) => void run(name, action)}
         sessions={sessions}
       />
+
+      <TrialWorkspace role="CHEF" />
 
       {/* Incoming offers alert */}
       {offers.length > 0 ? (
