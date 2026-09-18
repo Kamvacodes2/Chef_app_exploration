@@ -333,7 +333,7 @@ export function useOrderController(): OrderController {
         idempotencyKeyRef.current = createIdempotencyKey();
       }
 
-      let confirmation = await submitBookingRequestPayload(payload, {
+      const confirmation = await submitBookingRequestPayload(payload, {
         idempotencyKey: idempotencyKeyRef.current,
       }).catch(async (error: unknown) => {
         if (!isStaleIdempotencyError(error)) throw error;
