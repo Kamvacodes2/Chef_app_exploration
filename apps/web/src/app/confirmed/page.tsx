@@ -117,7 +117,10 @@ function fireGoogleAdsConversion(booking: BookingDetail) {
 
 function ConfirmedPageContent() {
   const searchParams = useSearchParams();
-  const bookingRef = searchParams.get("ref") ?? "";
+  // Paystack may return either `reference` or the legacy `trxref`; keep
+  // accepting `ref` for older links already sent to customers.
+  const bookingRef =
+    searchParams.get("ref") ?? searchParams.get("reference") ?? searchParams.get("trxref") ?? "";
 
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
