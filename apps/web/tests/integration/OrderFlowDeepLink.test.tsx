@@ -99,16 +99,16 @@ describe("OrderFlow landing deep link into meal discovery", () => {
     render(<OrderFlow />);
 
     expect(await screen.findByText("Selected: Chicken Gyro Bowl")).toBeInTheDocument();
-    // The customer stays on the meal step, with the deep-linked card selected.
+    // The customer stays on the meal step, with only the deep-linked meal
+    // focused initially instead of being dropped into the full catalogue.
     expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "meal");
     await waitFor(() =>
       expect(screen.getByTestId("meal-card-chicken-gyro-bowl").className).toContain(
         "ring-[var(--color-terracotta)]",
       ),
     );
-    expect(screen.getByTestId("meal-card-wors-pap-chakalaka").className).not.toContain(
-      "ring-[var(--color-terracotta)]",
-    );
+    expect(screen.queryByTestId("meal-card-wors-pap-chakalaka")).not.toBeInTheDocument();
+    expect(screen.getByTestId("meal-result-count")).toHaveTextContent("1 meal found");
   });
 
   it("opens meal discovery with nothing selected when the slug is not in the catalog", async () => {
