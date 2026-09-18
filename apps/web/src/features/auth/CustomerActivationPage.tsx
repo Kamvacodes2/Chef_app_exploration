@@ -7,6 +7,7 @@ import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/ap
 import {
   consumeCustomerActivation,
   setCustomerPassword,
+  updateCustomerProfile,
   type ActivatedCustomer,
 } from "./api/customerActivationClient";
 
@@ -28,6 +29,11 @@ export function CustomerActivationPage({
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
   const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const activationStarted = useRef(false);
@@ -51,6 +57,9 @@ export function CustomerActivationPage({
       .then(async (user) => {
         if (active) {
           setState({ status: "ready", user });
+          setDisplayName(user.displayName);
+          setPhone(user.phone ?? "");
+          setProfileSaved(Boolean(user.phone));
           try {
             const status = await fetchPolicyStatus();
             if (active) setPolicyStatus(status);
@@ -74,10 +83,32 @@ export function CustomerActivationPage({
     };
   }, [token]);
 
+  const saveProfile = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    setProfileError(null);
+    setSavingProfile(true);
+    try {
+      const user = await updateCustomerProfile(displayName, phone);
+      setState({ status: "ready", user });
+      setProfileSaved(true);
+    } catch (error: unknown) {
+      setProfileError(
+        error instanceof Error ? error.message : "Chefmate could not save your details.",
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const savePassword = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setPasswordError(null);
     setPasswordMessage(null);
+
+    if (!profileSaved) {
+      setPasswordError("Save your full name and phone number before creating a password.");
+      return;
+    }
 
     if (password !== passwordConfirmation) {
       setPasswordError("The passwords do not match.");
@@ -139,6 +170,74 @@ export function CustomerActivationPage({
                 }}
               />
             ) : null}
+            <form
+              className="space-y-4 rounded-lg border border-[var(--color-oxblood)]/15 p-4"
+              onSubmit={saveProfile}
+            >
+              <div>
+                <h2 className="font-display text-2xl font-semibold text-[var(--color-oxblood)]">
+                  Complete your customer profile
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-charcoal)]/70">
+                  Add your details so your Chefmate team can contact you. Your address can be added
+                  later before your first visit.
+                </p>
+              </div>
+              <label
+                className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+                htmlFor="activation-name"
+              >
+                Full name
+              </label>
+              <input
+                id="activation-name"
+                required
+                minLength={2}
+                value={displayName}
+                onChange={(event) => {
+                  setDisplayName(event.target.value);
+                  setProfileSaved(false);
+                }}
+                className="min-h-11 w-full rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
+              />
+              <label
+                className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+                htmlFor="activation-phone"
+              >
+                Phone number
+              </label>
+              <input
+                id="activation-phone"
+                required
+                minLength={7}
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(event) => {
+                  setPhone(event.target.value);
+                  setProfileSaved(false);
+                }}
+                className="min-h-11 w-full rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
+              />
+              {profileError ? (
+                <p className="text-sm font-medium text-[var(--color-oxblood)]" role="alert">
+                  {profileError}
+                </p>
+              ) : null}
+              {profileSaved ? (
+                <p className="text-sm font-medium text-green-800" role="status">
+                  Your customer details are saved.
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={savingProfile || profileSaved}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingProfile ? "Saving…" : profileSaved ? "Details saved" : "Save my details"}
+              </button>
+            </form>
+
             <div className="rounded-lg bg-[var(--color-warm-cream)] p-4" role="status">
               <p className="font-semibold text-[var(--color-oxblood)]">
                 You are signed in as {state.user.displayName}.
@@ -157,8 +256,8 @@ export function CustomerActivationPage({
                   Make future sign-ins easier
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-[var(--color-charcoal)]/70">
-                  Optional: create a password now so you can sign in from another device without
-                  requesting another email link.
+                  Create a password now so you can sign in from another device without requesting
+                  another email link.
                 </p>
               </div>
 

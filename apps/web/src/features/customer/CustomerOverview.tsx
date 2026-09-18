@@ -6,6 +6,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
+import { TrialWorkspace } from "@/features/trials/TrialWorkspace";
 import {
   fetchCustomerBookings,
   fetchCustomerSubscription,
@@ -182,6 +183,8 @@ export function CustomerOverview() {
           onClose={() => setShowPolicyModal(false)}
         />
       ) : null}
+
+      <TrialWorkspace role="CUSTOMER" />
 
       {/* Next booking alert */}
       <div className="rounded-xl border-l-4 border-emerald-600 bg-emerald-50 p-4">
