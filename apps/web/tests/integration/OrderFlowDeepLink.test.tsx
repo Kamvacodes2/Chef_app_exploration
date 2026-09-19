@@ -111,6 +111,23 @@ describe("OrderFlow landing deep link into meal discovery", () => {
     );
   });
 
+  it("opens the popular meal detail drawer and continues into the normal session flow", async () => {
+    setHash("#order-flow?meal=chicken-gyro-bowl&details=1");
+
+    render(<OrderFlow />);
+
+    const drawer = await screen.findByTestId("meal-detail-drawer");
+    expect(drawer).toHaveTextContent("Chicken Gyro Bowl");
+    expect(screen.getByText("Selected: Chicken Gyro Bowl")).toBeInTheDocument();
+
+    screen.getByRole("button", { name: "Continue to session" }).click();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("order-flow")).toHaveAttribute("data-step", "second-meal");
+    });
+    expect(screen.queryByTestId("meal-detail-drawer")).not.toBeInTheDocument();
+  });
+
   it("opens meal discovery with nothing selected when the slug is not in the catalog", async () => {
     setHash("#order-flow?meal=winter-oxtail-stew");
 

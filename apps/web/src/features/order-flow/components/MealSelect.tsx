@@ -40,6 +40,9 @@ export function MealSelect(): ReactElement {
         : null
       : (new URLSearchParams(window.location.hash.split("?", 2)[1] ?? "").get("meal") ??
         (state.customRequest === null ? (state.main?.id ?? null) : null));
+  const opensInitialMealDetails =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.hash.split("?", 2)[1] ?? "").get("details") === "1";
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -63,6 +66,7 @@ export function MealSelect(): ReactElement {
 
       <MealBrowser
         selectedSlug={initialSelectedSlug}
+        initialMealSlug={opensInitialMealDetails ? initialSelectedSlug : null}
         onSelectMeal={handleSelectMeal}
         onRequestCustom={openCustomRequest}
         initialCategorySlug={initialCategorySlug}
