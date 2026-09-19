@@ -28,6 +28,8 @@ export interface MealBrowserProps {
    * hides a category; "All" (or any other chip) is always reachable.
    */
   readonly initialCategorySlug?: string | null;
+  /** Opens the detail drawer automatically for a landing-page meal link. */
+  readonly initialMealSlug?: string | null;
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -49,6 +51,7 @@ export function MealBrowser({
   onSelectMeal,
   onRequestCustom,
   initialCategorySlug = null,
+  initialMealSlug = null,
 }: MealBrowserProps): ReactElement {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -83,7 +86,12 @@ export function MealBrowser({
     ])
       .then(([meals, categories]) => {
         if (controller.signal.aborted) return;
-        setCatalog({ meals: meals.filter((meal) => meal.isActive !== false), categories });
+        const activeMeals = meals.filter((meal) => meal.isActive !== false);
+        setCatalog({ meals: activeMeals, categories });
+        if (initialMealSlug) {
+          const initialMeal = activeMeals.find((meal) => meal.slug === initialMealSlug);
+          if (initialMeal) setDetailMeal(initialMeal);
+        }
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -96,7 +104,7 @@ export function MealBrowser({
       });
 
     return () => controller.abort();
-  }, [reloadToken]);
+  }, [initialMealSlug, reloadToken]);
 
   const calorieFilter = CALORIE_FILTERS[selectedCalorieIndex] ?? CALORIE_FILTERS[0]!;
   const query = debouncedSearch.trim().toLowerCase();

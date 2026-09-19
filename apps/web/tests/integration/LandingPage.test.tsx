@@ -327,7 +327,10 @@ describe("LandingPage", () => {
       ),
     );
     const firstPopularMeal = screen.getAllByTestId("popular-meal-card")[0]!;
-    expect(firstPopularMeal).toHaveAttribute("href", "#order-flow?meal=wors-pap-chakalaka");
+    expect(firstPopularMeal).toHaveAttribute(
+      "href",
+      "#order-flow?meal=wors-pap-chakalaka&details=1",
+    );
 
     fireEvent.click(firstPopularMeal);
 
