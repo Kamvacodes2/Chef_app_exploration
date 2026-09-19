@@ -159,7 +159,7 @@ export function PopularMealsGrid(): ReactElement {
               {group.map((meal) => (
                 <a
                   key={`${meal.id}-${groupIndex}`}
-                  href={`#order-flow?meal=${meal.id}`}
+                  href={`#order-flow?meal=${meal.id}&details=1`}
                   className="group w-[245px] shrink-0 rounded-[22px] border border-[var(--color-oxblood)]/12 bg-[var(--color-warm-cream)] p-4 text-left transition hover:-translate-y-1 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-terracotta)] sm:w-[270px]"
                   data-order-meal-id={meal.id}
                   data-testid={groupIndex === 0 ? "popular-meal-card" : undefined}
