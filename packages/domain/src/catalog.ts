@@ -1,4 +1,4 @@
-﻿export type CatalogItemKind = "main" | "side" | "dessert";
+export type CatalogItemKind = "main" | "side" | "dessert";
 
 export interface CatalogCategory {
   readonly slug: string;
@@ -640,8 +640,6 @@ export function resolvePricingPlan(id: string | null | undefined): PricingPlan {
 
 function discountFraction(giftCode: string | null): number {
   switch (giftCode?.trim().toUpperCase()) {
-    case "CHILL10":
-      return 0.1;
     case "WINTER15":
       return 0.15;
     case "FIRSTMEAL":

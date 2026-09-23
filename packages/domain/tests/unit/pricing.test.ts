@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { calculatePricingQuote } from "../../src/catalog.js";
 
 describe("Chefmate pricing", () => {
@@ -31,7 +31,7 @@ describe("Chefmate pricing", () => {
       sideSlugs: [],
       dessertSlug: null,
       customRequest: null,
-      giftCode: "CHILL10",
+      giftCode: "WINTER15",
       planSelection: {
         planId: "full-house",
         preferredDays: ["monday"],
@@ -41,8 +41,8 @@ describe("Chefmate pricing", () => {
     });
 
     expect(quote.plan).toMatchObject({ id: "premium", priceCents: 505_500 });
-    expect(quote.discountCents).toBe(50_550);
-    expect(quote.totalCents).toBe(454_950);
+    expect(quote.discountCents).toBe(75_825);
+    expect(quote.totalCents).toBe(429_675);
   });
 
   it("marks custom requests for manual review without taking payment", () => {

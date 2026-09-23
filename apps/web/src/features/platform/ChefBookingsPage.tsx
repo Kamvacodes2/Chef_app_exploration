@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { IconMessageCircle } from "@/components/ui/icons";
+import { ChatPanel } from "@/features/chat/ChatPanel";
 import {
   fetchChefBookings,
   markChefEnRoute,
   completeChefBooking,
   type ChefBooking,
 } from "@/features/platform/api/platformClient";
+
 
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
@@ -23,6 +26,7 @@ function formatDate(value: string): string {
 export function ChefBookingsPage() {
   const [bookings, setBookings] = useState<ChefBooking[]>([]);
   const [tab, setTab] = useState<"active" | "past">("active");
+  const [chatTarget, setChatTarget] = useState<ChefBooking | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -147,11 +151,16 @@ export function ChefBookingsPage() {
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
                         {booking.reference}
                       </span>
                       <StatusBadge status={booking.status} />
+                      {booking.type === "SUBSCRIPTION" ? (
+                        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-black text-purple-900 border border-purple-200">
+                          🔄 First session of repeat
+                        </span>
+                      ) : null}
                     </div>
                     <h3 className="mt-2 text-lg font-black">{booking.mainName}</h3>
                     <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
@@ -159,11 +168,39 @@ export function ChefBookingsPage() {
                       {booking.serviceArea ?? "Area pending"}
                     </p>
                     {booking.chefPayoutCents != null ? (
-                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                        <span>💰</span>
-                        {booking.status === "COMPLETED" ? "Earned " : "You receive "}
-                        {formatZar(booking.chefPayoutCents)}
-                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <p className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                          <span>💰</span>
+                          {booking.status === "COMPLETED"
+                            ? "Earned "
+                            : booking.type === "SUBSCRIPTION"
+                              ? "Session visit payout: "
+                              : "You receive "}
+                          {formatZar(booking.chefPayoutCents)}
+                          {booking.type === "SUBSCRIPTION" ? (
+                            <span className="font-semibold text-emerald-800/90">
+                              {" "}
+                              (First session of repeat - full package:{" "}
+                              {formatZar(
+                                booking.pricing?.plan?.priceCents ??
+                                  booking.pricing?.totalCents ??
+                                  booking.chefPayoutCents,
+                              )}{" "}
+                              paid per visit)
+                            </span>
+                          ) : null}
+                        </p>
+                        {booking.type === "SUBSCRIPTION" ? (
+                          <span className="rounded-lg bg-[var(--color-warm-cream)]/70 px-2.5 py-1 text-xs font-medium text-[var(--color-charcoal)]/80">
+                            {booking.pricing?.plan?.name
+                              ? `${booking.pricing.plan.name} · `
+                              : ""}
+                            {booking.pricing?.plan?.sessions
+                              ? `${booking.pricing.plan.sessions} package`
+                              : "Paid per completed session"}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : null}
                     {booking.street ? (
                       <p className="mt-2 text-sm text-[var(--color-charcoal)]/70">
@@ -174,7 +211,15 @@ export function ChefBookingsPage() {
                   </div>
 
                   {tab === "active" ? (
-                    <div className="flex shrink-0 flex-wrap gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <button
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-3.5 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"
+                        onClick={() => setChatTarget(booking)}
+                        type="button"
+                      >
+                        <IconMessageCircle width={14} height={14} />
+                        Chat with Customer
+                      </button>
                       <button
                         className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
                         disabled={
@@ -198,7 +243,16 @@ export function ChefBookingsPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="text-right text-xs font-semibold text-[var(--color-charcoal)]/60">
+                    <div className="flex flex-col items-end gap-2 text-xs font-semibold text-[var(--color-charcoal)]/60">
+                      <button
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--color-oxblood)]/20 px-3 text-xs font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)]"
+                        onClick={() => setChatTarget(booking)}
+                        type="button"
+                      >
+                        <IconMessageCircle width={13} height={13} />
+                        Chat History
+                      </button>
+
                       {booking.status === "COMPLETED" ? (
                         <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800 font-bold">
                           ✓ Visit Completed
@@ -216,6 +270,17 @@ export function ChefBookingsPage() {
           </div>
         )}
       </section>
+
+      {chatTarget ? (
+        <ChatPanel
+          bookingRequestId={chatTarget.id}
+          bookingRef={chatTarget.reference}
+          mealName={chatTarget.mainName}
+          recipientName="Customer & Support"
+          onClose={() => setChatTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }
+

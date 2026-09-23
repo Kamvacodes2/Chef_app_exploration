@@ -270,6 +270,23 @@ const chefBookingSchema = z.object({
   goalId: nullableString,
   promotionCodeHash: nullableString,
   createdAt: z.string(),
+  pricing: z
+    .object({
+      subtotalCents: z.number().int().nonnegative().optional(),
+      discountCents: z.number().int().nonnegative().optional(),
+      totalCents: z.number().int().nonnegative().optional(),
+      plan: z
+        .object({
+          id: z.string().optional(),
+          name: z.string().optional(),
+          sessions: z.string().optional(),
+          recurring: z.boolean().optional(),
+          priceCents: z.number().int().nonnegative().optional(),
+        })
+        .optional(),
+    })
+    .nullish(),
+  planSelection: z.record(z.unknown()).nullable().optional(),
   transitions: z.array(
     z.object({
       id: z.string().min(1),
@@ -297,10 +314,27 @@ const chefOfferSchema = z.object({
   booking: z.object({
     id: z.string().min(1),
     reference: z.string().min(1),
+    type: z.string().nullish(),
     mainName: z.string().min(1),
     scheduledDate: z.string().min(1),
     timeSlot: z.string().min(1),
     serviceArea: nullableString,
+    pricing: z
+      .object({
+        subtotalCents: z.number().int().nonnegative().optional(),
+        discountCents: z.number().int().nonnegative().optional(),
+        totalCents: z.number().int().nonnegative().optional(),
+        plan: z
+          .object({
+            id: z.string().optional(),
+            name: z.string().optional(),
+            sessions: z.string().optional(),
+            recurring: z.boolean().optional(),
+            priceCents: z.number().int().nonnegative().optional(),
+          })
+          .optional(),
+      })
+      .nullish(),
   }),
 });
 
@@ -620,6 +654,7 @@ const availableSessionSchema = z.object({
   id: z.string().min(1),
   reference: z.string().min(1),
   status: z.string().min(1),
+  type: z.string().nullish(),
   mainName: z.string().min(1),
   scheduledDate: z.string().min(1),
   timeSlot: z.string().min(1),
@@ -634,6 +669,23 @@ const availableSessionSchema = z.object({
   claimedAt: z.string().nullish(),
   /** Completed visits this customer has with the platform. */
   repeatVisits: z.number().int().nonnegative().catch(0),
+  pricing: z
+    .object({
+      subtotalCents: z.number().int().nonnegative().optional(),
+      discountCents: z.number().int().nonnegative().optional(),
+      totalCents: z.number().int().nonnegative().optional(),
+      plan: z
+        .object({
+          id: z.string().optional(),
+          name: z.string().optional(),
+          sessions: z.string().optional(),
+          recurring: z.boolean().optional(),
+          priceCents: z.number().int().nonnegative().optional(),
+        })
+        .optional(),
+    })
+    .nullish(),
+  planSelection: z.record(z.unknown()).nullable().optional(),
 });
 
 export type AvailableSession = z.infer<typeof availableSessionSchema>;
@@ -1345,6 +1397,7 @@ const chefPortalEarningItemSchema = z.object({
   id: z.string().min(1),
   bookingRequestId: z.string().min(1),
   bookingReference: z.string().min(1),
+  bookingType: z.string().nullish(),
   mainName: z.string().min(1),
   serviceArea: z.string().nullable(),
   scheduledDate: z.string().min(1),
@@ -1405,6 +1458,7 @@ const pendingChefPayoutSchema = z.object({
       id: z.string().min(1),
       bookingRequestId: z.string().min(1),
       bookingReference: z.string().min(1),
+      bookingType: z.string().nullish(),
       chefPayoutCents: z.number().int().nonnegative(),
       status: z.string(),
       createdAt: z.string(),

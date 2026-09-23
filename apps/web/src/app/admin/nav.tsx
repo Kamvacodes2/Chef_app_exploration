@@ -5,11 +5,13 @@ import {
   IconDollarSign,
   IconLayoutDashboard,
   IconMail,
+  IconMessageCircle,
   IconShield,
   IconSparkles,
   IconUserCheck,
   IconUsers,
 } from "@/components/ui/icons";
+import { ChatBadge } from "@/features/chat/ChatBadge";
 
 export const ADMIN_NAV: readonly NavItem[] = [
   {
@@ -19,11 +21,19 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconLayoutDashboard width={18} height={18} />,
   },
   {
+    id: "messages",
+    label: "Messages",
+    path: "/admin/messages",
+    icon: <IconMessageCircle width={18} height={18} />,
+    badge: <ChatBadge />,
+  },
+  {
     id: "calendar",
     label: "Calendar",
     path: "/admin/calendar",
     icon: <IconCalendar width={18} height={18} />,
   },
+
   {
     id: "bookings",
     label: "Bookings",

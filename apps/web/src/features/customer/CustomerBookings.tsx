@@ -13,6 +13,9 @@ import {
   fetchAvailabilityForDate,
   type AvailabilitySlot,
 } from "@/features/order-flow/api/availabilityClient";
+import { IconMessageCircle } from "@/components/ui/icons";
+import { ChatPanel } from "@/features/chat/ChatPanel";
+
 
 const OPEN_STATUSES: readonly CustomerBookingStatus[] = [
   "REQUESTED",
@@ -468,10 +471,12 @@ function BookingCard({
   booking,
   canModify,
   onModify,
+  onOpenChat,
 }: {
   readonly booking: CustomerBooking;
   readonly canModify: boolean;
   readonly onModify: (booking: CustomerBooking) => void;
+  readonly onOpenChat: (booking: CustomerBooking) => void;
 }) {
   const isUpcoming = OPEN_STATUSES.includes(booking.status);
   return (
@@ -512,15 +517,26 @@ function BookingCard({
         <p className="text-xs text-[var(--color-charcoal)]/50 font-medium">
           Ref {booking.reference}
         </p>
-        {canModify ? (
+        <div className="flex items-center gap-2">
           <button
-            className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-4 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"
-            onClick={() => onModify(booking)}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-3.5 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"
+            onClick={() => onOpenChat(booking)}
             type="button"
           >
-            Edit Order & Schedule
+            <IconMessageCircle width={14} height={14} />
+            Chat with Chef
           </button>
-        ) : null}
+
+          {canModify ? (
+            <button
+              className="min-h-9 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-4 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"
+              onClick={() => onModify(booking)}
+              type="button"
+            >
+              Edit Order & Schedule
+            </button>
+          ) : null}
+        </div>
       </div>
     </li>
   );
@@ -529,6 +545,7 @@ function BookingCard({
 export function CustomerBookings() {
   const [bookings, setBookings] = useState<CustomerBooking[] | null>(null);
   const [modifyTarget, setModifyTarget] = useState<CustomerBooking | null>(null);
+  const [chatTarget, setChatTarget] = useState<CustomerBooking | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -600,6 +617,7 @@ export function CustomerBookings() {
                 canModify={MODIFIABLE_STATUSES.includes(booking.status)}
                 key={booking.id}
                 onModify={setModifyTarget}
+                onOpenChat={setChatTarget}
               />
             ))}
           </ul>
@@ -622,6 +640,7 @@ export function CustomerBookings() {
                 canModify={false}
                 key={booking.id}
                 onModify={setModifyTarget}
+                onOpenChat={setChatTarget}
               />
             ))}
           </ul>
@@ -640,6 +659,17 @@ export function CustomerBookings() {
           onConfirm={confirmModify}
         />
       ) : null}
+
+      {chatTarget ? (
+        <ChatPanel
+          bookingRequestId={chatTarget.id}
+          bookingRef={chatTarget.reference}
+          mealName={mealList(chatTarget)}
+          recipientName="Chef & Support"
+          onClose={() => setChatTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }
+

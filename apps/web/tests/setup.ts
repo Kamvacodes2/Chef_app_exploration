@@ -44,3 +44,8 @@ if (typeof window !== "undefined" && !window.matchMedia) {
       dispatchEvent: () => false,
     }) as unknown as MediaQueryList;
 }
+
+if (typeof window !== "undefined" && typeof window.HTMLElement !== "undefined") {
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+}
+

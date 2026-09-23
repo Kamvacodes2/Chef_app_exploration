@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { IconSparkles } from "@/components/ui/icons";
+import { IconMessageCircle, IconSparkles } from "@/components/ui/icons";
+import { ChatPanel } from "@/features/chat/ChatPanel";
 import {
   fetchChefBookings,
   fetchChefOffers,
@@ -19,6 +20,7 @@ import {
   type ChefBooking,
   type AvailableSession,
 } from "@/features/platform/api/platformClient";
+
 import { ChefUnassignedSessionsPanel } from "./ChefUnassignedSessionsPanel";
 import { TrialWorkspace } from "@/features/trials/TrialWorkspace";
 
@@ -38,9 +40,11 @@ export function ChefOverview() {
   const [offers, setOffers] = useState<ChefOffer[]>([]);
   const [bookings, setBookings] = useState<ChefBooking[]>([]);
   const [sessions, setSessions] = useState<AvailableSession[]>([]);
+  const [chatTarget, setChatTarget] = useState<ChefBooking | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
 
   const load = async () => {
     setBusy("load");
@@ -242,15 +246,32 @@ export function ChefOverview() {
               key={offer.id}
               className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
             >
-              <h4 className="text-lg font-black">{offer.booking.mainName}</h4>
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="text-lg font-black">{offer.booking.mainName}</h4>
+                {offer.booking.type === "SUBSCRIPTION" ? (
+                  <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
+                    🔄 First session of repeat
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
                 {offer.booking.reference} · {formatDate(offer.booking.scheduledDate)} at{" "}
                 {offer.booking.timeSlot}
                 {offer.booking.serviceArea ? ` · ${offer.booking.serviceArea}` : ""}
               </p>
-              <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                You receive {formatZar(offer.chefPayoutCents)}
-              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <p className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                  {offer.booking.type === "SUBSCRIPTION"
+                    ? "Session visit payout: "
+                    : "You receive "}
+                  {formatZar(offer.chefPayoutCents)}
+                </p>
+                {offer.booking.type === "SUBSCRIPTION" ? (
+                  <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
+                    🔄 First session of repeat
+                  </span>
+                ) : null}
+              </div>
               <div className="mt-4 flex gap-2">
                 <button
                   className="min-h-10 rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
@@ -287,20 +308,47 @@ export function ChefOverview() {
               key={booking.id}
               className="mt-4 rounded-2xl border border-[var(--color-oxblood)]/10 p-5"
             >
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
-                {booking.reference} · <StatusBadge status={booking.status} />
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-charcoal)]/50">
+                  {booking.reference}
+                </span>
+                <StatusBadge status={booking.status} />
+                {booking.type === "SUBSCRIPTION" ? (
+                  <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
+                    🔄 First session of repeat
+                  </span>
+                ) : null}
+              </div>
               <h4 className="mt-2 text-lg font-black">{booking.mainName}</h4>
               <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
                 {formatDate(booking.scheduledDate)} at {booking.timeSlot} ·{" "}
                 {booking.serviceArea ?? "Area pending"}
               </p>
               {booking.chefPayoutCents != null ? (
-                <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                  You receive {formatZar(booking.chefPayoutCents)}
-                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <p className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
+                    {booking.type === "SUBSCRIPTION"
+                      ? "Session visit payout: "
+                      : "You receive "}
+                    {formatZar(booking.chefPayoutCents)}
+                  </p>
+                  {booking.type === "SUBSCRIPTION" ? (
+                    <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
+                      🔄 First session of repeat
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--color-oxblood)]/30 bg-[var(--color-oxblood)]/5 px-3.5 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-oxblood)] hover:text-white"
+                  onClick={() => setChatTarget(booking)}
+                  type="button"
+                >
+                  <IconMessageCircle width={14} height={14} />
+                  Chat with Customer
+                </button>
+
                 <button
                   className="min-h-10 rounded-xl border border-[var(--color-oxblood)]/20 px-4 text-sm font-bold text-[var(--color-oxblood)] disabled:opacity-50"
                   disabled={booking.status !== "CHEF_MATCHED" || busy === `en-route-${booking.id}`}
@@ -347,6 +395,17 @@ export function ChefOverview() {
           </Link>
         ))}
       </div>
+
+      {chatTarget ? (
+        <ChatPanel
+          bookingRequestId={chatTarget.id}
+          bookingRef={chatTarget.reference}
+          mealName={chatTarget.mainName}
+          recipientName="Customer & Support"
+          onClose={() => setChatTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }
+

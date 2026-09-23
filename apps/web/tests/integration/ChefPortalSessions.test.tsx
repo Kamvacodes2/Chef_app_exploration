@@ -50,10 +50,18 @@ const api = vi.hoisted(() => {
     markChefEnRoute: vi.fn(),
     updateChefBankDetails: vi.fn(),
     updateChefProfile: vi.fn(),
+    platformRoleSchema: vi.fn(),
   };
 });
 
-vi.mock("@/features/platform/api/platformClient", () => api);
+vi.mock("@/features/platform/api/platformClient", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/platform/api/platformClient")>();
+  return {
+    ...actual,
+    ...api,
+  };
+});
+
 
 const chefProfile = {
   userId: "chef-1",
@@ -175,12 +183,23 @@ describe("Chef portal sessions", () => {
     expect(screen.getByText(/back out to 3 chefs/i)).toBeInTheDocument();
   });
 
-  it("flags repeat customers with their completed visit count", async () => {
+  it("flags repeat customers with their completed visit count and session context", async () => {
     api.fetchAvailableSessions.mockResolvedValue([{ ...session, repeatVisits: 4 }]);
     render(<ChefOverview />);
 
     await screen.findByText("Lamb curry and rice");
     expect(screen.getByText(/Repeat customer · 4 completed visits/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Session 5 of repeat/).length).toBeGreaterThan(0);
+  });
+
+  it("labels subscription sessions as First session of repeat on up-for-grabs panel", async () => {
+    api.fetchAvailableSessions.mockResolvedValue([
+      { ...session, type: "SUBSCRIPTION", repeatVisits: 0 },
+    ]);
+    render(<ChefOverview />);
+
+    await screen.findByText("Lamb curry and rice");
+    expect(screen.getAllByText(/First session of repeat/).length).toBeGreaterThan(0);
   });
 
   it("warns when a session falls outside the chef's declared availability windows", async () => {

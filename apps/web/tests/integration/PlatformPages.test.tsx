@@ -5,6 +5,8 @@ import { ChefApplicationPage } from "@/features/platform/ChefApplicationPage";
 import { ChefMagicLoginPage } from "@/features/platform/ChefMagicLoginPage";
 import { AdminOverview } from "@/features/platform/AdminOverview";
 import { ChefOverview } from "@/features/platform/ChefOverview";
+import { ChefBookingsPage } from "@/features/platform/ChefBookingsPage";
+import { ChefEarnings } from "@/features/platform/ChefEarnings";
 
 const api = vi.hoisted(() => ({
   acceptChefOffer: vi.fn(),
@@ -14,6 +16,7 @@ const api = vi.hoisted(() => ({
   fetchAdminDashboard: vi.fn(),
   fetchChefApplications: vi.fn(),
   fetchChefBookings: vi.fn(),
+  fetchChefEarnings: vi.fn(),
   fetchChefOffers: vi.fn(),
   fetchChefProfile: vi.fn(),
   fetchAvailableSessions: vi.fn(),
@@ -852,5 +855,105 @@ describe("ChefOverview", () => {
     render(<ChefOverview />);
     await screen.findByText(/You receive/);
     expect(screen.getByText(/You receive/)).toHaveTextContent("456");
+  });
+
+  it("labels subscription bookings and offers as First session of repeat on ChefOverview", async () => {
+    const subOffer = {
+      ...offer,
+      id: "offer-sub-1",
+      booking: {
+        ...offer.booking,
+        type: "SUBSCRIPTION",
+      },
+    };
+    const subBooking = {
+      ...booking,
+      id: "booking-sub-1",
+      type: "SUBSCRIPTION",
+      chefPayoutCents: 32484,
+    };
+    api.fetchChefOffers.mockResolvedValue([subOffer]);
+    api.fetchChefBookings.mockResolvedValue([subBooking]);
+
+    render(<ChefOverview />);
+
+    await waitFor(() => {
+      const badges = screen.getAllByText(/First session of repeat/);
+      expect(badges.length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByText(/Session visit payout:/).length).toBeGreaterThan(0);
+  });
+});
+
+describe("ChefBookingsPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("clearly labels subscription bookings and clarifies session payout", async () => {
+    const subBooking = {
+      ...booking,
+      id: "booking-sub-1",
+      reference: "CM-SUB-01",
+      type: "SUBSCRIPTION",
+      chefPayoutCents: 32484,
+      pricing: {
+        totalCents: 129935,
+        plan: {
+          id: "rhythm",
+          name: "Weekly Rhythm",
+          sessions: "4 sessions",
+          recurring: true,
+          priceCents: 129935,
+        },
+      },
+    };
+    api.fetchChefBookings.mockResolvedValue([subBooking]);
+
+    render(<ChefBookingsPage />);
+
+    const badges = await screen.findAllByText(/First session of repeat/);
+    expect(badges.length).toBeGreaterThan(0);
+    expect(screen.getByText(/Session visit payout:/)).toHaveTextContent(/324/);
+    expect(screen.getByText(/full package:.*1.*299.*paid per visit/)).toBeInTheDocument();
+  });
+});
+
+describe("ChefEarnings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("labels subscription session visits in the earnings ledger", async () => {
+    api.fetchChefEarnings.mockResolvedValue({
+      totalEarnedCents: 32484,
+      pendingPayoutCents: 32484,
+      paidOutCents: 0,
+      nextPayoutDescription: "Settled every Monday",
+      items: [
+        {
+          id: "earning-1",
+          bookingRequestId: "booking-sub-1",
+          bookingReference: "CM-SUB-01",
+          bookingType: "SUBSCRIPTION",
+          mainName: "Moroccan tagine",
+          serviceArea: "Rosebank",
+          scheduledDate: "2026-09-15",
+          timeSlot: "18:00",
+          chefPayoutCents: 32484,
+          status: "PENDING",
+          payoutReference: null,
+          payoutProcessingDate: "2026-09-22",
+          paidAt: null,
+          createdAt: "2026-09-15T18:00:00.000Z",
+        },
+      ],
+      payouts: [],
+    });
+
+    render(<ChefEarnings />);
+
+    await expect(screen.findByText("CM-SUB-01")).resolves.toBeInTheDocument();
+    expect(screen.getByText(/First session of repeat/)).toBeInTheDocument();
   });
 });

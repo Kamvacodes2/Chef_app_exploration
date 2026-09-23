@@ -105,8 +105,9 @@ export function ChefEarnings() {
           <p className="font-bold text-[var(--color-oxblood)]">💡 How Payouts Work</p>
           <p className="mt-1">
             Whenever you complete a visit, your earnings are credited immediately as{" "}
-            <strong>Pending Payout</strong>. Every Monday, Chefmate settles all pending balances
-            directly into your verified bank account via EFT.
+            <strong>Pending Payout</strong>. For subscription packages, earnings are paid per
+            completed session visit rather than as an upfront lump sum. Every Monday, Chefmate
+            settles all pending balances directly into your verified bank account via EFT.
           </p>
         </div>
       </section>
@@ -140,7 +141,12 @@ export function ChefEarnings() {
                 {summary.items.map((item) => (
                   <tr key={item.id} className="hover:bg-[var(--color-warm-cream)]/20 transition">
                     <td className="py-3 px-2 font-mono text-xs font-bold text-[var(--color-charcoal)]">
-                      {item.bookingReference}
+                      <div>{item.bookingReference}</div>
+                      {item.bookingType === "SUBSCRIPTION" ? (
+                        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
+                          🔄 First session of repeat
+                        </span>
+                      ) : null}
                     </td>
                     <td className="py-3 px-2">
                       <div className="font-bold text-[var(--color-charcoal)]">{item.mainName}</div>
@@ -151,8 +157,15 @@ export function ChefEarnings() {
                     <td className="py-3 px-2 text-xs text-[var(--color-charcoal)]/80">
                       {formatDate(item.scheduledDate)} ({item.timeSlot})
                     </td>
-                    <td className="py-3 px-2 font-black text-emerald-800">
-                      {formatZar(item.chefPayoutCents)}
+                    <td className="py-3 px-2">
+                      <div className="font-black text-emerald-800">
+                        {formatZar(item.chefPayoutCents)}
+                      </div>
+                      {item.bookingType === "SUBSCRIPTION" ? (
+                        <div className="text-[10px] font-medium text-[var(--color-charcoal)]/60">
+                          Per session visit
+                        </div>
+                      ) : null}
                     </td>
                     <td className="py-3 px-2">
                       {item.status === "PAID" ? (

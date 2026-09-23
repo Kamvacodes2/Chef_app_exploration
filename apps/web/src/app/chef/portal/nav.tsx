@@ -4,8 +4,10 @@ import {
   IconClock,
   IconDollarSign,
   IconLayoutDashboard,
+  IconMessageCircle,
   IconUser,
 } from "@/components/ui/icons";
+import { ChatBadge } from "@/features/chat/ChatBadge";
 
 export const CHEF_NAV: readonly NavItem[] = [
   {
@@ -21,6 +23,13 @@ export const CHEF_NAV: readonly NavItem[] = [
     icon: <IconCalendar width={18} height={18} />,
   },
   {
+    id: "messages",
+    label: "Messages",
+    path: "/chef/portal/messages",
+    icon: <IconMessageCircle width={18} height={18} />,
+    badge: <ChatBadge />,
+  },
+  {
     id: "earnings",
     label: "Earnings",
     path: "/chef/portal/earnings",
@@ -33,3 +42,4 @@ export const CHEF_NAV: readonly NavItem[] = [
     icon: <IconUser width={18} height={18} />,
   },
 ];
+

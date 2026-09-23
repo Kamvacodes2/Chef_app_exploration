@@ -11,6 +11,7 @@ export interface NavItem {
   readonly label: string;
   readonly path: string;
   readonly icon: ReactNode;
+  readonly badge?: ReactNode;
 }
 
 interface DashboardLayoutProps {
@@ -59,6 +60,7 @@ export function DashboardLayout({
               >
                 {item.icon}
                 <span className="flex-1">{item.label}</span>
+                {item.badge}
               </Link>
             );
           })}
@@ -158,6 +160,7 @@ export function DashboardLayout({
                   >
                     {item.icon}
                     <span className="flex-1">{item.label}</span>
+                    {item.badge}
                   </Link>
                 );
               })}

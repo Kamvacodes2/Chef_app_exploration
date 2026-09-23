@@ -256,9 +256,17 @@ export function AdminFinancePage() {
                         {payout.earnings.map((e) => (
                           <span
                             key={e.id}
-                            className="rounded-lg border border-[var(--color-oxblood)]/10 bg-zinc-50 px-2.5 py-1 font-mono text-xs text-[var(--color-charcoal)]"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-oxblood)]/10 bg-zinc-50 px-2.5 py-1 font-mono text-xs text-[var(--color-charcoal)]"
                           >
-                            {e.bookingReference} · {formatZar(e.chefPayoutCents)}
+                            <span>{e.bookingReference}</span>
+                            {e.bookingType === "SUBSCRIPTION" ? (
+                              <span className="rounded bg-purple-100 px-1.5 py-0.5 font-sans text-[10px] font-bold text-purple-800">
+                                🔄 Session Visit
+                              </span>
+                            ) : null}
+                            <span className="font-semibold text-emerald-800">
+                              · {formatZar(e.chefPayoutCents)}
+                            </span>
                           </span>
                         ))}
                       </div>
@@ -310,6 +318,13 @@ export function AdminFinancePage() {
                   {formatZar(settlingChef.totalCents)}
                 </span>
               </div>
+              <p className="mt-1 text-xs text-[var(--color-charcoal)]/70">
+                Covers {settlingChef.earnings.length} completed visit
+                {settlingChef.earnings.length !== 1 ? "s" : ""}
+                {settlingChef.earnings.some((e) => e.bookingType === "SUBSCRIPTION")
+                  ? " (includes subscription session visits)"
+                  : ""}
+              </p>
               {settlingChef.bankAccount ? (
                 <div className="mt-2 text-xs text-[var(--color-charcoal)]/80 space-y-0.5">
                   <p>
