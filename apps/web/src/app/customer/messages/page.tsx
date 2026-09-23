@@ -1,12 +1,17 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MessagesInbox } from "@/features/chat/MessagesInbox";
 
-export default function CustomerMessagesPage() {
+function MessagesContent() {
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId") ?? undefined;
 
+  return <MessagesInbox initialRoomId={roomId} />;
+}
+
+export default function CustomerMessagesPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -16,7 +21,15 @@ export default function CustomerMessagesPage() {
         </p>
       </div>
 
-      <MessagesInbox initialRoomId={roomId} />
+      <Suspense
+        fallback={
+          <div className="h-96 flex items-center justify-center text-sm text-charcoal/40">
+            Loading messages...
+          </div>
+        }
+      >
+        <MessagesContent />
+      </Suspense>
     </div>
   );
 }
