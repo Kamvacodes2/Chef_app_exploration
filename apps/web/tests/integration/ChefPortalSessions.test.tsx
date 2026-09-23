@@ -62,7 +62,6 @@ vi.mock("@/features/platform/api/platformClient", async (importOriginal) => {
   };
 });
 
-
 const chefProfile = {
   userId: "chef-1",
   displayName: "Test Chef",

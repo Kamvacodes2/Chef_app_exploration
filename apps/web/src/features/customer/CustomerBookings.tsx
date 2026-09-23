@@ -16,7 +16,6 @@ import {
 import { IconMessageCircle } from "@/components/ui/icons";
 import { ChatPanel } from "@/features/chat/ChatPanel";
 
-
 const OPEN_STATUSES: readonly CustomerBookingStatus[] = [
   "REQUESTED",
   "NEEDS_REVIEW",
@@ -672,4 +671,3 @@ export function CustomerBookings() {
     </div>
   );
 }
-

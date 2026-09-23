@@ -118,7 +118,6 @@ export function ChatPanel({
     messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages.length]);
 
-
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || !roomId || sending) return;
@@ -159,9 +158,7 @@ export function ChatPanel({
             <h3 className="truncate text-sm font-bold leading-tight">
               {recipientName ? recipientName : mealName ? mealName : "Booking Chat"}
             </h3>
-            {bookingRef ? (
-              <p className="truncate text-xs text-white/70">Ref {bookingRef}</p>
-            ) : null}
+            {bookingRef ? <p className="truncate text-xs text-white/70">Ref {bookingRef}</p> : null}
           </div>
         </div>
         <button

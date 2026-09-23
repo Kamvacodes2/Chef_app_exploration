@@ -11,7 +11,6 @@ import {
   type ChefBooking,
 } from "@/features/platform/api/platformClient";
 
-
 function formatZar(cents: number): string {
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
@@ -192,9 +191,7 @@ export function ChefBookingsPage() {
                         </p>
                         {booking.type === "SUBSCRIPTION" ? (
                           <span className="rounded-lg bg-[var(--color-warm-cream)]/70 px-2.5 py-1 text-xs font-medium text-[var(--color-charcoal)]/80">
-                            {booking.pricing?.plan?.name
-                              ? `${booking.pricing.plan.name} · `
-                              : ""}
+                            {booking.pricing?.plan?.name ? `${booking.pricing.plan.name} · ` : ""}
                             {booking.pricing?.plan?.sessions
                               ? `${booking.pricing.plan.sessions} package`
                               : "Paid per completed session"}
@@ -283,4 +280,3 @@ export function ChefBookingsPage() {
     </div>
   );
 }
-

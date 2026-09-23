@@ -1,5 +1,10 @@
 import type { NavItem } from "@/components/layout/DashboardLayout";
-import { IconCalendar, IconLayoutDashboard, IconMessageCircle, IconUser } from "@/components/ui/icons";
+import {
+  IconCalendar,
+  IconLayoutDashboard,
+  IconMessageCircle,
+  IconUser,
+} from "@/components/ui/icons";
 import { ChatBadge } from "@/features/chat/ChatBadge";
 
 export const CUSTOMER_NAV: readonly NavItem[] = [
@@ -29,4 +34,3 @@ export const CUSTOMER_NAV: readonly NavItem[] = [
     icon: <IconUser width={18} height={18} />,
   },
 ];
-

@@ -48,4 +48,3 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 if (typeof window !== "undefined" && typeof window.HTMLElement !== "undefined") {
   window.HTMLElement.prototype.scrollIntoView = () => {};
 }
-

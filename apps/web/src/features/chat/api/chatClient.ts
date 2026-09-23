@@ -92,9 +92,7 @@ export async function createChatRoom(
   return chatRoomSchema.parse(json.data);
 }
 
-export async function fetchChatRooms(
-  options: PlatformRequestOptions = {},
-): Promise<ChatRoom[]> {
+export async function fetchChatRooms(options: PlatformRequestOptions = {}): Promise<ChatRoom[]> {
   const response = await send("/api/v1/chat/rooms", "GET", undefined, options);
   if (!response.ok) {
     throw new Error(

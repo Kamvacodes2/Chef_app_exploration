@@ -109,7 +109,10 @@ export function ChefUnassignedSessionsPanel({
               )}
               {session.type === "SUBSCRIPTION" || session.repeatVisits > 0 ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
-                  🔄 {session.repeatVisits > 0 ? `Session ${session.repeatVisits + 1} of repeat` : "First session of repeat"}
+                  🔄{" "}
+                  {session.repeatVisits > 0
+                    ? `Session ${session.repeatVisits + 1} of repeat`
+                    : "First session of repeat"}
                 </span>
               ) : null}
             </div>
@@ -126,14 +129,15 @@ export function ChefUnassignedSessionsPanel({
             {session.chefPayoutCents != null ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <p className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                  {session.type === "SUBSCRIPTION"
-                    ? "Session visit payout: "
-                    : "You receive "}
+                  {session.type === "SUBSCRIPTION" ? "Session visit payout: " : "You receive "}
                   {formatZar(session.chefPayoutCents)}
                 </p>
                 {session.type === "SUBSCRIPTION" || session.repeatVisits > 0 ? (
                   <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
-                    🔄 {session.repeatVisits > 0 ? `Session ${session.repeatVisits + 1} of repeat` : "First session of repeat"}
+                    🔄{" "}
+                    {session.repeatVisits > 0
+                      ? `Session ${session.repeatVisits + 1} of repeat`
+                      : "First session of repeat"}
                   </span>
                 ) : null}
               </div>

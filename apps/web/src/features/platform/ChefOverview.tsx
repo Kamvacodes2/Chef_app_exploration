@@ -45,7 +45,6 @@ export function ChefOverview() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-
   const load = async () => {
     setBusy("load");
     setError(null);
@@ -327,9 +326,7 @@ export function ChefOverview() {
               {booking.chefPayoutCents != null ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <p className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-900">
-                    {booking.type === "SUBSCRIPTION"
-                      ? "Session visit payout: "
-                      : "You receive "}
+                    {booking.type === "SUBSCRIPTION" ? "Session visit payout: " : "You receive "}
                     {formatZar(booking.chefPayoutCents)}
                   </p>
                   {booking.type === "SUBSCRIPTION" ? (
@@ -408,4 +405,3 @@ export function ChefOverview() {
     </div>
   );
 }
-

@@ -42,4 +42,3 @@ export const CHEF_NAV: readonly NavItem[] = [
     icon: <IconUser width={18} height={18} />,
   },
 ];
-

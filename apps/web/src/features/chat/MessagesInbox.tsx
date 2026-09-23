@@ -9,11 +9,7 @@ import {
   type ChatRoom,
   type ChatMessage,
 } from "./api/chatClient";
-import {
-  IconMessageCircle,
-  IconSearch,
-  IconChevronLeft,
-} from "@/components/ui/icons";
+import { IconMessageCircle, IconSearch, IconChevronLeft } from "@/components/ui/icons";
 
 export interface MessagesInboxProps {
   readonly initialRoomId?: string;
@@ -134,7 +130,6 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
     messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages]);
 
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRoomId || !inputContent.trim() || sending) return;
@@ -173,8 +168,7 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
     const otherParticipants = r.participants.filter((p) => p.userId !== user?.id);
     const participantMatch = otherParticipants.some(
       (p) =>
-        p.user?.displayName?.toLowerCase().includes(q) ||
-        p.user?.email?.toLowerCase().includes(q),
+        p.user?.displayName?.toLowerCase().includes(q) || p.user?.email?.toLowerCase().includes(q),
     );
 
     // Check booking details
@@ -230,11 +224,14 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
             </div>
           ) : filteredRooms.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-sm text-[var(--color-charcoal)]/50">
-              <IconMessageCircle width={32} height={32} className="mb-2 text-[var(--color-charcoal)]/30" />
+              <IconMessageCircle
+                width={32}
+                height={32}
+                className="mb-2 text-[var(--color-charcoal)]/30"
+              />
               {searchQuery ? "No matching conversations" : "No messages yet"}
             </div>
           ) : (
-
             filteredRooms.map((room) => {
               const active = room.id === selectedRoomId;
               const otherParticipants = room.participants.filter((p) => p.userId !== user?.id);
@@ -306,9 +303,7 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
 
       {/* Active Conversation Pane */}
       <div
-        className={`flex flex-1 flex-col bg-white ${
-          !selectedRoomId ? "hidden md:flex" : "flex"
-        }`}
+        className={`flex flex-1 flex-col bg-white ${!selectedRoomId ? "hidden md:flex" : "flex"}`}
       >
         {selectedRoom ? (
           <>
@@ -334,9 +329,8 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
                   </h3>
                   {selectedRoom.booking ? (
                     <p className="text-xs text-[var(--color-charcoal)]/60">
-                      Booking #{selectedRoom.booking.reference} •{" "}
-                      {selectedRoom.booking.mainName} ({selectedRoom.booking.scheduledDate}{" "}
-                      {selectedRoom.booking.timeSlot})
+                      Booking #{selectedRoom.booking.reference} • {selectedRoom.booking.mainName} (
+                      {selectedRoom.booking.scheduledDate} {selectedRoom.booking.timeSlot})
                     </p>
                   ) : (
                     <p className="text-xs text-[var(--color-charcoal)]/60">
@@ -349,9 +343,7 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
 
             {/* Error Banner */}
             {error ? (
-              <div className="bg-rose-50 px-4 py-2 text-xs font-medium text-rose-700">
-                {error}
-              </div>
+              <div className="bg-rose-50 px-4 py-2 text-xs font-medium text-rose-700">{error}</div>
             ) : null}
 
             {/* Messages Scroll Area */}
@@ -363,7 +355,11 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center text-sm text-[var(--color-charcoal)]/50">
-                  <IconMessageCircle width={36} height={36} className="mb-2 text-[var(--color-charcoal)]/30" />
+                  <IconMessageCircle
+                    width={36}
+                    height={36}
+                    className="mb-2 text-[var(--color-charcoal)]/30"
+                  />
                   <p className="font-medium">No messages in this chat yet</p>
                   <p className="text-xs text-[var(--color-charcoal)]/40">
                     Send a message below to start the conversation.
@@ -441,14 +437,19 @@ export function MessagesInbox({ initialRoomId }: MessagesInboxProps) {
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center p-8 text-center text-[var(--color-charcoal)]/40">
-            <IconMessageCircle width={48} height={48} className="mb-3 text-[var(--color-oxblood)]/30" />
-            <h3 className="text-lg font-bold text-[var(--color-charcoal)]/80">Select a conversation</h3>
+            <IconMessageCircle
+              width={48}
+              height={48}
+              className="mb-3 text-[var(--color-oxblood)]/30"
+            />
+            <h3 className="text-lg font-bold text-[var(--color-charcoal)]/80">
+              Select a conversation
+            </h3>
             <p className="mt-1 text-sm text-[var(--color-charcoal)]/50">
               Choose a message thread from the left to view messages and reply.
             </p>
           </div>
         )}
-
       </div>
     </div>
   );

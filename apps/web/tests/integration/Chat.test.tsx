@@ -143,7 +143,6 @@ const mockMessages: ChatMessage[] = [
   },
 ];
 
-
 describe("Messaging Integration Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -213,7 +212,6 @@ describe("Messaging Integration Tests", () => {
         screen.findByText("Hello Thabo! I will arrive 15 minutes before 17:00."),
       ).resolves.toBeInTheDocument();
     });
-
 
     it("allows user to type and send a chat message", async () => {
       const handleClose = vi.fn();
@@ -312,4 +310,3 @@ describe("Messaging Integration Tests", () => {
     });
   });
 });
-
