@@ -1165,7 +1165,7 @@ interface RequestDataArgs<Schema extends z.ZodTypeAny, Result> {
   readonly select?: (data: z.infer<Schema>["data"]) => Result;
 }
 
-async function requestData<Schema extends z.ZodTypeAny, Result = z.infer<Schema>["data"]>({
+export async function requestData<Schema extends z.ZodTypeAny, Result = z.infer<Schema>["data"]>({
   path,
   method,
   body,
@@ -1185,7 +1185,7 @@ async function requestData<Schema extends z.ZodTypeAny, Result = z.infer<Schema>
   return select ? select(parsed.data) : (parsed.data as Result);
 }
 
-async function requestNoContent({
+export async function requestNoContent({
   path,
   method,
   options,
