@@ -22,6 +22,7 @@ const OPEN_STATUSES: readonly CustomerBookingStatus[] = [
   "AWAITING_CHEF",
   "CHEF_MATCHED",
   "EN_ROUTE",
+  "ARRIVED",
 ];
 
 const STATUS_LABEL: Record<CustomerBookingStatus, string> = {
@@ -31,6 +32,7 @@ const STATUS_LABEL: Record<CustomerBookingStatus, string> = {
   AWAITING_CHEF: "Finding your chef",
   CHEF_MATCHED: "Chef matched",
   EN_ROUTE: "On its way",
+  ARRIVED: "Chef arrived",
   CANCELLED: "Cancelled",
   COMPLETED: "Delivered",
 };

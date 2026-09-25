@@ -11,6 +11,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   invited: { bg: "bg-purple-50", text: "text-purple-800" },
   suspended: { bg: "bg-red-50", text: "text-red-800" },
   en_route: { bg: "bg-sky-50", text: "text-sky-800" },
+  arrived: { bg: "bg-indigo-50", text: "text-indigo-800" },
   chef_matched: { bg: "bg-sky-50", text: "text-sky-800" },
   awaiting_chef: { bg: "bg-amber-50", text: "text-amber-800" },
   needs_review: { bg: "bg-amber-50", text: "text-amber-800" },

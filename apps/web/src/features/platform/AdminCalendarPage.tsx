@@ -97,13 +97,19 @@ function getBookingCardStyle(status: string): {
       };
     case "CHEF_MATCHED":
     case "EN_ROUTE":
+    case "ARRIVED":
     case "CONFIRMED":
       return {
         border: "border-l-sky-600 bg-sky-50/40 hover:bg-sky-50/70",
         bg: "border-sky-200",
         badgeBg: "bg-sky-100",
         badgeText: "text-sky-800",
-        badgeLabel: status === "EN_ROUTE" ? "🚗 En Route" : "👨‍🍳 Matched",
+        badgeLabel:
+          status === "EN_ROUTE"
+            ? "🚗 En Route"
+            : status === "ARRIVED"
+              ? "📍 Arrived"
+              : "👨‍🍳 Matched",
       };
     case "AWAITING_CHEF":
     case "MATCHING":
@@ -254,7 +260,7 @@ export function AdminCalendarPage() {
       if (statusFilter === "completed") {
         if (b.status !== "COMPLETED") return false;
       } else if (statusFilter === "in_progress") {
-        if (!["CONFIRMED", "CHEF_MATCHED", "EN_ROUTE"].includes(b.status)) return false;
+        if (!["CONFIRMED", "CHEF_MATCHED", "EN_ROUTE", "ARRIVED"].includes(b.status)) return false;
       } else if (statusFilter === "awaiting_chef") {
         if (!["AWAITING_CHEF", "MATCHING"].includes(b.status)) return false;
       } else if (statusFilter === "needs_action") {
@@ -316,7 +322,8 @@ export function AdminCalendarPage() {
       for (const b of list) {
         total += 1;
         if (b.status === "COMPLETED") completed += 1;
-        else if (["CONFIRMED", "CHEF_MATCHED", "EN_ROUTE"].includes(b.status)) inProgress += 1;
+        else if (["CONFIRMED", "CHEF_MATCHED", "EN_ROUTE", "ARRIVED"].includes(b.status))
+          inProgress += 1;
         else if (["AWAITING_CHEF", "MATCHING"].includes(b.status)) awaitingChef += 1;
         else if (b.status === "CANCELLED") {
           // cancelled

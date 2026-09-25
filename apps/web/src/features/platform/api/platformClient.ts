@@ -240,6 +240,7 @@ const bookingStatusSchema = z.enum([
   "AWAITING_CHEF",
   "CHEF_MATCHED",
   "EN_ROUTE",
+  "ARRIVED",
   "CANCELLED",
   "COMPLETED",
 ]);
@@ -796,6 +797,20 @@ export async function markChefEnRoute(
 ): Promise<ChefBooking> {
   return requestData({
     path: `/api/v1/chef/bookings/${encodeURIComponent(bookingId)}/en-route`,
+    method: "POST",
+    body: { note },
+    schema: envelope(chefBookingSchema),
+    options,
+  });
+}
+
+export async function markChefArrived(
+  bookingId: string,
+  note: string | null,
+  options: PlatformRequestOptions = {},
+): Promise<ChefBooking> {
+  return requestData({
+    path: `/api/v1/chef/bookings/${encodeURIComponent(bookingId)}/arrive`,
     method: "POST",
     body: { note },
     schema: envelope(chefBookingSchema),

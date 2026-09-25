@@ -14,6 +14,7 @@ const bookingStatusSchema = z.enum([
   "AWAITING_CHEF",
   "CHEF_MATCHED",
   "EN_ROUTE",
+  "ARRIVED",
   "CANCELLED",
   "COMPLETED",
 ]);

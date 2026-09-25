@@ -54,6 +54,7 @@ const PAYMENT_CONFIRMED_STATUSES = new Set([
   "AWAITING_CHEF",
   "CHEF_MATCHED",
   "EN_ROUTE",
+  "ARRIVED",
   "COMPLETED",
 ]);
 
