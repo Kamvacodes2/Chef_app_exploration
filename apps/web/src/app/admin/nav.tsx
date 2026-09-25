@@ -89,6 +89,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconShield width={18} height={18} />,
   },
   {
+    id: "safety",
+    label: "Safety",
+    path: "/admin/safety",
+    icon: <IconShield width={18} height={18} />,
+  },
+  {
     id: "comms",
     label: "Communications",
     path: "/admin/comms",
