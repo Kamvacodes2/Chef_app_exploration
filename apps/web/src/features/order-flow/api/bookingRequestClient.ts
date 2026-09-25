@@ -14,6 +14,7 @@ export type BookingRequestStatus =
   | "AWAITING_CHEF"
   | "CHEF_MATCHED"
   | "EN_ROUTE"
+  | "ARRIVED"
   | "CANCELLED"
   | "COMPLETED";
 
@@ -142,6 +143,7 @@ const bookingResponseSchema = z.object({
       "AWAITING_CHEF",
       "CHEF_MATCHED",
       "EN_ROUTE",
+      "ARRIVED",
       "CANCELLED",
       "COMPLETED",
     ]),

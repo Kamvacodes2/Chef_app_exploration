@@ -7,6 +7,7 @@ import { ChatPanel } from "@/features/chat/ChatPanel";
 import {
   fetchChefBookings,
   markChefEnRoute,
+  markChefArrived,
   completeChefBooking,
   type ChefBooking,
 } from "@/features/platform/api/platformClient";
@@ -64,6 +65,14 @@ export function ChefBookingsPage() {
     void run(`en-route-${booking.id}`, async () => {
       await markChefEnRoute(booking.id, null);
       setNotice(`Marked ${booking.reference} as en route.`);
+      await load();
+    });
+  };
+
+  const arrive = (booking: ChefBooking) => {
+    void run(`arrive-${booking.id}`, async () => {
+      await markChefArrived(booking.id, null);
+      setNotice(`Marked ${booking.reference} as arrived. Stay safe!`);
       await load();
     });
   };
@@ -228,9 +237,17 @@ export function ChefBookingsPage() {
                         En Route
                       </button>
                       <button
+                        className="min-h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white disabled:opacity-50"
+                        disabled={booking.status !== "EN_ROUTE" || busy === `arrive-${booking.id}`}
+                        onClick={() => arrive(booking)}
+                        type="button"
+                      >
+                        I've Arrived
+                      </button>
+                      <button
                         className="min-h-10 rounded-xl bg-[var(--color-oxblood)] px-4 text-sm font-bold text-white disabled:opacity-50"
                         disabled={
-                          !["CHEF_MATCHED", "EN_ROUTE"].includes(booking.status) ||
+                          !["CHEF_MATCHED", "EN_ROUTE", "ARRIVED"].includes(booking.status) ||
                           busy === `complete-${booking.id}`
                         }
                         onClick={() => complete(booking)}
