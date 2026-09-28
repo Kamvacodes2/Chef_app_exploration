@@ -158,4 +158,43 @@ describe("pricingQuoteClient", () => {
       ]),
     );
   });
+
+  /**
+   * A signed-out subscriber is only recognised by the email they enter, so the
+   * quote has to carry it — otherwise checkout shows a one-off price seconds
+   * before the order is created as an included session. A half-typed address
+   * must never be sent either: the API rejects it and the whole quote fails,
+   * which would lock checkout mid-typing.
+   */
+  it("carries the signed-out shopper's email once it is complete, and never a partial one", () => {
+    const state = {
+      ...INITIAL_ORDER_STATE,
+      main: {
+        id: "winter-oxtail-stew",
+        name: "Oxtail Stew",
+        description: "",
+        priceDisplay: "Included in package",
+        price: 0,
+        course: "main",
+        imageSrc: "/main.jpg",
+        imageAlt: "Oxtail stew",
+        paletteId: "espresso",
+        goalTags: [],
+      },
+    } as const;
+
+    expect(
+      buildPricingQuotePayload({ ...state, contactEmail: " sazi@example.test " }),
+    ).toMatchObject({ contactEmail: "sazi@example.test" });
+    expect(buildPricingQuotePayload({ ...state, contactEmail: "sazi@example" })).not.toHaveProperty(
+      "contactEmail",
+    );
+    expect(buildPricingQuotePayload({ ...state, contactEmail: "" })).not.toHaveProperty(
+      "contactEmail",
+    );
+    expect(buildPricingQuotePayload({ ...state, contactEmail: null })).not.toHaveProperty(
+      "contactEmail",
+    );
+    expect(buildPricingQuotePayload(state)).not.toHaveProperty("contactEmail");
+  });
 });

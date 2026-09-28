@@ -34,6 +34,12 @@ const pricingQuoteResponseSchema = z.object({
 
 export interface PricingQuotePayload {
   readonly mainSlug: string;
+  /**
+   * Signed-out shopper identity hint: the email typed at checkout. The API uses
+   * it to recognise an existing customer (and their prepaid subscription) so a
+   * session drawn from a package is quoted as included, not as a one-off order.
+   */
+  readonly contactEmail?: string | null;
   readonly sideSlugs: readonly string[];
   readonly dessertSlug: string | null;
   readonly customRequest: string | null;
@@ -97,13 +103,26 @@ export function buildPricingQuotePayload(
     | "week2DayMealPlans"
     | "week2Deferred"
     | "firstSessionDate"
-  >,
+  > & {
+    /**
+     * The email a signed-out shopper typed at checkout, so the quote can honour
+     * an existing customer account (and its subscription package). Omitted when
+     * the shopper is signed in, where the API uses the authenticated account.
+     */
+    readonly contactEmail?: string | null;
+  },
 ): PricingQuotePayload | null {
   if (!state.main) return null;
 
   const planSelection = buildPlanSelection(state);
+  // Only a complete address is sent: the API rejects a malformed one, which
+  // would fail the whole quote and lock checkout while the customer is still
+  // half-way through typing their email.
+  const contactEmail = state.contactEmail?.trim() ?? "";
+  const hasCompleteEmail = /^\S+@\S+\.\S+$/.test(contactEmail);
   return {
     mainSlug: state.main.id,
+    ...(hasCompleteEmail ? { contactEmail } : {}),
     sideSlugs: state.sides.map((side) => side.id),
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
