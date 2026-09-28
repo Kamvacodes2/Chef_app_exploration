@@ -9,6 +9,7 @@ export default function Home() {
       <SiteHeader />
       <LandingPage />
       <SiteFooter />
+      <WhatsAppChatButton />
     </>
   );
 }
