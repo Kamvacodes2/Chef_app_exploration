@@ -231,6 +231,10 @@ export function useOrderController(): OrderController {
         week2Deferred: state.week2Deferred,
         firstSessionDate: state.firstSessionDate,
         breakfastAddOn: state.breakfastAddOn,
+        // Signed-out shoppers are recognised by the email they enter, so a
+        // prepaid subscription session is quoted as included rather than as a
+        // one-off order. Signed-in customers are identified by their session.
+        contactEmail: authenticatedUser ? null : state.contact.email,
       }),
     [
       state.main,
@@ -258,6 +262,8 @@ export function useOrderController(): OrderController {
       state.week2DayMealPlans,
       state.week2Deferred,
       state.firstSessionDate,
+      state.contact.email,
+      authenticatedUser,
     ],
   );
 
