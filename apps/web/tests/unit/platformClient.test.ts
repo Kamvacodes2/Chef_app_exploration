@@ -24,6 +24,7 @@ import {
   markChefApplicationInterviewConducted,
   markChefEnRoute,
   platformRoleSchema,
+  resendBookingOffers,
   submitChefApplication,
   updateChefApplication,
   updateChefApplicationVerification,
@@ -759,6 +760,26 @@ describe("platformClient", () => {
     await expect(
       fetchPendingChefPayouts({ baseUrl: "http://api.test", fetchImpl: fetchPayoutsImpl }),
     ).resolves.toEqual(pendingPayoutsData);
+  });
+
+  it("resends a booking's chef offers", async () => {
+    const resendData = {
+      bookingId: "booking-1",
+      chefsNotified: 8,
+      offersReopened: 7,
+      offersCreated: 1,
+      expiresAt: "2026-09-28T11:38:40.483Z",
+    };
+    const fetchImpl = mockFetch({ data: resendData });
+
+    await expect(
+      resendBookingOffers("booking-1", { baseUrl: "http://api.test", fetchImpl }),
+    ).resolves.toEqual(resendData);
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/operations/booking-requests/booking-1/resend-offers",
+      expect.objectContaining({ method: "POST", credentials: "include" }),
+    );
   });
 
   it("settles a chef payout", async () => {
