@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   fetchOperationsBookings,
+  resendBookingOffers,
   sendPaymentReminder,
   verifyBookingPayment,
   type OperationsBooking,
@@ -79,6 +80,34 @@ export default function Page() {
       setAlert({
         type: "error",
         message: err instanceof Error ? err.message : "Failed to send payment reminder.",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleResendOffers(booking: OperationsBooking) {
+    if (
+      !window.confirm(
+        `Send ${booking.reference} out to the chefs again?\n\nEvery chef on the platform is offered the booking again — including any chef whose earlier offer expired — and each one is emailed a fresh claim link. Offers lapse after 15 minutes.`,
+      )
+    ) {
+      return;
+    }
+    setProcessingId(booking.id);
+    setAlert(null);
+    try {
+      const result = await resendBookingOffers(booking.id);
+      setAlert({
+        type: "success",
+        message: `${booking.reference} sent to ${result.chefsNotified} chef${
+          result.chefsNotified === 1 ? "" : "s"
+        } again (${result.offersReopened} reopened, ${result.offersCreated} new).`,
+      });
+    } catch (err) {
+      setAlert({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to resend the offer to chefs.",
       });
     } finally {
       setProcessingId(null);
@@ -311,6 +340,8 @@ export default function Page() {
                   b.status !== "COMPLETED" &&
                   (!isPaid || b.status === "REQUESTED" || b.status === "NEEDS_REVIEW");
 
+                const canResendOffers = b.status === "AWAITING_CHEF" && !b.cook;
+
                 return (
                   <tr
                     key={b.id}
@@ -423,15 +454,19 @@ export default function Page() {
                             {processingId === b.id ? "Sending..." : "Remind payment / proof"}
                           </button>
                         )}
-                        {!canMarkPaid &&
-                          !canRemindPayment &&
-                          (b.status === "AWAITING_CHEF" ? (
-                            <span className="inline-block rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-                              Broadcasted
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
-                          ))}
+                        {canResendOffers && (
+                          <button
+                            type="button"
+                            disabled={processingId === b.id}
+                            onClick={() => void handleResendOffers(b)}
+                            className="rounded-xl border border-[var(--color-oxblood)]/30 px-2.5 py-1 text-[11px] font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)] disabled:opacity-50"
+                          >
+                            {processingId === b.id ? "Sending..." : "Resend offer to all chefs"}
+                          </button>
+                        )}
+                        {!canMarkPaid && !canRemindPayment && !canResendOffers && (
+                          <span className="text-[11px] text-[var(--color-charcoal)]/40">—</span>
+                        )}
                       </div>
                     </td>
                   </tr>

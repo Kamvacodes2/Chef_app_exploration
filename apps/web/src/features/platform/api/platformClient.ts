@@ -932,6 +932,34 @@ export async function verifyBookingPayment(
   });
 }
 
+export const resendBookingOffersResultSchema = z.object({
+  bookingId: z.string(),
+  chefsNotified: z.number().int().nonnegative(),
+  offersReopened: z.number().int().nonnegative(),
+  offersCreated: z.number().int().nonnegative(),
+  expiresAt: z.string(),
+});
+
+export type ResendBookingOffersResult = z.infer<typeof resendBookingOffersResultSchema>;
+
+/**
+ * Sends an awaiting-chef booking out to the chefs again, reviving any offer that
+ * already lapsed. A chef can only ever hold one offer per booking, so once every
+ * chef has had their turn and the offers expired the booking was stranded — a
+ * plain broadcast matched nobody and no chef was emailed again.
+ */
+export async function resendBookingOffers(
+  bookingId: string,
+  options: PlatformRequestOptions = {},
+): Promise<ResendBookingOffersResult> {
+  return requestData({
+    path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/resend-offers`,
+    method: "POST",
+    schema: envelope(resendBookingOffersResultSchema),
+    options,
+  });
+}
+
 export async function fetchAdminDashboard(
   options: PlatformRequestOptions = {},
 ): Promise<AdminDashboard> {
