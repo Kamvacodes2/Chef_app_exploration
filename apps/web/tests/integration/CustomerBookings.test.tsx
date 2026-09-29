@@ -6,6 +6,7 @@ import type { CustomerBooking } from "@/features/customer/api/customerBookingsCl
 const bookingsApi = vi.hoisted(() => ({
   fetchCustomerBookings: vi.fn(),
   modifyCustomerBooking: vi.fn(),
+  downloadCustomerIngredientsPdf: vi.fn(),
 }));
 
 const availabilityApi = vi.hoisted(() => ({
@@ -24,6 +25,26 @@ const mockBooking: CustomerBooking = {
   meals: [
     { kind: "main", slug: "winter-oxtail-stew", name: "Winter Oxtail Stew" },
     { kind: "addon", slug: "overnight-oats-trio", name: "Overnight Oats Trio" },
+  ],
+  orderItems: [
+    {
+      kind: "main",
+      slug: "winter-oxtail-stew",
+      name: "Winter Oxtail Stew",
+      groupLabel: "Tuesday",
+      externalUrl: null,
+      ingredients: ["1kg oxtail", "carrots"],
+      shoppingListUrl: "https://checkers.example/list/meal",
+    },
+    {
+      kind: "main",
+      slug: "chicken-peri-peri",
+      name: "Chicken Peri Peri",
+      groupLabel: "Friday",
+      externalUrl: "https://sixty60.example/list/second-meal",
+      ingredients: ["chicken", "peri-peri sauce"],
+      shoppingListUrl: null,
+    },
   ],
   customRequest: "No dairy",
   address: {
@@ -51,8 +72,20 @@ describe("CustomerBookings component", () => {
     render(<CustomerBookings />);
 
     await expect(screen.findByText(/CM00475/)).resolves.toBeInTheDocument();
-    expect(screen.getByText("Winter Oxtail Stew, Overnight Oats Trio")).toBeInTheDocument();
+    expect(screen.getByText("Winter Oxtail Stew, Chicken Peri Peri")).toBeInTheDocument();
     expect(screen.getByText(/33 Wilson street/)).toBeInTheDocument();
+    expect(screen.getByText(/View all meals, ingredients & shopping links/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/View all meals, ingredients & shopping links/));
+    expect(screen.getByText(/1kg oxtail, carrots/)).toBeInTheDocument();
+    expect(screen.getByText("Chicken Peri Peri")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open Checkers Sixty60 list" })).toHaveAttribute(
+      "href",
+      "https://checkers.example/list/meal",
+    );
+    expect(screen.getByRole("link", { name: "Open recipe link" })).toHaveAttribute(
+      "href",
+      "https://sixty60.example/list/second-meal",
+    );
 
     const editBtn = screen.getByRole("button", { name: /Edit Order & Schedule/i });
     expect(editBtn).toBeInTheDocument();
@@ -63,6 +96,28 @@ describe("CustomerBookings component", () => {
     expect(headings.length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/Choose Main Dish/i)).toHaveValue("winter-oxtail-stew");
     expect(screen.getByPlaceholderText(/Mild spice, no dairy/i)).toHaveValue("No dairy");
+  });
+
+  it("downloads the ingredients PDF from the order card", async () => {
+    const urlApi = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:ingredients");
+    const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    bookingsApi.downloadCustomerIngredientsPdf.mockResolvedValue(new Blob(["%PDF-"]));
+
+    render(<CustomerBookings />);
+    await expect(screen.findByText(/CM00475/)).resolves.toBeInTheDocument();
+    fireEvent.click(screen.getByText(/View all meals, ingredients & shopping links/));
+    fireEvent.click(screen.getByRole("button", { name: "Download ingredients PDF" }));
+
+    await waitFor(() => {
+      expect(bookingsApi.downloadCustomerIngredientsPdf).toHaveBeenCalledWith("booking-1");
+    });
+    expect(click).toHaveBeenCalledOnce();
+    expect(urlApi).toHaveBeenCalledOnce();
+    expect(revokeUrl).toHaveBeenCalledWith("blob:ingredients");
+    urlApi.mockRestore();
+    revokeUrl.mockRestore();
+    click.mockRestore();
   });
 
   it("modifies booking date, dish, sides, notes, address and submits", async () => {

@@ -25,6 +25,16 @@ const bookingMealSchema = z.object({
   name: z.string(),
 });
 
+const customerOrderItemSchema = z.object({
+  kind: z.enum(["main", "side", "dessert", "addon", "link"]),
+  slug: z.string().nullable(),
+  name: z.string(),
+  groupLabel: z.string(),
+  externalUrl: z.string().url().nullable(),
+  ingredients: z.array(z.string()),
+  shoppingListUrl: z.string().url().nullable(),
+});
+
 const customerBookingSchema = z.object({
   id: z.string().min(1),
   reference: z.string().min(1),
@@ -32,6 +42,7 @@ const customerBookingSchema = z.object({
   type: z.enum(["STANDARD", "CUSTOM", "GIFT", "SUBSCRIPTION"]),
   mainMeal: z.object({ slug: z.string(), name: z.string().min(1) }),
   meals: z.array(bookingMealSchema),
+  orderItems: z.array(customerOrderItemSchema).optional().default([]),
   customRequest: z.string().nullable().optional(),
   address: z
     .object({
@@ -65,6 +76,7 @@ const subscriptionResponseSchema = z.object({
 
 export type CustomerBooking = z.infer<typeof customerBookingSchema>;
 export type BookingMeal = z.infer<typeof bookingMealSchema>;
+export type CustomerOrderItem = z.infer<typeof customerOrderItemSchema>;
 export type CustomerBookingStatus = z.infer<typeof bookingStatusSchema>;
 export type CustomerSubscription = z.infer<typeof subscriptionSchema>;
 
@@ -80,6 +92,26 @@ export async function fetchCustomerBookings(
     throw new Error(await readApiErrorMessage(response, "Chefmate could not load your bookings."));
   }
   return responseSchema.parse(await response.json()).data.items;
+}
+
+export async function downloadCustomerIngredientsPdf(
+  bookingId: string,
+  options: CustomerBookingsRequestOptions = {},
+): Promise<Blob> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    apiUrl(
+      options.baseUrl ?? getChefmateApiUrl(),
+      `/api/v1/account/booking-requests/${encodeURIComponent(bookingId)}/ingredients.pdf`,
+    ),
+    { method: "GET", credentials: "include" },
+  );
+  if (!response.ok) {
+    throw new Error(
+      await readApiErrorMessage(response, "Chefmate could not prepare your ingredients PDF."),
+    );
+  }
+  return response.blob();
 }
 
 export async function fetchCustomerSubscription(

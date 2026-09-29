@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  downloadCustomerIngredientsPdf,
   fetchCustomerBookings,
   fetchCustomerSubscription,
   modifyCustomerBooking,
@@ -14,7 +15,7 @@ function jsonResponse(body: unknown): Response {
 }
 
 describe("customerBookingsClient", () => {
-  it("parses a bookings list that includes free add-on (overnight oats) meals", async () => {
+  it("parses a bookings list that includes every selected meal and its ingredient links", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse({
         data: {
@@ -29,6 +30,26 @@ describe("customerBookingsClient", () => {
                 { kind: "main", slug: "burger-bowl", name: "Big Mac Burger Bowls" },
                 { kind: "addon", slug: "overnight-oats-trio", name: "Overnight Oats Trio" },
               ],
+              orderItems: [
+                {
+                  kind: "main",
+                  slug: "burger-bowl",
+                  name: "Big Mac Burger Bowls",
+                  groupLabel: "Tuesday",
+                  externalUrl: null,
+                  ingredients: ["beef mince", "lettuce"],
+                  shoppingListUrl: "https://checkers.example/list/burger-bowl",
+                },
+                {
+                  kind: "link",
+                  slug: null,
+                  name: "Linked recipe (TikTok)",
+                  groupLabel: "Friday",
+                  externalUrl: "https://www.tiktok.com/@chef/video/42",
+                  ingredients: [],
+                  shoppingListUrl: null,
+                },
+              ],
               scheduledDate: "2026-08-23",
               timeSlot: "16:00",
               createdAt: "2026-08-23T12:00:00.000Z",
@@ -40,7 +61,57 @@ describe("customerBookingsClient", () => {
     const bookings = await fetchCustomerBookings({ baseUrl: "https://api.test", fetchImpl });
     expect(bookings).toHaveLength(1);
     expect(bookings[0]?.meals.map((meal) => meal.kind)).toEqual(["main", "addon"]);
-    expect(bookings[0]?.meals[1]?.name).toBe("Overnight Oats Trio");
+    expect(bookings[0]?.orderItems[0]).toMatchObject({
+      name: "Big Mac Burger Bowls",
+      ingredients: ["beef mince", "lettuce"],
+      shoppingListUrl: "https://checkers.example/list/burger-bowl",
+    });
+    expect(bookings[0]?.orderItems[1]?.externalUrl).toBe("https://www.tiktok.com/@chef/video/42");
+  });
+
+  it("defaults full order details for legacy booking responses", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        data: {
+          items: [
+            {
+              id: "booking-legacy",
+              reference: "CM00367",
+              status: "COMPLETED",
+              type: "STANDARD",
+              mainMeal: { slug: "burger-bowl", name: "Big Mac Burger Bowls" },
+              meals: [{ kind: "main", slug: "burger-bowl", name: "Big Mac Burger Bowls" }],
+              scheduledDate: "2026-08-23",
+              timeSlot: "16:00",
+              createdAt: "2026-08-23T12:00:00.000Z",
+            },
+          ],
+        },
+      }),
+    );
+    const bookings = await fetchCustomerBookings({ baseUrl: "https://api.test", fetchImpl });
+    expect(bookings[0]?.orderItems).toEqual([]);
+  });
+
+  it("downloads a booking ingredients PDF with session credentials", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          blob: async () => new Blob(["%PDF-"]),
+        }) as unknown as Response,
+    );
+
+    const pdf = await downloadCustomerIngredientsPdf("booking/123", {
+      baseUrl: "https://api.test/",
+      fetchImpl,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.test/api/v1/account/booking-requests/booking%2F123/ingredients.pdf",
+      { method: "GET", credentials: "include" },
+    );
+    expect(pdf).toBeInstanceOf(Blob);
   });
 
   it("returns the subscription summary when the customer owns a package", async () => {
