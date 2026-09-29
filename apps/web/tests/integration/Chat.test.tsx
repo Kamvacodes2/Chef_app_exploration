@@ -51,6 +51,7 @@ const mockBooking: CustomerBooking = {
   type: "STANDARD",
   mainMeal: { slug: "winter-oxtail-stew", name: "Winter Oxtail Stew" },
   meals: [{ kind: "main", slug: "winter-oxtail-stew", name: "Winter Oxtail Stew" }],
+  orderItems: [],
   customRequest: "Less salt please",
   address: {
     street: "10 Sandton Drive",

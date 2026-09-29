@@ -7,6 +7,7 @@ import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 import { TrialWorkspace } from "@/features/trials/TrialWorkspace";
+import { CustomerBookings } from "@/features/customer/CustomerBookings";
 import {
   fetchCustomerBookings,
   fetchCustomerSubscription,
@@ -49,9 +50,11 @@ function formatDate(isoDate: string): string {
 
 function mealList(booking: CustomerBooking): string {
   // Prefer every dish ordered: main(s) plus any sides/dessert added.
-  return booking.meals.length > 0
-    ? booking.meals.map((meal) => meal.name).join(", ")
-    : booking.mainMeal.name;
+  const items =
+    booking.orderItems.length > 0
+      ? booking.orderItems.map((item) => item.name)
+      : booking.meals.map((meal) => meal.name);
+  return [...new Set(items)].join(", ") || booking.mainMeal.name;
 }
 
 function planDisplayName(name: string): string {
@@ -310,45 +313,8 @@ export function CustomerOverview() {
         </div>
       </div>
 
-      {/* Upcoming bookings */}
-      <section className="rounded-3xl bg-white p-6 shadow-[0_20px_60px_rgba(70,33,24,0.08)]">
-        <h3 className="text-xl font-black text-[var(--color-oxblood)]">Upcoming Bookings</h3>
-        {upcoming.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {upcoming.map((booking) => (
-              <li
-                key={booking.id}
-                className="rounded-2xl border border-[var(--color-oxblood)]/10 bg-[var(--color-warm-cream)] p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-[var(--color-charcoal)]">
-                      {mealList(booking)}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
-                      {formatDate(booking.scheduledDate)} · {booking.timeSlot}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[var(--color-bone)] px-3 py-1 text-xs font-bold text-[var(--color-oxblood)]">
-                    {STATUS_LABEL[booking.status]}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-[var(--color-charcoal)]/50">
-                  Ref {booking.reference}
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm text-[var(--color-charcoal)]/70">
-            No upcoming bookings.{" "}
-            <Link href="/" className="font-semibold text-[var(--color-oxblood)] hover:underline">
-              Book a cook
-            </Link>{" "}
-            to get started.
-          </p>
-        )}
-      </section>
+      {/* Full order details, ingredient links and PDF download are shared with My Bookings. */}
+      <CustomerBookings />
     </div>
   );
 }

@@ -10,6 +10,8 @@ const api = vi.hoisted(() => ({
 const client = vi.hoisted(() => ({
   fetchCustomerBookings: vi.fn(),
   fetchCustomerSubscription: vi.fn(),
+  modifyCustomerBooking: vi.fn(),
+  downloadCustomerIngredientsPdf: vi.fn(),
 }));
 
 vi.mock("@/features/platform/api/platformClient", async () => {
@@ -24,6 +26,9 @@ vi.mock("@/features/platform/api/platformClient", async () => {
 });
 
 vi.mock("@/features/customer/api/customerBookingsClient", () => client);
+vi.mock("@/features/order-flow/api/availabilityClient", () => ({
+  fetchAvailabilityForDate: vi.fn(),
+}));
 
 const rhythmSubscription = {
   planId: "rhythm",

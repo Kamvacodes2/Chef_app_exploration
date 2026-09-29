@@ -15,6 +15,7 @@ import {
 } from "@/features/order-flow/api/availabilityClient";
 import { IconMessageCircle } from "@/components/ui/icons";
 import { ChatPanel } from "@/features/chat/ChatPanel";
+import { CustomerOrderItems } from "@/features/customer/CustomerOrderItems";
 
 const OPEN_STATUSES: readonly CustomerBookingStatus[] = [
   "REQUESTED",
@@ -84,9 +85,11 @@ function formatDate(isoDate: string): string {
 }
 
 function mealList(booking: CustomerBooking): string {
-  return booking.meals.length > 0
-    ? booking.meals.map((meal) => meal.name).join(", ")
-    : booking.mainMeal.name;
+  const items =
+    booking.orderItems.length > 0
+      ? booking.orderItems.map((item) => item.name)
+      : booking.meals.map((meal) => meal.name);
+  return [...new Set(items)].join(", ") || booking.mainMeal.name;
 }
 
 function EditOrderModal({
@@ -488,6 +491,7 @@ function BookingCard({
           <p className="mt-1 text-sm text-[var(--color-charcoal)]/70">
             {formatDate(booking.scheduledDate)} · {booking.timeSlot}
           </p>
+          <CustomerOrderItems bookingId={booking.id} items={booking.orderItems} />
           {booking.customRequest ? (
             <p className="mt-1 text-xs italic text-[var(--color-charcoal)]/60 bg-[var(--color-warm-cream)]/50 p-1.5 rounded-lg">
               Note: {booking.customRequest}
