@@ -2,6 +2,28 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { AdminCalendarPage } from "@/features/platform/AdminCalendarPage";
 
+function currentLocalDate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function addDays(date: string, days: number): string {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + days);
+  return currentLocalDateFrom(value);
+}
+
+function currentLocalDateFrom(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+const today = currentLocalDate();
+const tomorrow = addDays(today, 1);
+
 const mockBookingsResponse = {
   data: {
     items: [
@@ -14,7 +36,7 @@ const mockBookingsResponse = {
         mainMealSlug: "lamb-curry-and-dombolo",
         mainName: "Lamb curry and dombolo",
         customRequest: "No dairy please",
-        scheduledDate: "2026-09-15",
+        scheduledDate: today,
         timeSlot: "17:00",
         estate: null,
         unit: "Apt 4B",
@@ -41,6 +63,54 @@ const mockBookingsResponse = {
         },
       },
       {
+        id: "b-unpaid",
+        reference: "CM-UNPAID-01",
+        status: "REQUESTED",
+        type: "STANDARD",
+        customerId: "cust-unpaid",
+        mainMealSlug: "beef-stew",
+        mainName: "Unpaid stew",
+        customRequest: null,
+        scheduledDate: tomorrow,
+        timeSlot: "13:00",
+        estate: null,
+        unit: null,
+        street: "1 Test Road",
+        serviceArea: "Rosebank",
+        contactName: "Unpaid Customer",
+        contactEmail: "unpaid@example.com",
+        contactPhone: "+27839876543",
+        goalId: null,
+        createdAt: "2026-09-14T08:00:00.000Z",
+        cook: null,
+        alignedChefs: [],
+        payment: { id: "pay-pending", status: "PENDING", method: "PAYSTACK", amountCents: 65000 },
+      },
+      {
+        id: "b-missing-payment",
+        reference: "CM-MISSING-PAY-01",
+        status: "REQUESTED",
+        type: "STANDARD",
+        customerId: "cust-missing",
+        mainMealSlug: "beef-stew",
+        mainName: "Uninitialized stew",
+        customRequest: null,
+        scheduledDate: tomorrow,
+        timeSlot: "14:00",
+        estate: null,
+        unit: null,
+        street: "2 Test Road",
+        serviceArea: "Rosebank",
+        contactName: "No Payment Customer",
+        contactEmail: "missing@example.com",
+        contactPhone: "+27839876543",
+        goalId: null,
+        createdAt: "2026-09-14T08:00:00.000Z",
+        cook: null,
+        alignedChefs: [],
+        payment: null,
+      },
+      {
         id: "b-2",
         reference: "CM00540",
         status: "AWAITING_CHEF",
@@ -49,7 +119,7 @@ const mockBookingsResponse = {
         mainMealSlug: "beef-stew",
         mainName: "Beef stew and dombolo",
         customRequest: null,
-        scheduledDate: "2026-09-16",
+        scheduledDate: today,
         timeSlot: "12:00",
         estate: "Green Valley",
         unit: null,
@@ -145,6 +215,18 @@ describe("AdminCalendarPage Integration", () => {
     expect(screen.getByText("← Table View")).toBeInTheDocument();
     expect(screen.getByText("Time Grid")).toBeInTheDocument();
     expect(screen.getByText("Day Columns")).toBeInTheDocument();
+  });
+
+  it("keeps unpaid and missing-payment bookings out of the calendar and its totals", async () => {
+    render(<AdminCalendarPage />);
+    await waitFor(() => {
+      expect(screen.queryByText("Loading calendar bookings...")).not.toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Unpaid stew")).not.toBeInTheDocument();
+    expect(screen.queryByText("Uninitialized stew")).not.toBeInTheDocument();
+    expect(screen.queryByText("CM-UNPAID-01")).not.toBeInTheDocument();
+    expect(screen.queryByText("CM-MISSING-PAY-01")).not.toBeInTheDocument();
   });
 
   it("renders week navigation controls and allows switching views", async () => {

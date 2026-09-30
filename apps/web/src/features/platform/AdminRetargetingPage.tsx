@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchRetargetableBookings,
   sendRetargetEmail,
+  rescheduleAdminBooking,
+  sendPaymentReminder,
   type RetargetableBooking,
 } from "./api/platformClient";
 
@@ -53,6 +55,7 @@ export function AdminRetargetingPage() {
   const [promoSummary, setPromoSummary] = useState("");
   const [sendBusy, setSendBusy] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -137,13 +140,87 @@ export function AdminRetargetingPage() {
               : ""}
           </p>
         </div>
-        <button
-          className="inline-flex min-h-10 items-center rounded-xl bg-[var(--color-oxblood)] px-4 text-xs font-bold text-white transition hover:opacity-90"
-          onClick={() => openComposer(booking)}
-          type="button"
-        >
-          {booking.retargetEmailSentAt ? "Send again" : "Send promo email"}
-        </button>
+        {booking.isTestBooking ? null : (
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="inline-flex min-h-10 items-center rounded-xl border border-[var(--color-oxblood)]/30 px-3 text-xs font-bold text-[var(--color-oxblood)] transition hover:bg-[var(--color-warm-cream)] disabled:opacity-60"
+              disabled={rescheduleId === booking.bookingId}
+              onClick={() => {
+                const scheduledDate = window.prompt(
+                  `New session date for ${booking.reference} (YYYY-MM-DD):`,
+                  booking.scheduledDate,
+                );
+                if (!scheduledDate) return;
+                const timeSlot = window.prompt(
+                  `Session time for ${booking.reference} (HH:MM):`,
+                  booking.timeSlot,
+                );
+                if (
+                  !timeSlot ||
+                  !window.confirm(
+                    `Reschedule ${booking.reference} to ${scheduledDate} at ${timeSlot}?`,
+                  )
+                )
+                  return;
+                setRescheduleId(booking.bookingId);
+                void rescheduleAdminBooking(booking.bookingId, {
+                  scheduledDate,
+                  timeSlot,
+                  reason: "Rescheduled by admin at customer request",
+                })
+                  .then(() => {
+                    setNotice(
+                      `${booking.reference} rescheduled to ${scheduledDate} at ${timeSlot}.`,
+                    );
+                    return load();
+                  })
+                  .catch((caught: unknown) => {
+                    setError(
+                      caught instanceof Error ? caught.message : "Failed to reschedule booking",
+                    );
+                  })
+                  .finally(() => setRescheduleId(null));
+              }}
+              type="button"
+            >
+              Change date/time
+            </button>
+            <button
+              className="inline-flex min-h-10 items-center rounded-xl border border-amber-700/30 px-3 text-xs font-bold text-amber-900 transition hover:bg-amber-50"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    `Queue a payment reminder for ${booking.reference}? A Paystack order will include a secure payment link.`,
+                  )
+                )
+                  return;
+                void sendPaymentReminder(booking.bookingId)
+                  .then((result) => {
+                    setNotice(
+                      result.authorizationUrl
+                        ? `Paystack payment link reminder queued for ${booking.reference}.`
+                        : `Payment reminder queued for ${booking.reference}.`,
+                    );
+                  })
+                  .catch((caught: unknown) => {
+                    setError(
+                      caught instanceof Error ? caught.message : "Failed to queue payment reminder",
+                    );
+                  });
+              }}
+              type="button"
+            >
+              Send payment link
+            </button>
+            <button
+              className="inline-flex min-h-10 items-center rounded-xl bg-[var(--color-oxblood)] px-4 text-xs font-bold text-white transition hover:opacity-90"
+              onClick={() => openComposer(booking)}
+              type="button"
+            >
+              {booking.retargetEmailSentAt ? "Send again" : "Send promo email"}
+            </button>
+          </div>
+        )}
       </div>
     </li>
   );
@@ -155,9 +232,9 @@ export function AdminRetargetingPage() {
           <div>
             <h2 className="text-2xl font-black text-[var(--color-oxblood)]">Retargeting</h2>
             <p className="mt-1 max-w-2xl text-sm text-[var(--color-charcoal)]/70">
-              Customers who placed an order but never completed payment. Send a personalized
-              win-back email at your discretion — optionally with an active promo code. Payment
-              status refreshes as customers pay; cancelled bookings never appear here.
+              Customers who placed an order but never completed payment. Change a session date, send
+              a secure Paystack payment link when available, or send a personalized win-back email.
+              Payment status refreshes as customers pay; cancelled bookings never appear here.
             </p>
           </div>
           <button

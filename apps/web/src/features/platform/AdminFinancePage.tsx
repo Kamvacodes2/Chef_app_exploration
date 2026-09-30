@@ -127,7 +127,7 @@ export function AdminFinancePage() {
               Finance & Chef Payouts
             </h2>
             <p className="mt-1 text-xs text-[var(--color-charcoal)]/70 sm:text-sm">
-              Weekly Monday payouts ledger, customer collections, and platform revenue.
+              Lifetime verified collections, unpaid order value, and platform revenue.
             </p>
           </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-3.5 py-1 text-xs font-bold text-emerald-900">
@@ -148,17 +148,17 @@ export function AdminFinancePage() {
               valueColor="text-emerald-700"
             />
             <StatCard
-              label="Customer Collections"
+              label="Customer Collections (Lifetime)"
               value={formatZar(summary.customerCollectedCents)}
               valueColor="text-[var(--color-oxblood)]"
             />
             <StatCard
-              label="Pending Collections"
-              value={formatZar(summary.customerOutstandingCents)}
+              label="Unpaid Orders Value"
+              value={formatZar(summary.unpaidOrderValueCents)}
             />
             <div className="col-span-2 sm:col-span-1">
               <StatCard
-                label="Platform Revenue"
+                label="Platform Revenue (Lifetime)"
                 value={formatZar(summary.platformRevenueCents)}
                 valueColor="text-emerald-800"
               />

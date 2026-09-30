@@ -57,6 +57,18 @@ const cancelledBooking = operationsBooking({
   status: "CANCELLED",
   cook: null,
 });
+const unpaidBooking = operationsBooking({
+  id: "b-4",
+  reference: "CM00627",
+  status: "REQUESTED",
+  payment: { id: "pay-4", status: "PENDING", method: "PAYSTACK", amountCents: 52785 },
+});
+const noPaymentBooking = operationsBooking({
+  id: "b-5",
+  reference: "CM00628",
+  status: "NEEDS_REVIEW",
+  payment: null,
+});
 
 const resendResponse = {
   data: {
@@ -82,7 +94,15 @@ describe("Admin bookings page", () => {
           ok: true,
           status: 200,
           json: async () => ({
-            data: { items: [awaitingChefBooking, assignedBooking, cancelledBooking] },
+            data: {
+              items: [
+                awaitingChefBooking,
+                assignedBooking,
+                cancelledBooking,
+                unpaidBooking,
+                noPaymentBooking,
+              ],
+            },
           }),
         };
       }
@@ -139,8 +159,10 @@ describe("Admin bookings page", () => {
       expect(screen.getByText("CM00625")).toBeInTheDocument();
     });
 
-    // Default "All Bookings" tab excludes cancelled orders entirely.
+    // Default Bookings excludes cancelled orders and unpaid orders managed in Retargeting.
     expect(screen.queryByText("CM00626")).not.toBeInTheDocument();
+    expect(screen.queryByText("CM00627")).not.toBeInTheDocument();
+    expect(screen.queryByText("CM00628")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /All Bookings \(2\)/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancelled \(1\)/ })).toBeInTheDocument();
 

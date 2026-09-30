@@ -593,7 +593,7 @@ describe("platform pages", () => {
 
     render(<AdminDashboardPage />);
 
-    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+    await expect(screen.findByText(/Platform revenue/i)).resolves.toBeInTheDocument();
     expect(screen.getAllByText("Nomsa Dlamini").length).toBeGreaterThan(0);
 
     // Send portal access now opens a confirmation dialog first.
@@ -643,7 +643,7 @@ describe("platform pages", () => {
 
     render(<AdminDashboardPage />);
 
-    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+    await expect(screen.findByText(/Platform revenue/i)).resolves.toBeInTheDocument();
 
     // Approve now opens a confirmation dialog instead of firing immediately.
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
@@ -706,7 +706,7 @@ describe("platform pages", () => {
 
     render(<AdminDashboardPage />);
 
-    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+    await expect(screen.findByText(/Platform revenue/i)).resolves.toBeInTheDocument();
 
     // Default section is the chef applications pipeline; nothing else is rendered.
     expect(screen.getByRole("heading", { name: "Chef applications pipeline" })).toBeInTheDocument();
@@ -731,7 +731,7 @@ describe("platform pages", () => {
     expect(screen.queryByRole("heading", { name: "Customers" })).not.toBeInTheDocument();
 
     // The metrics strip stays mounted no matter which section is active.
-    expect(screen.getByText("Platform revenue")).toBeInTheDocument();
+    expect(screen.getByText(/Platform revenue/i)).toBeInTheDocument();
     expect(screen.getByText("Comms queued/sent")).toBeInTheDocument();
 
     // The single upfront fetch is not repeated when switching sections.
@@ -760,7 +760,7 @@ describe("platform pages", () => {
     api.fetchPopularMeals.mockResolvedValue([]);
 
     render(<AdminDashboardPage />);
-    await expect(screen.findByText("Platform revenue")).resolves.toBeInTheDocument();
+    await expect(screen.findByText(/Platform revenue/i)).resolves.toBeInTheDocument();
 
     const tablist = screen.getByRole("tablist", { name: "Admin dashboard sections" });
     fireEvent.keyDown(tablist, { key: "ArrowRight" });

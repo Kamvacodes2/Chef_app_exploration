@@ -25,6 +25,8 @@ import {
   markChefEnRoute,
   platformRoleSchema,
   resendBookingOffers,
+  rescheduleAdminBooking,
+  sendPaymentReminder,
   submitChefApplication,
   updateChefApplication,
   updateChefApplicationVerification,
@@ -720,7 +722,7 @@ describe("platformClient", () => {
   it("fetches finance summary and pending chef payouts", async () => {
     const financeSummaryData = {
       customerCollectedCents: 500000,
-      customerOutstandingCents: 0,
+      unpaidOrderValueCents: 0,
       chefPayableCents: 150000,
       chefPaidCents: 350000,
       platformRevenueCents: 150000,
@@ -760,6 +762,68 @@ describe("platformClient", () => {
     await expect(
       fetchPendingChefPayouts({ baseUrl: "http://api.test", fetchImpl: fetchPayoutsImpl }),
     ).resolves.toEqual(pendingPayoutsData);
+  });
+
+  it("reschedules an admin booking and parses a payment-link reminder response", async () => {
+    const booking = {
+      id: "booking-1",
+      reference: "CM00665",
+      status: "REQUESTED",
+      type: "STANDARD",
+      customerId: null,
+      mainMealSlug: "winter-oxtail-stew",
+      mainName: "Winter Oxtail Stew",
+      customRequest: null,
+      scheduledDate: "2026-10-01",
+      timeSlot: "18:00",
+      estate: null,
+      unit: null,
+      street: "12 Jacaranda Avenue",
+      serviceArea: "Fourways",
+      contactName: "Customer",
+      contactEmail: "customer@example.com",
+      contactPhone: "+27821234567",
+      goalId: null,
+      createdAt: "2026-09-28T09:00:00.000Z",
+      cook: null,
+      alignedChefs: [],
+      payment: { id: "payment-1", status: "PENDING", method: "PAYSTACK", amountCents: 52785 },
+    };
+    const rescheduleFetch = mockFetch({ data: booking });
+    await expect(
+      rescheduleAdminBooking(
+        "booking-1",
+        {
+          scheduledDate: "2026-10-01",
+          timeSlot: "18:00",
+          reason: "Customer requested a date change",
+        },
+        { baseUrl: "http://api.test", fetchImpl: rescheduleFetch },
+      ),
+    ).resolves.toMatchObject({ scheduledDate: "2026-10-01", timeSlot: "18:00" });
+    expect(rescheduleFetch).toHaveBeenCalledWith(
+      "http://api.test/api/v1/operations/booking-requests/booking-1/reschedule",
+      expect.objectContaining({ method: "PATCH" }),
+    );
+
+    const reminderFetch = mockFetch({
+      data: {
+        bookingId: "booking-1",
+        queued: true,
+        authorizationUrl: "https://checkout.paystack.com/test",
+      },
+    });
+    await expect(
+      sendPaymentReminder("booking-1", { baseUrl: "http://api.test", fetchImpl: reminderFetch }),
+    ).resolves.toEqual({
+      bookingId: "booking-1",
+      queued: true,
+      authorizationUrl: "https://checkout.paystack.com/test",
+    });
+    expect(reminderFetch).toHaveBeenCalledWith(
+      "http://api.test/api/v1/operations/booking-requests/booking-1/payment-reminder",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("resends a booking's chef offers", async () => {

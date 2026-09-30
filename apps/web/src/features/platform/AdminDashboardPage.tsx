@@ -225,12 +225,12 @@ export function AdminDashboardPage() {
           <Metric label="Applications" value={dashboard?.chefApplicationsCount ?? 0} />
           <Metric label="Bookings this month" value={dashboard?.bookingsThisMonthCount ?? 0} />
           <Metric
-            label="Collected this month"
+            label="Collected this month (verified · UTC)"
             value={formatZar(dashboard?.collectedThisMonthCents ?? 0)}
           />
           <Metric label="Chef payable" value={formatZar(dashboard?.chefPayableCents ?? 0)} />
           <Metric
-            label="Platform revenue"
+            label="Platform revenue (lifetime)"
             value={formatZar(dashboard?.platformRevenueCents ?? 0)}
           />
           <Metric

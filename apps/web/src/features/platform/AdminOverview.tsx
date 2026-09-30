@@ -123,12 +123,13 @@ export function AdminOverview() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Collected This Month"
+          subtitle="Verified payments · UTC month to date"
           value={formatZar(dashboard?.collectedThisMonthCents ?? 0)}
           valueColor="text-emerald-700"
         />
         <StatCard label="Chef Payable" value={formatZar(dashboard?.chefPayableCents ?? 0)} />
         <StatCard
-          label="Platform Revenue"
+          label="Platform Revenue (Lifetime)"
           value={formatZar(dashboard?.platformRevenueCents ?? 0)}
           valueColor="text-[var(--color-oxblood)]"
         />
