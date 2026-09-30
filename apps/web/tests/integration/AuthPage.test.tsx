@@ -7,7 +7,18 @@ const authApi = vi.hoisted(() => ({
   signIn: vi.fn(),
 }));
 
+const navigation = vi.hoisted(() => ({
+  replace: vi.fn(),
+}));
+
 vi.mock("@/features/auth/api/authClient", () => authApi);
+
+// AuthPage reads ?next= and navigates after sign-in via the app router; these
+// hooks only work inside the Next.js runtime, so provide a test double.
+vi.mock("next/navigation", () => ({
+  useRouter: () => navigation,
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const customer = {
   id: "customer-1",
