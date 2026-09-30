@@ -12,7 +12,7 @@ import {
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { IconCalendar, IconCheck, IconSearch, IconSparkles } from "@/components/ui/icons";
 
-type FilterTab = "all" | "unassigned" | "awaiting_chef" | "assigned" | "completed";
+type FilterTab = "all" | "unassigned" | "awaiting_chef" | "assigned" | "completed" | "cancelled";
 
 export default function Page() {
   const [bookings, setBookings] = useState<OperationsBooking[]>([]);
@@ -116,6 +116,11 @@ export default function Page() {
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
+      // Cancelled bookings never happened — keep them out of the default view
+      // and surface them only under the explicit Cancelled audit tab.
+      const isCancelled = b.status === "CANCELLED";
+      if (isCancelled && filterTab !== "cancelled") return false;
+      if (filterTab === "cancelled") return isCancelled;
       if (filterTab === "unassigned") {
         if (b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
         if (
@@ -138,7 +143,7 @@ export default function Page() {
       } else if (filterTab === "assigned") {
         if (!b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
       } else if (filterTab === "completed") {
-        if (b.status !== "COMPLETED" && b.status !== "CANCELLED") return false;
+        if (b.status !== "COMPLETED") return false;
       }
 
       if (searchQuery.trim()) {
@@ -225,7 +230,7 @@ export default function Page() {
                 : "bg-white text-[var(--color-charcoal)]/70 hover:bg-[var(--color-warm-cream)]"
             }`}
           >
-            All Bookings ({bookings.length})
+            All Bookings ({bookings.filter((b) => b.status !== "CANCELLED").length})
           </button>
           <button
             type="button"
@@ -278,7 +283,18 @@ export default function Page() {
                 : "bg-white text-[var(--color-charcoal)]/70 hover:bg-[var(--color-warm-cream)]"
             }`}
           >
-            Completed / Cancelled
+            Completed
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab("cancelled")}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors ${
+              filterTab === "cancelled"
+                ? "bg-[var(--color-oxblood)] text-white"
+                : "bg-white text-[var(--color-charcoal)]/70 hover:bg-[var(--color-warm-cream)]"
+            }`}
+          >
+            Cancelled ({bookings.filter((b) => b.status === "CANCELLED").length})
           </button>
         </div>
 

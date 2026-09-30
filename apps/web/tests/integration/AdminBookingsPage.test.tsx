@@ -51,6 +51,12 @@ const assignedBooking = operationsBooking({
     roles: ["CHEF"],
   },
 });
+const cancelledBooking = operationsBooking({
+  id: "b-3",
+  reference: "CM00626",
+  status: "CANCELLED",
+  cook: null,
+});
 
 const resendResponse = {
   data: {
@@ -75,7 +81,9 @@ describe("Admin bookings page", () => {
         return {
           ok: true,
           status: 200,
-          json: async () => ({ data: { items: [awaitingChefBooking, assignedBooking] } }),
+          json: async () => ({
+            data: { items: [awaitingChefBooking, assignedBooking, cancelledBooking] },
+          }),
         };
       }
       return { ok: true, status: 200, json: async () => ({ data: {} }) };
@@ -122,6 +130,24 @@ describe("Admin bookings page", () => {
         call[0].toString().includes("/api/v1/operations/booking-requests"),
       ).length,
     ).toBeGreaterThan(1);
+  });
+
+  it("keeps cancelled bookings out of the default view and under the Cancelled tab", async () => {
+    render(<Page />);
+
+    await waitFor(() => {
+      expect(screen.getByText("CM00625")).toBeInTheDocument();
+    });
+
+    // Default "All Bookings" tab excludes cancelled orders entirely.
+    expect(screen.queryByText("CM00626")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /All Bookings \(2\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancelled \(1\)/ })).toBeInTheDocument();
+
+    // They remain visible under the explicit Cancelled audit tab.
+    fireEvent.click(screen.getByRole("button", { name: /Cancelled \(1\)/ }));
+    expect(screen.getByText("CM00626")).toBeInTheDocument();
+    expect(screen.queryByText("CM00625")).not.toBeInTheDocument();
   });
 
   it("does not resend when the admin backs out of the confirmation", async () => {
