@@ -1546,6 +1546,71 @@ export async function fetchFinanceSummary(
   });
 }
 
+const retargetableBookingSchema = z.object({
+  bookingId: z.string().min(1),
+  reference: z.string().min(1),
+  status: z.string(),
+  bookingType: z.string(),
+  mainName: z.string(),
+  scheduledDate: z.string(),
+  timeSlot: z.string(),
+  totalCents: z.number().int(),
+  contactName: z.string().nullable(),
+  contactEmail: z.string(),
+  paymentStatus: z.string().nullable(),
+  isTestBooking: z.boolean(),
+  retargetEmailSentAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export type RetargetableBooking = z.infer<typeof retargetableBookingSchema>;
+
+const retargetSendResultSchema = z.object({
+  booking: retargetableBookingSchema,
+});
+
+export type RetargetSendResult = z.infer<typeof retargetSendResultSchema>;
+
+export interface SendRetargetEmailInput {
+  readonly bookingId: string;
+  readonly subject?: string;
+  readonly greeting?: string;
+  readonly message: string;
+  readonly promoCode?: string;
+  readonly promoSummary?: string;
+}
+
+export async function fetchRetargetableBookings(
+  options: PlatformRequestOptions = {},
+): Promise<readonly RetargetableBooking[]> {
+  return requestData({
+    path: "/api/v1/operations/retargeting",
+    method: "GET",
+    schema: itemsEnvelope(retargetableBookingSchema),
+    options,
+    select: (data) => data.items,
+  });
+}
+
+export async function sendRetargetEmail(
+  input: SendRetargetEmailInput,
+  options: PlatformRequestOptions = {},
+): Promise<RetargetSendResult> {
+  return requestData({
+    path: `/api/v1/operations/retargeting/${encodeURIComponent(input.bookingId)}/email`,
+    method: "POST",
+    body: {
+      message: input.message,
+      ...(input.subject ? { subject: input.subject } : {}),
+      ...(input.greeting ? { greeting: input.greeting } : {}),
+      ...(input.promoCode ? { promoCode: input.promoCode } : {}),
+      ...(input.promoSummary ? { promoSummary: input.promoSummary } : {}),
+    },
+    schema: envelope(retargetSendResultSchema),
+    options,
+  });
+}
+
 export async function fetchPendingChefPayouts(
   options: PlatformRequestOptions = {},
 ): Promise<readonly PendingChefPayout[]> {
