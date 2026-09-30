@@ -249,6 +249,10 @@ export function AdminCalendarPage() {
   // Filter bookings
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
+      // Cancelled bookings never happened — keep them out of the default view
+      // and surface them only when explicitly filtered.
+      if (b.status === "CANCELLED" && statusFilter !== "cancelled") return false;
+
       // Chef filter
       if (selectedChefId === "unassigned") {
         if (b.cook) return false;
