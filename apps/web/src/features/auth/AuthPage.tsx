@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { createCustomerAccount, signIn, type AuthenticatedUser } from "./api/authClient";
 import { useAuth } from "./AuthContext";
+import { isSafeInternalPath } from "@/lib/safePath";
 
 type AuthMode = "login" | "register";
 
 export function AuthPage() {
   const { refresh } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<AuthMode>("login");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +25,12 @@ export function AuthPage() {
   const [acceptMarketing, setAcceptMarketing] = useState(false);
 
   const isRegistering = mode === "register";
+
+  // When the customer was bounced here from a protected page
+  // (/login?next=/customer/dashboard), send them back after signing in. The
+  // value is validated against open-redirect tricks before use.
+  const rawNext = searchParams.get("next");
+  const nextPath = isSafeInternalPath(rawNext) ? rawNext : null;
 
   const switchMode = (nextMode: AuthMode): void => {
     setMode(nextMode);
@@ -47,6 +57,14 @@ export function AuthPage() {
       // Sync into the global auth context so the site header reflects the
       // sign-in immediately—no page refresh needed before navigating.
       void refresh();
+      // Continue to the page that triggered the sign-in, when we came from a
+      // protected route and the signed-in account can actually use it.
+      if (
+        nextPath &&
+        postLoginTargetRoles(nextPath).some((role) => authenticatedUser.roles.includes(role))
+      ) {
+        router.replace(nextPath);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Chefmate could not sign you in.");
     } finally {
@@ -111,7 +129,7 @@ export function AuthPage() {
                 Signed in as {user.displayName}.
               </p>
               <div className="flex flex-wrap gap-3">
-                {postLoginLinks(user.roles).map((link) => (
+                {postLoginLinks(user.roles, nextPath).map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -288,7 +306,18 @@ interface PostLoginLink {
   readonly label: string;
 }
 
-function postLoginLinks(roles: AuthenticatedUser["roles"]): readonly PostLoginLink[] {
+/** Roles that may open an internal path used as a post-login `next` target. */
+function postLoginTargetRoles(path: string): AuthenticatedUser["roles"] {
+  if (path.startsWith("/admin")) return ["ADMIN", "SUPPORT"];
+  if (path.startsWith("/chef")) return ["CHEF"];
+  if (path.startsWith("/customer")) return ["CUSTOMER"];
+  return [];
+}
+
+function postLoginLinks(
+  roles: AuthenticatedUser["roles"],
+  nextPath: string | null,
+): readonly PostLoginLink[] {
   const links: PostLoginLink[] = [];
 
   if (roles.includes("ADMIN") || roles.includes("SUPPORT")) {
@@ -300,7 +329,13 @@ function postLoginLinks(roles: AuthenticatedUser["roles"]): readonly PostLoginLi
   }
 
   if (roles.includes("CUSTOMER")) {
-    links.push({ href: "/customer/dashboard", label: "Go to customer dashboard" });
+    // A customer bounced from a protected /customer page continues there;
+    // anything else falls back to the plain dashboard.
+    const target =
+      nextPath && postLoginTargetRoles(nextPath).includes("CUSTOMER")
+        ? nextPath
+        : "/customer/dashboard";
+    links.push({ href: target, label: "Go to customer dashboard" });
   }
 
   if (links.length === 0) {
