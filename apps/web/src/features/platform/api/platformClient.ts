@@ -1566,6 +1566,17 @@ export async function fetchFinanceSummary(
   });
 }
 
+const trackedEmailEngagementSchema = z.object({
+  status: z.enum(["PENDING", "PROCESSING", "SENT", "FAILED"]),
+  sentAt: z.string().nullable(),
+  lastError: z.string().nullable(),
+  attempts: z.number().int(),
+  openedAt: z.string().nullable(),
+  openCount: z.number().int(),
+  clickedAt: z.string().nullable(),
+  clickCount: z.number().int(),
+});
+
 const retargetableBookingSchema = z.object({
   bookingId: z.string().min(1),
   reference: z.string().min(1),
@@ -1579,7 +1590,8 @@ const retargetableBookingSchema = z.object({
   contactEmail: z.string(),
   paymentStatus: z.string().nullable(),
   isTestBooking: z.boolean(),
-  retargetEmailSentAt: z.string().nullable(),
+  retargetEmail: trackedEmailEngagementSchema.nullable(),
+  paymentReminder: trackedEmailEngagementSchema.nullable(),
   createdAt: z.string(),
 });
 
