@@ -1,9 +1,9 @@
 name: Merge gate
 
-# This is the single check to require in branch protection for main. It runs the
-# complete local/CI pipeline, including the anti-silent-skip preflight, so a PR
-# cannot merge when any required Git test, typecheck, build, browser, security,
-# database, or accessibility suite fails.
+# This is the single check to require in branch protection for main. The named
+# child workflows run the same existing gates as the standalone main/scheduled
+# workflows, in parallel. The final job stays named "All checks" and fails
+# closed if any child gate fails or is skipped.
 on:
   pull_request:
   workflow_dispatch:
@@ -15,46 +15,92 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  CI: true
-  DEPLOY_ENV: ci
-  POSTGRES_USER: chefmate_ci
-  POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
-  POSTGRES_DB: chefmate_ci
-  DATABASE_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/chefmate_ci
-  CHEFMATE_TEST_PG_URL: postgresql://chefmate_ci:CHANGE_ME_CI_ONLY@127.0.0.1:5432/postgres
-  KMS_LOCAL_DEV_KEY: ci-only-not-a-real-key-value
-  NEXT_PUBLIC_CHEFMATE_API_URL: http://127.0.0.1:4000
-
 jobs:
+  quality:
+    name: Quality
+    uses: ./.github/workflows/quality.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  security:
+    name: Security tests
+    uses: ./.github/workflows/security.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  dependency-audit:
+    name: Production dependency audit
+    uses: ./.github/workflows/dependency-audit.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  coverage:
+    name: Coverage
+    uses: ./.github/workflows/coverage.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  build:
+    name: Production build
+    uses: ./.github/workflows/build.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  playwright:
+    name: Playwright E2E
+    uses: ./.github/workflows/playwright.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
+  accessibility:
+    name: Accessibility
+    uses: ./.github/workflows/a11y.yml
+    with:
+      concurrency_suffix: merge-gate
+    permissions:
+      contents: read
+
   all-checks:
     name: All checks
+    if: ${{ always() }}
+    needs:
+      - quality
+      - security
+      - dependency-audit
+      - coverage
+      - build
+      - playwright
+      - accessibility
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: chefmate_ci
-          POSTGRES_PASSWORD: CHANGE_ME_CI_ONLY
-          POSTGRES_DB: chefmate_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U chefmate_ci -d chefmate_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Node and pnpm
-        uses: ./.github/actions/setup-node-pnpm
-
-      - name: Install Playwright browsers
-        uses: ./.github/actions/setup-playwright
-
-      - name: Run complete merge gate
-        run: pnpm test:ci
+      - name: Require every CI gate to pass
+        env:
+          QUALITY: ${{ needs.quality.result }}
+          SECURITY: ${{ needs.security.result }}
+          DEPENDENCY_AUDIT: ${{ needs.dependency-audit.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+          BUILD: ${{ needs.build.result }}
+          PLAYWRIGHT: ${{ needs.playwright.result }}
+          ACCESSIBILITY: ${{ needs.accessibility.result }}
+        run: |
+          set -euo pipefail
+          printf 'Quality: %s\nSecurity tests: %s\nDependency audit: %s\nCoverage: %s\nBuild: %s\nPlaywright E2E: %s\nAccessibility: %s\n' \
+            "$QUALITY" "$SECURITY" "$DEPENDENCY_AUDIT" "$COVERAGE" "$BUILD" "$PLAYWRIGHT" "$ACCESSIBILITY"
+          for result in "$QUALITY" "$SECURITY" "$DEPENDENCY_AUDIT" "$COVERAGE" "$BUILD" "$PLAYWRIGHT" "$ACCESSIBILITY"; do
+            if [ "$result" != "success" ]; then
+              echo "::error::A required CI gate did not succeed; refusing to pass All checks."
+              exit 1
+            fi
+          done

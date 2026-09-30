@@ -5,9 +5,10 @@ import Link from "next/link";
 import {
   fetchOperationsBookings,
   resendBookingOffers,
+  type OperationsBooking,
   sendPaymentReminder,
   verifyBookingPayment,
-  type OperationsBooking,
+  rescheduleAdminBooking,
 } from "@/features/platform/api/platformClient";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { IconCalendar, IconCheck, IconSearch, IconSparkles } from "@/components/ui/icons";
@@ -66,7 +67,7 @@ export default function Page() {
   async function handleSendPaymentReminder(booking: OperationsBooking) {
     if (
       !window.confirm(
-        `Send a payment/proof-of-payment reminder to ${booking.contactName ?? "the customer"} for ${booking.reference}?`,
+        `Send a payment reminder to ${booking.contactName ?? "the customer"} for ${booking.reference}? If this is a Paystack order, the secure checkout link will be included.`,
       )
     ) {
       return;
@@ -74,12 +75,54 @@ export default function Page() {
     setProcessingId(booking.id);
     setAlert(null);
     try {
-      await sendPaymentReminder(booking.id);
-      setAlert({ type: "success", message: `Payment reminder queued for ${booking.reference}.` });
+      const reminder = await sendPaymentReminder(booking.id);
+      setAlert({
+        type: "success",
+        message: reminder.authorizationUrl
+          ? `Paystack reminder with checkout link queued for ${booking.reference}.`
+          : `Payment reminder queued for ${booking.reference}.`,
+      });
     } catch (err) {
       setAlert({
         type: "error",
         message: err instanceof Error ? err.message : "Failed to send payment reminder.",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleReschedule(booking: OperationsBooking) {
+    const scheduledDate = window.prompt(
+      `New session date for ${booking.reference} (YYYY-MM-DD):`,
+      booking.scheduledDate.slice(0, 10),
+    );
+    if (!scheduledDate) return;
+    const timeSlot = window.prompt(
+      `Session time for ${booking.reference} (HH:MM):`,
+      booking.timeSlot,
+    );
+    if (!timeSlot) return;
+    if (!window.confirm(`Reschedule ${booking.reference} to ${scheduledDate} at ${timeSlot}?`))
+      return;
+
+    setProcessingId(booking.id);
+    setAlert(null);
+    try {
+      await rescheduleAdminBooking(booking.id, {
+        scheduledDate,
+        timeSlot,
+        reason: "Rescheduled by admin at customer request",
+      });
+      setAlert({
+        type: "success",
+        message: `${booking.reference} rescheduled to ${scheduledDate} at ${timeSlot}.`,
+      });
+      await loadBookings();
+    } catch (err) {
+      setAlert({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to reschedule booking.",
       });
     } finally {
       setProcessingId(null);
@@ -121,14 +164,11 @@ export default function Page() {
       const isCancelled = b.status === "CANCELLED";
       if (isCancelled && filterTab !== "cancelled") return false;
       if (filterTab === "cancelled") return isCancelled;
+      // Unpaid and unverified orders are managed from Retargeting, not Bookings.
+      if (b.payment?.status !== "VERIFIED") return false;
       if (filterTab === "unassigned") {
-        if (b.cook || b.status === "CANCELLED" || b.status === "COMPLETED") return false;
-        if (
-          b.payment?.status === "VERIFIED" &&
-          b.status !== "REQUESTED" &&
-          b.status !== "NEEDS_REVIEW"
-        )
-          return false;
+        if (b.cook || b.status === "COMPLETED") return false;
+        if (b.status !== "REQUESTED" && b.status !== "NEEDS_REVIEW") return false;
       } else if (filterTab === "awaiting_chef") {
         if (
           b.status !== "AWAITING_CHEF" &&
@@ -167,11 +207,10 @@ export default function Page() {
     return bookings.filter(
       (b) =>
         !b.cook &&
+        b.payment?.status === "VERIFIED" &&
         b.status !== "CANCELLED" &&
         b.status !== "COMPLETED" &&
-        (b.payment?.status !== "VERIFIED" ||
-          b.status === "REQUESTED" ||
-          b.status === "NEEDS_REVIEW"),
+        (b.status === "REQUESTED" || b.status === "NEEDS_REVIEW"),
     ).length;
   }, [bookings]);
 
@@ -181,7 +220,7 @@ export default function Page() {
         <div>
           <h1 className="text-2xl font-black text-[var(--color-oxblood)]">Bookings</h1>
           <p className="mt-1 text-sm text-[var(--color-charcoal)]/60">
-            Manage orders, approve unassigned requests, verify payments, and broadcast to chefs.
+            Manage paid orders and payment reviews; follow up with unpaid customers in Retargeting.
           </p>
         </div>
         <Link
@@ -230,7 +269,12 @@ export default function Page() {
                 : "bg-white text-[var(--color-charcoal)]/70 hover:bg-[var(--color-warm-cream)]"
             }`}
           >
-            All Bookings ({bookings.filter((b) => b.status !== "CANCELLED").length})
+            All Bookings (
+            {
+              bookings.filter((b) => b.status !== "CANCELLED" && b.payment?.status === "VERIFIED")
+                .length
+            }
+            )
           </button>
           <button
             type="button"
@@ -241,7 +285,7 @@ export default function Page() {
                 : "bg-amber-50 text-amber-900 hover:bg-amber-100"
             }`}
           >
-            <span>Needs Payment / Action</span>
+            <span>Paid Payment Review</span>
             {unassignedCount > 0 && (
               <span
                 className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
@@ -460,7 +504,7 @@ export default function Page() {
                             {processingId === b.id ? "Approving..." : "Mark as Paid"}
                           </button>
                         )}
-                        {canRemindPayment && (
+                        {!b.reference.toLowerCase().includes("test") && canRemindPayment && (
                           <button
                             type="button"
                             disabled={processingId === b.id}
@@ -468,6 +512,16 @@ export default function Page() {
                             className="rounded-xl border border-amber-600 px-2.5 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
                           >
                             {processingId === b.id ? "Sending..." : "Remind payment / proof"}
+                          </button>
+                        )}
+                        {!b.reference.toLowerCase().includes("test") && canRemindPayment && (
+                          <button
+                            type="button"
+                            disabled={processingId === b.id}
+                            onClick={() => void handleReschedule(b)}
+                            className="rounded-xl border border-[var(--color-oxblood)]/30 px-2.5 py-1 text-[11px] font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)] disabled:opacity-50"
+                          >
+                            Change date/time
                           </button>
                         )}
                         {canResendOffers && (

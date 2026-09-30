@@ -305,7 +305,7 @@ const chefBookingSchema = z.object({
 const chefOfferSchema = z.object({
   id: z.string().min(1),
   bookingRequestId: z.string().min(1),
-  chefUserId: z.string().min(1),
+  cookUserId: z.string().min(1),
   status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "WITHDRAWN"]),
   rank: z.number().int(),
   distanceKm: z.number().nullable(),
@@ -343,8 +343,8 @@ const chefEarningSchema = z.object({
   id: z.string().min(1),
   bookingRequestId: z.string().min(1),
   bookingReference: z.string().min(1),
-  chefUserId: z.string().min(1),
-  chefDisplayName: z.string().min(1),
+  cookUserId: z.string().min(1),
+  cookDisplayName: z.string().min(1),
   chefPayoutCents: z.number().int().nonnegative(),
   status: z.enum(["PENDING", "PAYABLE", "PAID", "CANCELLED"]),
   payoutReference: z.string().nullable(),
@@ -910,11 +910,31 @@ export async function fetchOperationsBookings(
 export async function sendPaymentReminder(
   bookingId: string,
   options: PlatformRequestOptions = {},
-): Promise<void> {
-  await requestData({
+): Promise<{ bookingId: string; queued: true; authorizationUrl: string | null }> {
+  return requestData({
     path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/payment-reminder`,
     method: "POST",
-    schema: envelope(z.object({ bookingId: z.string(), queued: z.literal(true) })),
+    schema: envelope(
+      z.object({
+        bookingId: z.string(),
+        queued: z.literal(true),
+        authorizationUrl: z.string().url().nullable(),
+      }),
+    ),
+    options,
+  });
+}
+
+export async function rescheduleAdminBooking(
+  bookingId: string,
+  input: { scheduledDate: string; timeSlot: string; reason: string },
+  options: PlatformRequestOptions = {},
+): Promise<OperationsBooking> {
+  return requestData({
+    path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/reschedule`,
+    method: "PATCH",
+    body: input,
+    schema: envelope(operationsBookingSchema),
     options,
   });
 }
@@ -1476,7 +1496,7 @@ export type ChefEarningsSummary = z.infer<typeof chefEarningsSummarySchema>;
 
 const financeSummarySchema = z.object({
   customerCollectedCents: z.number().int().nonnegative(),
-  customerOutstandingCents: z.number().int().nonnegative(),
+  unpaidOrderValueCents: z.number().int().nonnegative(),
   chefPayableCents: z.number().int().nonnegative(),
   chefPaidCents: z.number().int().nonnegative(),
   platformRevenueCents: z.number().int().nonnegative(),

@@ -251,6 +251,8 @@ export function AdminCalendarPage() {
     return bookings.filter((b) => {
       // Cancelled bookings never happened — keep them out of the default view
       // and surface them only when explicitly filtered.
+      // Unpaid and unverified orders belong in Retargeting, not the operations calendar.
+      if (b.payment?.status !== "VERIFIED") return false;
       if (b.status === "CANCELLED" && statusFilter !== "cancelled") return false;
 
       // Chef filter
@@ -268,8 +270,8 @@ export function AdminCalendarPage() {
       } else if (statusFilter === "awaiting_chef") {
         if (!["AWAITING_CHEF", "MATCHING"].includes(b.status)) return false;
       } else if (statusFilter === "needs_action") {
-        if (!["REQUESTED", "NEEDS_REVIEW"].includes(b.status) && b.payment?.status === "VERIFIED")
-          return false;
+        if (!["REQUESTED", "NEEDS_REVIEW"].includes(b.status)) return false;
+        if (b.payment?.status !== "VERIFIED") return false;
       } else if (statusFilter === "cancelled") {
         if (b.status !== "CANCELLED") return false;
       }
@@ -376,7 +378,7 @@ export function AdminCalendarPage() {
             </div>
             <h1 className="mt-2 text-2xl font-black sm:text-3xl">Weekly Chef Bookings Schedule</h1>
             <p className="mt-1 text-sm text-white/80">
-              Visual weekly board of all chef assignments, fulfilled orders, and scheduled services.
+              Visual weekly board of paid chef assignments, fulfilled orders, and payment reviews.
             </p>
           </div>
 

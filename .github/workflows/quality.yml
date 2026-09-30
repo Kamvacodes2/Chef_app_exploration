@@ -3,11 +3,17 @@ name: Quality
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_call:
+    inputs:
+      concurrency_suffix:
+        description: Unique caller suffix so parallel reusable gates cannot cancel one another
+        required: false
+        type: string
+        default: standalone
   workflow_dispatch:
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: quality-${{ inputs.concurrency_suffix || github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -45,6 +51,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-node-pnpm
+      - name: Verify every required test suite exists
+        run: pnpm test:ci:preflight
       - name: Apply migrations from empty
         run: pnpm db:migrate
       - name: Run deterministic quality gate

@@ -3,11 +3,17 @@ name: Playwright
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_call:
+    inputs:
+      concurrency_suffix:
+        description: Unique caller suffix so parallel reusable gates cannot cancel one another
+        required: false
+        type: string
+        default: standalone
   workflow_dispatch:
 
 concurrency:
-  group: playwright-${{ github.workflow }}-${{ github.ref }}
+  group: playwright-${{ inputs.concurrency_suffix || github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

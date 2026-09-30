@@ -38,6 +38,7 @@ const CI_TEST_SCRIPTS = [
   "test:db",
   "test:integration",
   "test:security",
+  "test:ci:preflight",
   "test:ci:security",
   "test:ci:dependency-audit",
   "test:coverage",
@@ -51,6 +52,17 @@ const CI_WORKFLOW_FILES = [
   ".github/workflows/build.yml",
   ".github/workflows/playwright.yml",
   ".github/workflows/a11y.yml",
+  ".github/workflows/merge-gate.yml",
+] as const;
+
+const REUSABLE_CI_WORKFLOWS = [
+  "quality.yml",
+  "security.yml",
+  "dependency-audit.yml",
+  "coverage.yml",
+  "build.yml",
+  "playwright.yml",
+  "a11y.yml",
 ] as const;
 
 interface Manifest {
@@ -140,6 +152,45 @@ describe("no Vitest UI or API server is ever started", () => {
     expect(workflows).not.toMatch(/run:\s*pnpm test:ci\s*$/m);
     expect(/run:\s*.*vitest/.test(workflows)).toBe(false);
     expect(workflows).not.toContain("--ui");
+  });
+
+  it("runs each existing PR gate once in parallel", () => {
+    const aggregator = readText(".github/workflows/merge-gate.yml");
+
+    for (const workflow of REUSABLE_CI_WORKFLOWS) {
+      const reusable = readText(`.github/workflows/${workflow}`);
+      expect(reusable).toContain("  workflow_call:");
+      expect(reusable).toContain("concurrency_suffix:");
+      expect(reusable).toContain("inputs.concurrency_suffix || github.workflow");
+      expect(reusable).not.toContain("  pull_request:");
+      expect(aggregator).toContain(`uses: ./.github/workflows/${workflow}`);
+      expect(aggregator).toContain("concurrency_suffix: merge-gate");
+    }
+
+    expect(aggregator).toContain("  all-checks:\n    name: All checks");
+    expect(aggregator).toContain("if: ${{ always() }}");
+    expect(aggregator).toContain("needs:");
+    for (const job of [
+      "quality",
+      "security",
+      "dependency-audit",
+      "coverage",
+      "build",
+      "playwright",
+      "accessibility",
+    ]) {
+      expect(aggregator).toContain(`- ${job}`);
+    }
+    expect(aggregator).toContain('if [ "$result" != "success" ]');
+    expect(aggregator).toContain("refusing to pass All checks");
+  });
+
+  it("keeps direct main-branch and manual triggers on every standalone CI gate", () => {
+    for (const workflow of REUSABLE_CI_WORKFLOWS) {
+      const text = readText(`.github/workflows/${workflow}`);
+      expect(text).toContain("  push:\n    branches: [main]");
+      expect(text).toContain("  workflow_dispatch:");
+    }
   });
 });
 
