@@ -77,6 +77,12 @@ export const ADMIN_NAV: readonly NavItem[] = [
     icon: <IconDollarSign width={18} height={18} />,
   },
   {
+    id: "retargeting",
+    label: "Retargeting",
+    path: "/admin/retargeting",
+    icon: <IconSparkles width={18} height={18} />,
+  },
+  {
     id: "discounts",
     label: "Discounts",
     path: "/admin/discount-campaigns",
