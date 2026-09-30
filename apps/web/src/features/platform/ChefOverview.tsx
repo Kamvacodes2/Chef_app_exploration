@@ -50,16 +50,29 @@ export function ChefOverview() {
     setBusy("load");
     setError(null);
     try {
-      const [p, o, b, s] = await Promise.all([
-        fetchChefProfile(),
-        fetchChefOffers(),
-        fetchChefBookings(),
-        fetchAvailableSessions(),
-      ]);
-      setProfile(p);
-      setOffers(o);
-      setBookings(b);
-      setSessions(s);
+      const [profileResult, offersResult, bookingsResult, sessionsResult] =
+        await Promise.allSettled([
+          fetchChefProfile(),
+          fetchChefOffers(),
+          fetchChefBookings(),
+          fetchAvailableSessions(),
+        ]);
+      if (profileResult.status === "fulfilled") setProfile(profileResult.value);
+      if (offersResult.status === "fulfilled") setOffers(offersResult.value);
+      if (bookingsResult.status === "fulfilled") setBookings(bookingsResult.value);
+      if (sessionsResult.status === "fulfilled") setSessions(sessionsResult.value);
+
+      const failureMessage = (name: string, result: PromiseSettledResult<unknown>) =>
+        result.status === "rejected"
+          ? `${name}: ${result.reason instanceof Error ? result.reason.message : "Load failed"}`
+          : null;
+      const failures = [
+        failureMessage("Profile", profileResult),
+        failureMessage("Offers", offersResult),
+        failureMessage("Bookings", bookingsResult),
+        failureMessage("Available sessions", sessionsResult),
+      ].filter((failure): failure is string => failure !== null);
+      if (failures.length > 0) setError(failures.join("; "));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Load failed");
     } finally {

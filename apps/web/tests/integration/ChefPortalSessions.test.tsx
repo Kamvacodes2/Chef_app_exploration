@@ -104,6 +104,15 @@ describe("Chef portal sessions", () => {
     api.fetchChefBookings.mockResolvedValue([]);
   });
 
+  it("keeps available sessions visible when another portal request fails", async () => {
+    api.fetchChefOffers.mockRejectedValue(new Error("Offer response failed validation"));
+    api.fetchAvailableSessions.mockResolvedValue([session]);
+    render(<ChefOverview />);
+
+    expect(await screen.findByText("Lamb curry and rice")).toBeInTheDocument();
+    expect(screen.getByText(/Offers: Offer response failed validation/)).toBeInTheDocument();
+  });
+
   it("lists up-for-grabs sessions and claims one only after the availability confirmation", async () => {
     api.fetchAvailableSessions.mockResolvedValue([session]);
     api.claimAvailableSession.mockResolvedValue({

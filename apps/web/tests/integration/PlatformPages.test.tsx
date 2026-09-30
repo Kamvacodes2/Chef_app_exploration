@@ -145,7 +145,7 @@ const chefProfile = {
 const offer = {
   id: "offer-1",
   bookingRequestId: "booking-1",
-  chefUserId: "chef-1",
+  cookUserId: "chef-1",
   status: "PENDING",
   rank: 1,
   distanceKm: 4,

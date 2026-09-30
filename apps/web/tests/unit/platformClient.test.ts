@@ -132,7 +132,7 @@ const booking = {
 const offer = {
   id: "offer-1",
   bookingRequestId: "booking-1",
-  chefUserId: "chef-1",
+  cookUserId: "chef-1",
   status: "PENDING",
   rank: 1,
   distanceKm: 4.3,
@@ -153,8 +153,8 @@ const earning = {
   id: "earning-1",
   bookingRequestId: "booking-1",
   bookingReference: "CM-0001",
-  chefUserId: "chef-1",
-  chefDisplayName: "Nomsa Dlamini",
+  cookUserId: "chef-1",
+  cookDisplayName: "Nomsa Dlamini",
   chefPayoutCents: 64675,
   status: "PENDING",
   payoutReference: null,
@@ -287,9 +287,9 @@ describe("platformClient", () => {
         }),
       ) as unknown as typeof fetch;
 
-    await expect(fetchChefOffers({ baseUrl: "http://api.test", fetchImpl })).resolves.toHaveLength(
-      1,
-    );
+    await expect(fetchChefOffers({ baseUrl: "http://api.test", fetchImpl })).resolves.toEqual([
+      expect.objectContaining({ cookUserId: "chef-1" }),
+    ]);
     await expect(
       acceptChefOffer("offer-1", { baseUrl: "http://api.test", fetchImpl }),
     ).resolves.toMatchObject({
@@ -298,7 +298,7 @@ describe("platformClient", () => {
     await expect(
       completeChefBooking("booking-1", null, { baseUrl: "http://api.test", fetchImpl }),
     ).resolves.toMatchObject({
-      earning: { chefPayoutCents: 64675 },
+      earning: { cookUserId: "chef-1", cookDisplayName: "Nomsa Dlamini", chefPayoutCents: 64675 },
       surveysIssued: 2,
     });
   });
