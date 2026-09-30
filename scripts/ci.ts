@@ -12,7 +12,9 @@ import { buildSuiteEnv, CI_PIPELINE as PIPELINE } from "./lib/pipeline.js";
 
 /**
  * `pnpm test:ci` — the full local verification command. GitHub Actions uses
- * the targeted `test:ci:*` scripts in the isolated workflow files.
+ * the targeted `test:ci:*` scripts in reusable workflow phases; the optional
+ * `--preflight-only` mode validates the required script/test surface without
+ * provisioning a database or touching generated coverage directories.
  *
  * Blueprint section 19.1: it "orchestrates all deterministic checks except
  * scheduled load and restore drills, starts disposable PostgreSQL/PostGIS,
@@ -48,6 +50,7 @@ const REQUIRED_SCRIPTS = [
   "test:coverage",
   "test:e2e",
   "test:a11y",
+  "test:ci:preflight",
   "test:ci:quality",
   "test:ci:security",
   "test:ci:dependency-audit",
@@ -245,8 +248,15 @@ async function main(): Promise<void> {
    * provisioned below, and every other value the children require is set
    * explicitly.
    */
-  prepareCoverageDirectories();
+  const preflightOnly = process.argv.includes("--preflight-only");
+  if (!preflightOnly) {
+    prepareCoverageDirectories();
+  }
   preflight();
+  if (preflightOnly) {
+    say("CI surface preflight passed; no database or generated files were changed.");
+    return;
+  }
 
   let database: DisposablePostgres | undefined;
   const started = Date.now();

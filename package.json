@@ -40,6 +40,7 @@
     "test:ci:build": "pnpm build",
     "test:ci:playwright": "pnpm test:e2e",
     "test:ci:a11y": "pnpm test:a11y",
+    "test:ci:preflight": "tsx scripts/ci.ts --preflight-only",
     "test:ci": "tsx scripts/ci.ts"
   },
   "devDependencies": {
