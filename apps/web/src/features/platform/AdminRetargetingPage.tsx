@@ -20,6 +20,45 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(value));
 }
 
+/**
+ * Human-readable engagement state of a tracked email, from the strongest signal
+ * available: a click proves the customer engaged, an open is a softer signal,
+ * and "delivered" only means the provider accepted the message.
+ */
+function trackedEmailLabel(
+  engagement: RetargetableBooking["paymentReminder"],
+  label: string,
+): string | null {
+  if (!engagement) return null;
+  if (engagement.status === "FAILED") {
+    return engagement.lastError ? `${label} failed: ${engagement.lastError}` : `${label} failed`;
+  }
+  if (engagement.clickedAt || engagement.clickCount > 0) {
+    return engagement.clickedAt
+      ? `${label} link clicked ${formatDate(engagement.clickedAt)}`
+      : `${label} link clicked`;
+  }
+  if (engagement.openedAt || engagement.openCount > 0) {
+    return engagement.openedAt
+      ? `${label} opened ${formatDate(engagement.openedAt)}`
+      : `${label} opened`;
+  }
+  if (engagement.status === "SENT") {
+    return engagement.sentAt
+      ? `${label} delivered ${formatDate(engagement.sentAt)}`
+      : `${label} delivered`;
+  }
+  return `${label} sending…`;
+}
+
+function retargetEmailLabel(booking: RetargetableBooking): string | null {
+  return trackedEmailLabel(booking.retargetEmail, "Retarget email");
+}
+
+function paymentReminderLabel(booking: RetargetableBooking): string | null {
+  return trackedEmailLabel(booking.paymentReminder, "Payment reminder");
+}
+
 function defaultGreeting(booking: RetargetableBooking): string {
   const first = (booking.contactName ?? "").trim().split(/\s+/)[0];
   return first || booking.contactEmail.split("@")[0] || "there";
@@ -135,9 +174,8 @@ export function AdminRetargetingPage() {
             {STATUS_LABELS[booking.status] ?? booking.status} · Payment:{" "}
             {booking.paymentStatus?.toLowerCase() ?? "none"} · Created{" "}
             {formatDate(booking.createdAt)}
-            {booking.retargetEmailSentAt
-              ? ` · Retarget email sent ${formatDate(booking.retargetEmailSentAt)}`
-              : ""}
+            {retargetEmailLabel(booking) ? ` · ${retargetEmailLabel(booking)}` : ""}
+            {paymentReminderLabel(booking) ? ` · ${paymentReminderLabel(booking)}` : ""}
           </p>
         </div>
         {booking.isTestBooking ? null : (
@@ -198,9 +236,10 @@ export function AdminRetargetingPage() {
                   .then((result) => {
                     setNotice(
                       result.authorizationUrl
-                        ? `Paystack payment link reminder queued for ${booking.reference}.`
-                        : `Payment reminder queued for ${booking.reference}.`,
+                        ? `Paystack payment link reminder queued for ${booking.reference}. Refresh to confirm delivery on the row.`
+                        : `Payment reminder queued for ${booking.reference}. Refresh to confirm delivery on the row.`,
                     );
+                    return load();
                   })
                   .catch((caught: unknown) => {
                     setError(
@@ -217,7 +256,7 @@ export function AdminRetargetingPage() {
               onClick={() => openComposer(booking)}
               type="button"
             >
-              {booking.retargetEmailSentAt ? "Send again" : "Send promo email"}
+              {booking.retargetEmail ? "Send again" : "Send promo email"}
             </button>
           </div>
         )}
