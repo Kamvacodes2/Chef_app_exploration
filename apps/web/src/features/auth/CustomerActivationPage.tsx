@@ -10,6 +10,11 @@ import {
   updateCustomerProfile,
   type ActivatedCustomer,
 } from "./api/customerActivationClient";
+import {
+  fetchCustomerBookings,
+  type CustomerBooking,
+} from "@/features/customer/api/customerBookingsClient";
+import { initializePaystackCheckout } from "@/features/order-flow/api/bookingRequestClient";
 
 type ActivationState =
   | { status: "loading" }
@@ -36,6 +41,14 @@ export function CustomerActivationPage({
   const [profileError, setProfileError] = useState<string | null>(null);
   const [policyStatus, setPolicyStatus] = useState<PolicyStatusItem[] | null>(null);
   const [policiesAccepted, setPoliciesAccepted] = useState(false);
+  // Newest unpaid booking on this account, if any. Activation must end at
+  // payment (save and pay) — never strand the customer on a dashboard link
+  // while money is still owed.
+  const [payableBooking, setPayableBooking] = useState<CustomerBooking | null | undefined>(
+    undefined,
+  );
+  const [isPaying, setIsPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
   const activationStarted = useRef(false);
 
   useEffect(() => {
@@ -65,6 +78,21 @@ export function CustomerActivationPage({
             if (active) setPolicyStatus(status);
           } catch {
             // If the status check fails, still let the customer continue.
+          }
+          try {
+            const bookings = await fetchCustomerBookings();
+            if (active) {
+              const unpaid = bookings
+                .filter(
+                  (booking) =>
+                    booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW",
+                )
+                .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+              setPayableBooking(unpaid[0] ?? null);
+            }
+          } catch {
+            // If the bookings check fails, fall back to the dashboard link.
+            if (active) setPayableBooking(null);
           }
         }
       })
@@ -97,6 +125,20 @@ export function CustomerActivationPage({
       );
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const payForBooking = async (reference: string): Promise<void> => {
+    setPayError(null);
+    setIsPaying(true);
+    try {
+      const checkout = await initializePaystackCheckout(reference);
+      window.location.assign(checkout.authorizationUrl);
+    } catch (error: unknown) {
+      setPayError(
+        error instanceof Error ? error.message : "Chefmate could not start your payment.",
+      );
+      setIsPaying(false);
     }
   };
 
@@ -337,12 +379,45 @@ export function CustomerActivationPage({
               </button>
             </form>
 
-            <Link
-              href="/customer/dashboard"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--color-oxblood)]/25 px-5 text-sm font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)]"
-            >
-              Open my customer dashboard
-            </Link>
+            {payableBooking ? (
+              <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-oxblood)]/25 bg-[var(--color-warm-cream)] p-4">
+                <div>
+                  <p className="font-bold text-[var(--color-oxblood)]">
+                    Your order {payableBooking.reference} is waiting for payment.
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-charcoal)]/75">
+                    {payableBooking.mainMeal.name} · {payableBooking.scheduledDate} at{" "}
+                    {payableBooking.timeSlot}
+                  </p>
+                </div>
+                {payError ? (
+                  <p className="text-sm font-medium text-[var(--color-oxblood)]" role="alert">
+                    {payError}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={isPaying}
+                  onClick={() => void payForBooking(payableBooking.reference)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPaying ? "Starting your payment…" : "Save and pay — continue to Paystack"}
+                </button>
+                <Link
+                  href="/customer/dashboard"
+                  className="text-center text-sm font-semibold text-[var(--color-oxblood)]/70 underline-offset-4 hover:underline"
+                >
+                  Open my customer dashboard instead
+                </Link>
+              </div>
+            ) : (
+              <Link
+                href="/customer/dashboard"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--color-oxblood)]/25 px-5 text-sm font-bold text-[var(--color-oxblood)] hover:bg-[var(--color-warm-cream)]"
+              >
+                Open my customer dashboard
+              </Link>
+            )}
           </div>
         ) : null}
       </section>
