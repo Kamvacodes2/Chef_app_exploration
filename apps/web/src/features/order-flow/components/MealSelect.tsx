@@ -138,7 +138,7 @@ export function MealSelect(): ReactElement {
                     Choose your meal option — fixed price, pay at checkout
                   </legend>
                   <div className="mt-2 flex flex-col gap-2">
-                    {CUSTOM_MEAL_TIER_OPTIONS.map((option) => {
+                    {CUSTOM_MEAL_TIER_OPTIONS.filter((option) => !option.bespoke).map((option) => {
                       const selected = customTier === option.id;
                       return (
                         <label

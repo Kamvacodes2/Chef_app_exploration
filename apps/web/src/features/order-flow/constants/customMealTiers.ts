@@ -14,6 +14,11 @@ export interface CustomMealTierOption {
   readonly description: string;
   /** Fixed base price in cents, before sides/dessert add-ons. */
   readonly basePriceCents: number;
+  /**
+   * One-off tiers (e.g. Lindi's bespoke R980) are bookable only through
+   * their dedicated order page — never offered in the generic meal picker.
+   */
+  readonly bespoke?: boolean;
 }
 
 export const CUSTOM_MEAL_TIER_OPTIONS: readonly CustomMealTierOption[] = Object.freeze([
@@ -40,6 +45,7 @@ export const CUSTOM_MEAL_TIER_OPTIONS: readonly CustomMealTierOption[] = Object.
     title: "Two mains — bespoke R980",
     description: "Bespoke two-main session (Lindi custom order) at a fixed R980.",
     basePriceCents: 98000,
+    bespoke: true,
   },
 ]);
 
