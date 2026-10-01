@@ -84,8 +84,7 @@ export function CustomerActivationPage({
             if (active) {
               const unpaid = bookings
                 .filter(
-                  (booking) =>
-                    booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW",
+                  (booking) => booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW",
                 )
                 .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
               setPayableBooking(unpaid[0] ?? null);
