@@ -22,10 +22,15 @@ const checkoutApi = vi.hoisted(() => ({
   initializePaystackCheckout: vi.fn(),
 }));
 
+const authApi = vi.hoisted(() => ({
+  getCurrentUser: vi.fn(),
+}));
+
 vi.mock("@/features/auth/api/customerActivationClient", () => activationApi);
 vi.mock("@/features/platform/api/platformClient", () => platformApi);
 vi.mock("@/features/customer/api/customerBookingsClient", () => bookingsApi);
 vi.mock("@/features/order-flow/api/bookingRequestClient", () => checkoutApi);
+vi.mock("@/features/auth/api/authClient", () => authApi);
 
 const user = {
   id: "customer-1",
@@ -56,6 +61,7 @@ describe("CustomerActivationPage save and pay", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     activationApi.consumeCustomerActivation.mockResolvedValue(user);
+    authApi.getCurrentUser.mockResolvedValue(null);
     platformApi.fetchPolicyStatus.mockResolvedValue([]);
     bookingsApi.fetchCustomerBookings.mockResolvedValue([unpaidBooking]);
     checkoutApi.initializePaystackCheckout.mockResolvedValue({
@@ -86,6 +92,27 @@ describe("CustomerActivationPage save and pay", () => {
       expect(checkoutApi.initializePaystackCheckout).toHaveBeenCalledWith("CM00535"),
     );
     expect(window.location.assign).toHaveBeenCalledWith("https://checkout.paystack.com/test");
+  });
+
+  it("recovers a refreshed single-use link when the session already exists", async () => {
+    activationApi.consumeCustomerActivation.mockRejectedValue(
+      new Error("This customer activation link is invalid or expired"),
+    );
+    authApi.getCurrentUser.mockResolvedValue({
+      id: "customer-1",
+      displayName: "Lindi",
+      email: "lindi@example.test",
+      roles: ["CUSTOMER"],
+      status: "ACTIVE",
+      emailVerifiedAt: "2026-10-01T17:00:00.000Z",
+      createdAt: "2026-10-01T17:00:00.000Z",
+    });
+    render(<CustomerActivationPage token="activation-token" />);
+
+    expect(
+      await screen.findByRole("button", { name: /Save and pay/ }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("falls back to the dashboard link when nothing is owed", async () => {

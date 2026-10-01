@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { PolicyAcceptanceModal } from "@/components/ui/PolicyAcceptanceModal";
+import { getCurrentUser } from "@/features/auth/api/authClient";
 import { fetchPolicyStatus, type PolicyStatusItem } from "@/features/platform/api/platformClient";
 import {
   consumeCustomerActivation,
@@ -64,38 +65,50 @@ export function CustomerActivationPage({
       return () => {
         active = false;
       };
-    }
+    }    const initialise = async (user: ActivatedCustomer): Promise<void> => {
+      setState({ status: "ready", user });
+      setDisplayName(user.displayName);
+      setPhone(user.phone ?? "");
+      setProfileSaved(Boolean(user.phone));
+      try {
+        const status = await fetchPolicyStatus();
+        if (active) setPolicyStatus(status);
+      } catch {
+        // If the status check fails, still let the customer continue.
+      }
+      try {
+        const bookings = await fetchCustomerBookings();
+        if (active) {
+          const unpaid = bookings
+            .filter(
+              (booking) => booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW",
+            )
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+          setPayableBooking(unpaid[0] ?? null);
+        }
+      } catch {
+        // If the bookings check fails, fall back to the dashboard link.
+        if (active) setPayableBooking(null);
+      }
+    };
 
     void consumeCustomerActivation(token)
       .then(async (user) => {
-        if (active) {
-          setState({ status: "ready", user });
-          setDisplayName(user.displayName);
-          setPhone(user.phone ?? "");
-          setProfileSaved(Boolean(user.phone));
-          try {
-            const status = await fetchPolicyStatus();
-            if (active) setPolicyStatus(status);
-          } catch {
-            // If the status check fails, still let the customer continue.
-          }
-          try {
-            const bookings = await fetchCustomerBookings();
-            if (active) {
-              const unpaid = bookings
-                .filter(
-                  (booking) => booking.status === "REQUESTED" || booking.status === "NEEDS_REVIEW",
-                )
-                .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-              setPayableBooking(unpaid[0] ?? null);
-            }
-          } catch {
-            // If the bookings check fails, fall back to the dashboard link.
-            if (active) setPayableBooking(null);
-          }
-        }
+        if (active) await initialise(user);
       })
-      .catch((error: unknown) => {
+      .catch(async (error: unknown) => {
+        // Single-use link: a refresh after a successful first click burns the
+        // token, so an "expired" error with a live session means the customer
+        // is already signed in — continue instead of dead-ending.
+        try {
+          const existing = await getCurrentUser();
+          if (existing && active) {
+            await initialise({ ...existing, phone: null });
+            return;
+          }
+        } catch {
+          // Fall through to the error state below.
+        }
         if (active) {
           setState({
             status: "error",
