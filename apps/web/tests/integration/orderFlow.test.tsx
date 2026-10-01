@@ -212,10 +212,12 @@ describe("order flow end-to-end", () => {
     s = orderReducer(s, {
       type: "SET_CUSTOM_REQUEST",
       text: "Ouma's chicken curry",
+      tier: "two-mains",
       link: "https://recipes.example.test/oumas-curry",
     });
     expect(s.customRequest).toBe("Ouma's chicken curry");
     expect(s.customRequestLink).toBe("https://recipes.example.test/oumas-curry");
+    expect(s.customMealTier).toBe("two-mains");
     expect(s.main?.id).toBe("custom-request");
     expect(selectCanContinue({ ...s, step: "meal" })).toBe(true);
   });

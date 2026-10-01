@@ -135,35 +135,31 @@ export function ReviewStep(): ReactElement {
   const isSubscriptionSession =
     pricingQuote?.totalCents === 0 && Boolean(pricingQuote?.plan?.recurring);
   const isPlanRequest = Boolean(plan?.recurring) && !isSubscriptionSession;
-  const isEstimatedPricing = !isCustomRequest && !hasPricingQuote;
-  const totalLabel = isCustomRequest
-    ? "Custom quote"
-    : isEstimatedPricing
-      ? isPlanRequest
-        ? "Estimated monthly plan"
-        : plan
-          ? "Estimated package total"
-          : "Estimated order total"
-      : isPlanRequest
-        ? "Monthly plan"
-        : isPricingLoading
-          ? "Updating total"
-          : plan
-            ? "Session total"
-            : "Order total";
-  const subtotalLabel = isCustomRequest
-    ? "Recipe details"
-    : isEstimatedPricing
-      ? plan
-        ? "Estimated package price"
-        : "Estimated items"
+  const isEstimatedPricing = !hasPricingQuote;
+  const totalLabel = isEstimatedPricing
+    ? isPlanRequest
+      ? "Estimated monthly plan"
       : plan
-        ? "Package price"
-        : "Items";
+        ? "Estimated package total"
+        : "Estimated order total"
+    : isPlanRequest
+      ? "Monthly plan"
+      : isPricingLoading
+        ? "Updating total"
+        : plan
+          ? "Session total"
+          : "Order total";
+  const subtotalLabel = isEstimatedPricing
+    ? plan
+      ? "Estimated package price"
+      : "Estimated items"
+    : plan
+      ? "Package price"
+      : "Items";
   const nextStepCopy = isSubscriptionSession
     ? "This session is included with your subscription. We'll confirm your booking and match you with an available Chefmate."
     : isCustomRequest
-      ? "Send your request and Chefmate will review the recipe, confirm your tailored price, then send payment details before matching a chef."
+      ? "Send your custom request and pay securely online. Once payment is confirmed, we match you with an available Chefmate."
       : isEstimatedPricing
         ? isPlanRequest
           ? "Estimated from your plan choices while Chefmate confirms the latest server price. You can send the plan request once the confirmed quote is ready."
@@ -454,7 +450,7 @@ export function ReviewStep(): ReactElement {
           <h3 className="font-display text-2xl font-semibold">
             {isSubscriptionSession
               ? "Your session"
-              : isCustomRequest || isPlanRequest
+              : isPlanRequest
                 ? "What happens next"
                 : plan
                   ? "Your package"
@@ -477,22 +473,12 @@ export function ReviewStep(): ReactElement {
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="text-sm text-[var(--color-charcoal)]/75">{totalLabel}</span>
                   <span className="font-display text-2xl font-semibold">
-                    {isCustomRequest
-                      ? "To be confirmed"
-                      : totalCents === undefined
-                        ? "--"
-                        : formatZarCents(totalCents)}
+                    {totalCents === undefined ? "--" : formatZarCents(totalCents)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">
                   <span>{subtotalLabel}</span>
-                  <span>
-                    {isCustomRequest
-                      ? "Chefmate will confirm"
-                      : subtotalCents === undefined
-                        ? "--"
-                        : formatZarCents(subtotalCents)}
-                  </span>
+                  <span>{subtotalCents === undefined ? "--" : formatZarCents(subtotalCents)}</span>
                 </div>
                 {discountCents > 0 ? (
                   <div className="flex items-center justify-between gap-4 text-xs text-[var(--color-charcoal)]/65">

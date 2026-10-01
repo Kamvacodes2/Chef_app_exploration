@@ -22,6 +22,8 @@ import {
   SECOND_MEAL_PRICE_ZAR,
 } from "../constants/menu";
 import { normalizeGiftCode, validateGiftCode } from "../constants/giftCodes";
+import type { CustomMealTier } from "../constants/customMealTiers";
+import { customMealTierOption } from "../constants/customMealTiers";
 
 export type MealLinkSource = "TIKTOK" | "INSTAGRAM" | "PINTEREST" | "OTHER";
 
@@ -87,6 +89,12 @@ export interface OrderState {
   readonly customRequest: string | null;
   /** Optional recipe URL supplied with a custom dish request. */
   readonly customRequestLink: string | null;
+  /**
+   * Fixed-price meal option chosen for a custom-dish request. The tier is the
+   * price, so the custom can be paid at checkout instead of waiting for a
+   * manual quote.
+   */
+  readonly customMealTier: CustomMealTier | null;
   /** Free breakfast add-on (overnight oats) offered to subscription plans: null = not asked, true = yes, false = no thanks. */
   readonly breakfastAddOn: boolean | null;
   readonly date: string | null;
@@ -125,6 +133,7 @@ export const INITIAL_ORDER_STATE: OrderState = Object.freeze({
   dessert: null,
   customRequest: null,
   customRequestLink: null,
+  customMealTier: null,
   breakfastAddOn: null,
   date: null,
   time: null,
@@ -180,7 +189,7 @@ export type OrderAction =
   | { type: "TOGGLE_SIDE"; item: OrderMenuItem }
   | { type: "SELECT_DESSERT"; item: OrderMenuItem }
   | { type: "SKIP_DESSERT" }
-  | { type: "SET_CUSTOM_REQUEST"; text: string; link?: string | null }
+  | { type: "SET_CUSTOM_REQUEST"; text: string; tier: CustomMealTier; link?: string | null }
   | { type: "CLEAR_CUSTOM_REQUEST" }
   | { type: "SET_BREAKFAST_ADD_ON"; value: boolean }
   | { type: "SET_DATE"; date: string | null }
@@ -607,6 +616,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           favoriteMealLink: null,
           main: state.main?.id === action.item.id ? null : state.main,
           customRequest: null,
+          customMealTier: null,
           extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
         });
       }
@@ -620,6 +630,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
           state.secondFavoriteMealId === action.item.id ? null : state.secondFavoriteMealId,
         main: action.item,
         customRequest: null,
+        customMealTier: null,
         extraMeals: state.extraMeals.filter((meal) => meal.id !== action.item.id),
       });
     }
@@ -721,6 +732,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         favoriteMealDeferred: true,
         main: null,
         customRequest: null,
+        customMealTier: null,
         // "I'll choose later" defers the whole weekly menu, including the
         // extra mains and any day assignments made so far.
         extraMeals: [],
@@ -734,6 +746,7 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         main: action.item,
         customRequest: null,
         customRequestLink: null,
+        customMealTier: null,
         // A meal can only fill one slot: picking it as the main clears it from
         // the optional second-meal slot picked at the next step.
         secondFavoriteMealId:
@@ -765,11 +778,12 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
     case "SKIP_DESSERT":
       return { ...state, dessert: null, step: "schedule" };
     case "SET_CUSTOM_REQUEST": {
+      const tier = customMealTierOption(action.tier);
       const customMain: OrderMenuItem = {
         id: "custom-request",
         name: "Custom Request",
         description: action.text,
-        priceDisplay: "TBC",
+        priceDisplay: tier.title,
         price: 0,
         course: "main",
         imageSrc: "/images/loop/meal-3.webp",
@@ -781,12 +795,19 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
         ...state,
         customRequest: action.text,
         customRequestLink: action.link ?? null,
+        customMealTier: action.tier,
         main: customMain,
         step: "sides",
       };
     }
     case "CLEAR_CUSTOM_REQUEST":
-      return { ...state, customRequest: null, customRequestLink: null, main: null };
+      return {
+        ...state,
+        customRequest: null,
+        customRequestLink: null,
+        customMealTier: null,
+        main: null,
+      };
     case "SET_BREAKFAST_ADD_ON":
       return { ...state, breakfastAddOn: action.value };
     case "SET_DATE":

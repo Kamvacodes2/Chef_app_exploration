@@ -3,6 +3,7 @@ import { getChefmateApiUrl } from "@/lib/env";
 import { ChefmateApiError, readApiErrorDetails } from "@/lib/apiError";
 import type { Address, ContactDetails, GoalId } from "../types";
 import type { OrderState } from "../state/orderReducer";
+import type { CustomMealTier } from "../constants/customMealTiers";
 import { OVERNIGHT_OATS_SLUG } from "../constants/menu";
 import { buildPlanSelection } from "@/features/plans/planSelection";
 import type { ChefmatePlanSelection } from "@/features/plans/planCatalog";
@@ -26,6 +27,8 @@ export interface BookingRequestPayload {
   readonly dessertSlug: string | null;
   readonly customRequest: string | null;
   readonly customRequestLink?: string | null;
+  /** Fixed-price meal option for a custom-dish request (required by the API unless the order is subscription-covered). */
+  readonly customMealTier?: CustomMealTier | null;
   readonly scheduledDate: string;
   readonly timeSlot: string;
   readonly address: Address;
@@ -181,6 +184,7 @@ export function buildBookingRequestPayload(
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
     customRequestLink: state.customRequestLink,
+    ...(state.customMealTier ? { customMealTier: state.customMealTier } : {}),
     scheduledDate: state.date,
     timeSlot: state.time,
     address: {

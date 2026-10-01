@@ -7,13 +7,20 @@ import { MealBrowser } from "@/features/meal-browser/MealBrowser";
 import type { BrowserMeal } from "@/features/meal-browser/api/mealCatalogClient";
 import { toOrderMenuItem } from "@/features/meal-browser/toOrderMenuItem";
 import { defaultCategorySlugForGoal } from "../constants/goalMealDefaults";
+import {
+  CUSTOM_MEAL_TIER_OPTIONS,
+  customMealTierOption,
+  type CustomMealTier,
+} from "../constants/customMealTiers";
 import { useOrder } from "../state/OrderContext";
+import { formatZarCents } from "./ReviewStep";
 
 export function MealSelect(): ReactElement {
   const { state, selectMain, setCustomRequest, clearCustomRequest } = useOrder();
   const [customOpen, setCustomOpen] = useState(false);
   const [customText, setCustomText] = useState("");
   const [customLink, setCustomLink] = useState("");
+  const [customTier, setCustomTier] = useState<CustomMealTier>("one-main");
   const customRef = useRef<HTMLTextAreaElement>(null);
 
   const openCustomRequest = useCallback(() => {
@@ -60,6 +67,11 @@ export function MealSelect(): ReactElement {
         {state.main && state.customRequest === null ? (
           <p className="w-fit rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-[var(--color-bone)]">
             Selected: {state.main.name}
+          </p>
+        ) : null}
+        {state.customRequest !== null && state.customMealTier !== null ? (
+          <p className="w-fit rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-[var(--color-bone)]">
+            Selected: Custom request — {customMealTierOption(state.customMealTier).title}
           </p>
         ) : null}
       </div>
@@ -121,6 +133,54 @@ export function MealSelect(): ReactElement {
                 <p className="text-xs leading-5 text-[var(--color-bone)]/60">
                   Add the recipe URL so the chef can review exactly what you mean.
                 </p>
+                <fieldset>
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-[var(--color-bone)]/80">
+                    Choose your meal option — fixed price, pay at checkout
+                  </legend>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {CUSTOM_MEAL_TIER_OPTIONS.map((option) => {
+                      const selected = customTier === option.id;
+                      return (
+                        <label
+                          key={option.id}
+                          className={
+                            "flex cursor-pointer items-center justify-between gap-3 rounded-2xl px-4 py-3 ring-1 transition-colors " +
+                            (selected
+                              ? "bg-[var(--color-bone)] text-[var(--color-oxblood)] ring-[var(--color-bone)]"
+                              : "bg-white/5 text-[var(--color-bone)] ring-white/10 hover:ring-white/25")
+                          }
+                        >
+                          <span className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="custom-meal-tier"
+                              value={option.id}
+                              checked={selected}
+                              onChange={() => setCustomTier(option.id)}
+                              className="h-4 w-4 accent-[var(--color-oxblood)]"
+                            />
+                            <span>
+                              <span className="block text-sm font-bold">{option.title}</span>
+                              <span
+                                className={
+                                  "block text-xs " +
+                                  (selected
+                                    ? "text-[var(--color-oxblood)]/70"
+                                    : "text-[var(--color-bone)]/60")
+                                }
+                              >
+                                {option.description}
+                              </span>
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-sm font-bold">
+                            {formatZarCents(option.basePriceCents)}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
@@ -128,6 +188,7 @@ export function MealSelect(): ReactElement {
                       setCustomOpen(false);
                       setCustomText("");
                       setCustomLink("");
+                      setCustomTier("one-main");
                       clearCustomRequest();
                     }}
                     className="rounded-xl px-4 py-2 text-sm text-[var(--color-bone)]/70 hover:text-[var(--color-bone)]"
@@ -143,8 +204,7 @@ export function MealSelect(): ReactElement {
                     onClick={() => {
                       const text = customText.trim();
                       const link = customLink.trim();
-                      if (link) setCustomRequest(text, link);
-                      else setCustomRequest(text);
+                      setCustomRequest(text, customTier, link ? link : null);
                     }}
                     className="rounded-xl bg-[var(--color-bone)] px-5 py-2 text-sm font-bold text-[var(--color-oxblood)] transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
                   >
