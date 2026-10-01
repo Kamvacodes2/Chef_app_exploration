@@ -124,7 +124,9 @@ export default function LindiCustomOrderPage() {
       window.location.assign(checkout.authorizationUrl);
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Chefmate could not start this booking.",
+        submitError instanceof Error
+          ? submitError.message
+          : "Chefmate could not start this booking.",
       );
       setIsSubmitting(false);
     }
@@ -303,8 +305,8 @@ export default function LindiCustomOrderPage() {
           </button>
           <p className="text-xs leading-5 text-[var(--color-charcoal)]/60">
             Save creates your Chefmate account and R980 order (reference CMxxxxx), then takes you
-            straight to the secure Paystack gateway — no dashboard, no second sign-in. The 65%
-            chef share is applied automatically once a chef is matched.
+            straight to the secure Paystack gateway — no dashboard, no second sign-in. The 65% chef
+            share is applied automatically once a chef is matched.
           </p>
         </form>
       </section>
