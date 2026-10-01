@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { createCustomerAccount, signIn } from "@/features/auth/api/authClient";
+import { updateCustomerProfile } from "@/features/auth/api/customerActivationClient";
+import { acceptPolicy, fetchPolicyStatus } from "@/features/platform/api/platformClient";
 import {
   initializePaystackCheckout,
   submitBookingRequestPayload,
@@ -34,6 +37,8 @@ export default function LindiCustomOrderPage() {
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
   const [area, setArea] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,21 +50,49 @@ export default function LindiCustomOrderPage() {
       setError("Please agree to the Customer Terms and Conditions to continue.");
       return;
     }
+    if (password !== passwordConfirmation) {
+      setError("The passwords do not match.");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const contact = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: normalizePhone(phone),
-      };
-      if (contact.name.length < 2) throw new Error("Contact name is required.");
-      if (!/^\S+@\S+\.\S+$/.test(contact.email))
+      const displayName = name.trim();
+      const normalizedEmail = email.trim().toLowerCase();
+      if (displayName.length < 2) throw new Error("Contact name is required.");
+      if (!/^\S+@\S+\.\S+$/.test(normalizedEmail))
         throw new Error("A valid contact email is required.");
+      const normalizedPhone = normalizePhone(phone);
       if (street.trim().length <= 2)
         throw new Error("Street address is required for the chef visit.");
       if (area.trim().length <= 1)
         throw new Error("Area or suburb is required for the chef visit.");
 
+      // 1. Create the DB account (or sign back into it) so the browser holds
+      // a session before any money moves — no dashboard detour, no second
+      // sign-in after payment.
+      try {
+        await createCustomerAccount({
+          email: normalizedEmail,
+          password,
+          displayName,
+        });
+      } catch {
+        await signIn({ email: normalizedEmail, password });
+      }
+
+      // 2. Save the phone number onto the account.
+      await updateCustomerProfile(displayName, normalizedPhone);
+
+      // 3. Accept every required policy (customer terms) on the account.
+      const policyStatus = await fetchPolicyStatus();
+      for (const policy of policyStatus) {
+        if (policy.required && !policy.accepted) {
+          await acceptPolicy(policy.policyKey, policy.requiredVersion);
+        }
+      }
+
+      // 4. Create the R980 bespoke booking as the signed-in customer, then
+      // go straight to the Paystack gateway.
       const confirmation = await submitBookingRequestPayload(
         {
           source: "landing-order-flow",
@@ -77,15 +110,11 @@ export default function LindiCustomOrderPage() {
             street: street.trim(),
             area: area.trim(),
           },
-          contact,
           giftCode: null,
         },
         { idempotencyKey: crypto.randomUUID() },
       );
 
-      // Activation + account link are queued automatically for this guest
-      // booking (email.customer.activation); the order confirmation carries
-      // the payment. Take them straight to the R980 Paystack gateway.
       const existingUrl = confirmation.payment?.paystack?.authorizationUrl;
       if (existingUrl) {
         window.location.assign(existingUrl);
@@ -203,6 +232,41 @@ export default function LindiCustomOrderPage() {
               className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
             />
           </label>
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-password"
+          >
+            Create password
+            <input
+              id="lindi-password"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={12}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
+            />
+            <span className="font-normal text-[var(--color-charcoal)]/65">
+              At least 12 characters, including uppercase, lowercase, and a number.
+            </span>
+          </label>
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-password-confirmation"
+          >
+            Confirm password
+            <input
+              id="lindi-password-confirmation"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={12}
+              value={passwordConfirmation}
+              onChange={(event) => setPasswordConfirmation(event.target.value)}
+              className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
+            />
+          </label>
 
           <label className="flex cursor-pointer items-start gap-3 text-sm text-[var(--color-charcoal)]/85">
             <input
@@ -237,12 +301,12 @@ export default function LindiCustomOrderPage() {
             disabled={isSubmitting}
             className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[var(--color-oxblood)] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Starting your booking…" : `Continue to booking — pay ${TOTAL_LABEL}`}
+            {isSubmitting ? "Saving and starting payment…" : `Save and pay ${TOTAL_LABEL}`}
           </button>
           <p className="text-xs leading-5 text-[var(--color-charcoal)]/60">
-            Continuing creates your Chefmate order and account activation link, then takes you to
-            the secure Paystack gateway for {TOTAL_LABEL}. Your order confirmation and activation
-            email use Chefmate theming.
+            Save creates your Chefmate account and R980 order (reference CMxxxxx), then takes you
+            straight to the secure Paystack gateway — no dashboard, no second sign-in. The 65% chef
+            share is applied automatically once a chef is matched.
           </p>
         </form>
       </section>

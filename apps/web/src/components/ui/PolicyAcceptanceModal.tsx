@@ -22,6 +22,10 @@ interface PolicyAcceptanceModalProps {
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+function policyIdentity(policy: PolicyStatusItem): string {
+  return `${policy.policyKey}:${policy.requiredVersion}`;
+}
+
 export function PolicyAcceptanceModal({
   mode = "required",
   policies,
@@ -36,28 +40,19 @@ export function PolicyAcceptanceModal({
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const busyRef = useRef(false);
   const [acceptedLocally, setAcceptedLocally] = useState<ReadonlySet<string>>(() => new Set());
-  const [acknowledged, setAcknowledged] = useState(false);
+  const [checked, setChecked] = useState<ReadonlySet<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pendingPolicies = useMemo(
     () =>
-      policies.filter(
-        (policy) =>
-          !policy.accepted && !acceptedLocally.has(`${policy.policyKey}:${policy.requiredVersion}`),
-      ),
+      policies.filter((policy) => !policy.accepted && !acceptedLocally.has(policyIdentity(policy))),
     [acceptedLocally, policies],
   );
-  const current = pendingPolicies[0];
-  const currentIdentity = current
-    ? `${current.policyKey}:${current.requiredVersion}`
-    : "confirmation";
-  const processedCount = policies.filter(
-    (policy) =>
-      !policy.accepted && acceptedLocally.has(`${policy.policyKey}:${policy.requiredVersion}`),
-  ).length;
-  const totalCount = processedCount + pendingPolicies.length;
+  const allChecked =
+    pendingPolicies.length > 0 &&
+    pendingPolicies.every((policy) => checked.has(policyIdentity(policy)));
   const dismissible = mode === "optional" && onClose !== undefined;
 
   useEffect(() => {
@@ -70,11 +65,14 @@ export function PolicyAcceptanceModal({
     };
   }, []);
 
-  useEffect(() => {
-    setAcknowledged(false);
-    setError(null);
-    titleRef.current?.focus();
-  }, [currentIdentity]);
+  const toggleChecked = (identity: string, isChecked: boolean) => {
+    setChecked((previous) => {
+      const next = new Set(previous);
+      if (isChecked) next.add(identity);
+      else next.delete(identity);
+      return next;
+    });
+  };
 
   const completeAndConfirm = async () => {
     if (busyRef.current) return;
@@ -97,25 +95,25 @@ export function PolicyAcceptanceModal({
     }
   };
 
-  const handleAccept = async () => {
-    if (!current || !acknowledged || busyRef.current) return;
+  const handleAcceptAll = async () => {
+    if (pendingPolicies.length === 0 || !allChecked || busyRef.current) return;
 
     busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
-      await acceptPolicy(current.policyKey, current.requiredVersion);
-      const acceptedIdentity = `${current.policyKey}:${current.requiredVersion}`;
-      setAcceptedLocally((previous) => new Set(previous).add(acceptedIdentity));
-      setAcknowledged(false);
-
-      if (pendingPolicies.length === 1) {
-        setConfirming(true);
-        await onComplete();
-        setConfirming(false);
+      const acceptedIdentities: string[] = [];
+      for (const policy of pendingPolicies) {
+        await acceptPolicy(policy.policyKey, policy.requiredVersion);
+        acceptedIdentities.push(policyIdentity(policy));
       }
+      setAcceptedLocally((previous) => new Set([...previous, ...acceptedIdentities]));
+      setChecked(new Set());
+      setConfirming(true);
+      await onComplete();
+      setConfirming(false);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to accept this policy.");
+      setError(caught instanceof Error ? caught.message : "Failed to accept these policies.");
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -162,9 +160,14 @@ export function PolicyAcceptanceModal({
     if (dismissible && !busy && event.target === event.currentTarget) onClose?.();
   };
 
-  const heading = current?.title ?? "Confirming policy status";
-  const description = current
-    ? `Policy ${Math.min(processedCount + 1, totalCount)} of ${totalCount}. Review the published document and acknowledge it to continue.`
+  const hasPending = pendingPolicies.length > 0;
+  const heading = hasPending
+    ? pendingPolicies.length === 1
+      ? (pendingPolicies[0]?.title ?? "Review policy")
+      : `Review and accept ${pendingPolicies.length} policies`
+    : "Confirming policy status";
+  const description = hasPending
+    ? "Review each published document, tick every checkbox, then accept once to continue."
     : "Your acceptance has been saved. ChefMate must confirm your current policy status before continuing.";
 
   return (
@@ -210,37 +213,48 @@ export function PolicyAcceptanceModal({
           </p>
         </div>
 
-        {current ? (
+        {hasPending ? (
           <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-[var(--color-charcoal)]/75">
-            {current.stale ? (
-              <div className="mt-4 rounded-xl border-l-4 border-amber-600 bg-amber-50 p-4 text-amber-950">
-                <p className="font-semibold">This policy has been updated.</p>
-                <p className="mt-1 text-xs">
-                  Please review the current document and acknowledge it again to continue.
-                </p>
-              </div>
-            ) : null}
-
-            <a
-              className="mt-5 inline-flex rounded-xl border border-[var(--color-oxblood)] px-4 py-2.5 font-bold text-[var(--color-oxblood)] transition-colors hover:bg-[var(--color-oxblood)] hover:text-white"
-              href={current.documentPath}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Open {current.title}
-              <span className="sr-only"> in a new tab</span>
-            </a>
-
-            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-oxblood)]/15 p-4">
-              <input
-                checked={acknowledged}
-                className="mt-0.5 h-4 w-4 accent-[var(--color-oxblood)]"
-                disabled={busy}
-                onChange={(event) => setAcknowledged(event.target.checked)}
-                type="checkbox"
-              />
-              <span>I acknowledge that I have reviewed and accept {current.title}.</span>
-            </label>
+            <ul className="flex flex-col gap-4">
+              {pendingPolicies.map((policy) => {
+                const identity = policyIdentity(policy);
+                return (
+                  <li
+                    key={identity}
+                    className="flex flex-col gap-2 rounded-xl border border-[var(--color-oxblood)]/15 p-4"
+                  >
+                    <p className="font-bold text-[var(--color-oxblood)]">{policy.title}</p>
+                    {policy.stale ? (
+                      <div className="rounded-xl border-l-4 border-amber-600 bg-amber-50 p-3 text-amber-950">
+                        <p className="font-semibold">This policy has been updated.</p>
+                        <p className="mt-1 text-xs">
+                          Please review the current document and acknowledge it again to continue.
+                        </p>
+                      </div>
+                    ) : null}
+                    <a
+                      className="inline-flex w-fit rounded-xl border border-[var(--color-oxblood)] px-4 py-2 font-bold text-[var(--color-oxblood)] transition-colors hover:bg-[var(--color-oxblood)] hover:text-white"
+                      href={policy.documentPath}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      Open {policy.title}
+                      <span className="sr-only"> in a new tab</span>
+                    </a>
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        checked={checked.has(identity)}
+                        className="mt-0.5 h-4 w-4 accent-[var(--color-oxblood)]"
+                        disabled={busy}
+                        onChange={(event) => toggleChecked(identity, event.target.checked)}
+                        type="checkbox"
+                      />
+                      <span>I acknowledge that I have reviewed and accept {policy.title}.</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ) : (
           <div className="flex-1 px-6 py-8 text-sm text-[var(--color-charcoal)]/75">
@@ -263,14 +277,18 @@ export function PolicyAcceptanceModal({
         </div>
 
         <div className="shrink-0 space-y-3 border-t border-[var(--color-oxblood)]/10 px-6 py-4">
-          {current ? (
+          {hasPending ? (
             <button
               className="w-full rounded-xl bg-[var(--color-oxblood)] py-3 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!acknowledged || busy}
-              onClick={() => void handleAccept()}
+              disabled={!allChecked || busy}
+              onClick={() => void handleAcceptAll()}
               type="button"
             >
-              {busy ? "Please wait..." : "Accept"}
+              {busy
+                ? "Please wait..."
+                : pendingPolicies.length === 1
+                  ? "Accept"
+                  : `Accept all ${pendingPolicies.length} policies`}
             </button>
           ) : (
             <button

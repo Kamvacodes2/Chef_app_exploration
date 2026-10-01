@@ -84,27 +84,28 @@ describe("PolicyAcceptanceModal", () => {
     outside.remove();
   });
 
-  it("requires an explicit acknowledgement for each policy and accepts pending documents sequentially", async () => {
+  it("lists every pending policy at once and accepts them all with a single confirmation", async () => {
     const onComplete = vi.fn().mockResolvedValue(undefined);
     render(<PolicyAcceptanceModal onComplete={onComplete} policies={[chefTerms, codeOfConduct]} />);
 
-    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled());
-    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    expect(
+      screen.getByRole("heading", { name: "Review and accept 2 policies" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open Chef Terms/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open Chef Code of Conduct/ })).toBeInTheDocument();
 
-    await expect(
-      screen.findByRole("heading", { name: "Chef Code of Conduct" }),
-    ).resolves.toBeInTheDocument();
-    expect(api.acceptPolicy).toHaveBeenNthCalledWith(1, "CHEF_TERMS", "2026-08-18");
-    expect(onComplete).not.toHaveBeenCalled();
-    expect(screen.getByRole("checkbox", { name: /accept Chef Code of Conduct/ })).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "Accept" })).toBeDisabled();
+    const acceptAll = screen.getByRole("button", { name: "Accept all 2 policies" });
+    expect(acceptAll).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Terms/ }));
+    expect(acceptAll).toBeDisabled();
 
     fireEvent.click(screen.getByRole("checkbox", { name: /accept Chef Code of Conduct/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled());
-    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    await waitFor(() => expect(acceptAll).toBeEnabled());
+    fireEvent.click(acceptAll);
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
+    expect(api.acceptPolicy).toHaveBeenNthCalledWith(1, "CHEF_TERMS", "2026-08-18");
     expect(api.acceptPolicy).toHaveBeenNthCalledWith(2, "CHEF_CODE_OF_CONDUCT", "2026-08-09");
     expect(screen.getByRole("heading", { name: "Confirming policy status" })).toBeInTheDocument();
   });
