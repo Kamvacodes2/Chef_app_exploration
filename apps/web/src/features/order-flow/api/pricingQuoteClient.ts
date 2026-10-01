@@ -4,6 +4,7 @@ import type { ChefmatePlanSelection } from "@/features/plans/planCatalog";
 import { getChefmateApiUrl } from "@/lib/env";
 import type { OrderState } from "../state/orderReducer";
 import { OVERNIGHT_OATS_SLUG } from "../constants/menu";
+import type { CustomMealTier } from "../constants/customMealTiers";
 
 const pricingItemSchema = z.object({
   kind: z.enum(["main", "side", "dessert", "addon"]),
@@ -44,6 +45,8 @@ export interface PricingQuotePayload {
   readonly dessertSlug: string | null;
   readonly customRequest: string | null;
   readonly customRequestLink?: string | null;
+  /** Fixed-price meal option for a custom-dish request (required by the API unless the order is subscription-covered). */
+  readonly customMealTier?: CustomMealTier | null;
   readonly giftCode: string | null;
   readonly planSelection?: ChefmatePlanSelection;
   /**
@@ -83,6 +86,7 @@ export function buildPricingQuotePayload(
     | "dessert"
     | "customRequest"
     | "customRequestLink"
+    | "customMealTier"
     | "appliedGift"
     | "planId"
     | "preferredDays"
@@ -127,6 +131,7 @@ export function buildPricingQuotePayload(
     dessertSlug: state.dessert?.id ?? null,
     customRequest: state.customRequest,
     ...(state.customRequestLink ? { customRequestLink: state.customRequestLink } : {}),
+    ...(state.customMealTier ? { customMealTier: state.customMealTier } : {}),
     giftCode: state.appliedGift?.code ?? null,
     ...(state.breakfastAddOn ? { breakfastAddOnSlug: OVERNIGHT_OATS_SLUG } : {}),
     ...(planSelection

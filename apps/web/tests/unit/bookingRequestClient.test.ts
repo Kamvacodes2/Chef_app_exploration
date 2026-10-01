@@ -149,6 +149,36 @@ describe("booking request client", () => {
 
     expect(guestPayload.contact?.phone).toBe("+27821234567");
   });
+  it("sends the chosen fixed-price meal option with a custom request", () => {
+    const customMain = {
+      id: "custom-request",
+      name: "Custom Request",
+      description: "Ouma's chicken curry",
+      priceDisplay: "Two mains",
+      price: 0,
+      course: "main",
+      imageSrc: "/images/loop/meal-3.webp",
+      imageAlt: "Custom dish request",
+      paletteId: "persimmon",
+      goalTags: [],
+    } as const;
+    const customPayload = buildBookingRequestPayload({
+      ...INITIAL_ORDER_STATE,
+      main: customMain,
+      customRequest: "Ouma's chicken curry",
+      customMealTier: "two-mains",
+      date: "2026-08-15",
+      time: "18:30",
+      address: { estate: "", unit: "", street: "12 Jacaranda Avenue", area: "Fourways" },
+      contact: { name: "Test Customer", email: "customer@example.test", phone: "082 123 4567" },
+    });
+
+    expect(customPayload).toMatchObject({
+      mainSlug: "custom-request",
+      customRequest: "Ouma's chicken curry",
+      customMealTier: "two-mains",
+    });
+  });
   it("omits duplicate contact data when the customer is signed in", () => {
     const main = MAINS.find((item) => item.id === "chicken-peri-peri")!;
     const signedInPayload = buildBookingRequestPayload(

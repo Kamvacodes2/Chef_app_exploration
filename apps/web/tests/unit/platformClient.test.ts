@@ -24,6 +24,7 @@ import {
   markChefApplicationInterviewConducted,
   markChefEnRoute,
   platformRoleSchema,
+  matchBookingChef,
   resendBookingOffers,
   rescheduleAdminBooking,
   sendPaymentReminder,
@@ -842,6 +843,76 @@ describe("platformClient", () => {
 
     expect(fetchImpl).toHaveBeenCalledWith(
       "http://api.test/api/v1/operations/booking-requests/booking-1/resend-offers",
+      expect.objectContaining({ method: "POST", credentials: "include" }),
+    );
+  });
+
+  it("matches a booking to a chef from the admin side", async () => {
+    const operationsBooking = {
+      id: "booking-1",
+      reference: "CM-0001",
+      status: "CHEF_MATCHED",
+      type: "TONIGHT",
+      customerId: "customer-1",
+      mainMealSlug: "winter-oxtail-stew",
+      mainName: "Winter Oxtail Stew",
+      customRequest: null,
+      scheduledDate: "2026-10-07",
+      timeSlot: "18:30",
+      estate: null,
+      unit: null,
+      street: null,
+      serviceArea: "Fourways",
+      contactName: "Test Customer",
+      contactEmail: "customer@example.test",
+      contactPhone: "+27821234567",
+      goalId: null,
+      createdAt: "2026-09-30T08:00:00.000Z",
+      cook: { id: "chef-1", email: "chef@example.test", displayName: "Chef Dee", roles: ["CHEF"] },
+      alignedChefs: [],
+      payment: {
+        id: "pay-1",
+        status: "VERIFIED",
+        method: "PAYSTACK",
+        amountCents: 52785,
+        verifiedAt: "2026-09-30T09:00:00.000Z",
+      },
+    };
+    const offer = {
+      id: "offer-1",
+      bookingRequestId: "booking-1",
+      cookUserId: "chef-1",
+      status: "ACCEPTED",
+      rank: 1,
+      distanceKm: null,
+      chefPayoutCents: 34310,
+      expiresAt: "2026-09-30T10:00:00.000Z",
+      createdAt: "2026-09-30T09:30:00.000Z",
+      booking: {
+        id: "booking-1",
+        reference: "CM-0001",
+        type: "TONIGHT",
+        mainName: "Winter Oxtail Stew",
+        scheduledDate: "2026-10-07",
+        timeSlot: "18:30",
+        serviceArea: "Fourways",
+      },
+    };
+    const fetchImpl = mockFetch({ data: { booking: operationsBooking, offer } });
+
+    await expect(
+      matchBookingChef(
+        "booking-1",
+        { cookUserId: "chef-1", note: "Matched by admin" },
+        { baseUrl: "http://api.test", fetchImpl },
+      ),
+    ).resolves.toMatchObject({
+      booking: { id: "booking-1", status: "CHEF_MATCHED", cook: { id: "chef-1" } },
+      offer: { cookUserId: "chef-1", status: "ACCEPTED" },
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://api.test/api/v1/operations/booking-requests/booking-1/match-chef",
       expect.objectContaining({ method: "POST", credentials: "include" }),
     );
   });

@@ -400,7 +400,11 @@ describe("MealSelect meal browser", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Request this" }));
 
-    expect(controller.setCustomRequest).toHaveBeenCalledWith("Ouma's chicken curry");
+    expect(controller.setCustomRequest).toHaveBeenCalledWith(
+      "Ouma's chicken curry",
+      "one-main",
+      null,
+    );
   });
 
   it("retries the catalog load after a failure", async () => {
@@ -428,10 +432,35 @@ describe("MealSelect meal browser", () => {
       target: { value: "Ouma's chicken curry" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Request this" }));
-    expect(controller.setCustomRequest).toHaveBeenCalledWith("Ouma's chicken curry");
+    expect(controller.setCustomRequest).toHaveBeenCalledWith(
+      "Ouma's chicken curry",
+      "one-main",
+      null,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(controller.clearCustomRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("submits the chosen fixed-price meal option with the custom request", async () => {
+    const controller = renderMealSelect();
+    await screen.findByTestId("meal-card-wors-pap-chakalaka");
+
+    fireEvent.click(screen.getByRole("button", { name: "Can't find what you want?" }));
+    fireEvent.change(screen.getByLabelText("Tell the kitchen what you're craving"), {
+      target: { value: "Ouma's chicken curry" },
+    });
+    // Tier options show their fixed upfront prices.
+    expect(screen.getByText("One main")).toBeInTheDocument();
+    expect(screen.getByText("Three courses")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /Two mains/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Request this" }));
+
+    expect(controller.setCustomRequest).toHaveBeenCalledWith(
+      "Ouma's chicken curry",
+      "two-mains",
+      null,
+    );
   });
 });
 

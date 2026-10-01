@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   fetchChefs,
   fetchOperationsBookings,
+  matchBookingChef,
   verifyBookingPayment,
   type ChefSummary,
   type OperationsBooking,
@@ -159,6 +160,8 @@ export function AdminCalendarPage() {
   const [viewMode, setViewMode] = useState<CalendarViewMode>("grid");
   const [selectedBooking, setSelectedBooking] = useState<OperationsBooking | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [matchChefId, setMatchChefId] = useState<string>("");
+  const [matching, setMatching] = useState(false);
 
   const loadData = async () => {
     try {
@@ -204,9 +207,38 @@ export function AdminCalendarPage() {
     }
   };
 
+  const handleMatchChef = async (booking: OperationsBooking) => {
+    if (!matchChefId) {
+      alert("Select a chef to match first.");
+      return;
+    }
+    const chef = chefs.find((c) => c.id === matchChefId);
+    const confirmText = `Match booking ${booking.reference} to ${chef?.displayName ?? "this chef"}?\n\nThis will:\n1. Assign the chef and move the booking to Chef Matched\n2. Email the customer that their chef is confirmed\n3. Email shopping & ingredient lists to the chef and customer — exactly as if the chef had accepted`;
+    if (!window.confirm(confirmText)) return;
+
+    setMatching(true);
+    try {
+      const result = await matchBookingChef(booking.id, {
+        cookUserId: matchChefId,
+        note: "Matched to chef by admin from calendar",
+      });
+      await loadData();
+      setSelectedBooking(result.booking);
+      setMatchChefId("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to match chef.");
+    } finally {
+      setMatching(false);
+    }
+  };
+
   useEffect(() => {
     void loadData();
   }, []);
+
+  useEffect(() => {
+    setMatchChefId("");
+  }, [selectedBooking?.id]);
 
   // Generate 7 days for the selected week: Monday to Sunday
   const weekDays = useMemo(() => {
@@ -925,6 +957,45 @@ export function AdminCalendarPage() {
                         {selectedBooking.alignedChefs.map((c) => c.displayName).join(", ")}
                       </p>
                     )}
+                    {selectedBooking.payment?.status === "VERIFIED" &&
+                      (selectedBooking.status === "AWAITING_CHEF" ||
+                        selectedBooking.status === "CONFIRMED") && (
+                        <div className="mt-3 rounded-xl border border-[var(--color-oxblood)]/15 bg-white p-3">
+                          <label
+                            htmlFor="admin-match-chef"
+                            className="text-xs font-bold uppercase tracking-wider text-[var(--color-oxblood)]"
+                          >
+                            Match a chef
+                          </label>
+                          <p className="mt-1 text-xs text-[var(--color-charcoal)]/70">
+                            The chef and customer are notified exactly as if the chef had accepted —
+                            confirmation plus shopping lists.
+                          </p>
+                          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                            <select
+                              id="admin-match-chef"
+                              value={matchChefId}
+                              onChange={(e) => setMatchChefId(e.target.value)}
+                              className="flex-1 rounded-xl border border-[var(--color-oxblood)]/15 bg-white px-3 py-2 text-xs font-semibold text-[var(--color-charcoal)] focus:outline-none focus:border-[var(--color-oxblood)]"
+                            >
+                              <option value="">Select a chef…</option>
+                              {chefs.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.displayName}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              disabled={!matchChefId || matching}
+                              onClick={() => void handleMatchChef(selectedBooking)}
+                              className="rounded-xl bg-[var(--color-oxblood)] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                            >
+                              {matching ? "Matching…" : "Match chef"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                   </div>
                 )}
               </div>

@@ -980,6 +980,32 @@ export async function resendBookingOffers(
   });
 }
 
+export const matchBookingChefResultSchema = z.object({
+  booking: operationsBookingSchema,
+  offer: chefOfferSchema,
+});
+
+export type MatchBookingChefResult = z.infer<typeof matchBookingChefResultSchema>;
+
+/**
+ * Admin click-to-match: assigns the chosen chef to a paid booking awaiting a
+ * chef and notifies the chef + customer exactly as a normal chef accept/claim
+ * would (chef-matched + shopping-list emails, CHEF_MATCHED status).
+ */
+export async function matchBookingChef(
+  bookingId: string,
+  input: { cookUserId: string; note?: string | null },
+  options: PlatformRequestOptions = {},
+): Promise<MatchBookingChefResult> {
+  return requestData({
+    path: `/api/v1/operations/booking-requests/${encodeURIComponent(bookingId)}/match-chef`,
+    method: "POST",
+    body: { cookUserId: input.cookUserId, ...(input.note ? { note: input.note } : {}) },
+    schema: envelope(matchBookingChefResultSchema),
+    options,
+  });
+}
+
 export async function fetchAdminDashboard(
   options: PlatformRequestOptions = {},
 ): Promise<AdminDashboard> {

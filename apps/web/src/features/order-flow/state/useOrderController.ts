@@ -21,6 +21,7 @@ import {
   type OrderStep,
 } from "./orderReducer";
 import type { Address, ContactDetails, GoalId, OrderMenuItem } from "../types";
+import type { CustomMealTier } from "../constants/customMealTiers";
 import type { ChefmatePlanId, DayTimeWindowId, PreferredDayId } from "@/features/plans/planCatalog";
 import {
   bookingRequestFingerprint,
@@ -89,7 +90,7 @@ export interface OrderController {
   readonly toggleSide: (item: OrderMenuItem) => void;
   readonly selectDessert: (item: OrderMenuItem) => void;
   readonly skipDessert: () => void;
-  readonly setCustomRequest: (text: string, link?: string | null) => void;
+  readonly setCustomRequest: (text: string, tier: CustomMealTier, link?: string | null) => void;
   readonly clearCustomRequest: () => void;
   readonly setBreakfastAddOn: (value: boolean) => void;
   readonly setDate: (date: string | null) => void;
@@ -211,6 +212,7 @@ export function useOrderController(): OrderController {
         dessert: state.dessert,
         customRequest: state.customRequest,
         customRequestLink: state.customRequestLink,
+        customMealTier: state.customMealTier,
         appliedGift: state.appliedGift,
         planId: state.planId,
         preferredDays: state.preferredDays,
@@ -242,6 +244,7 @@ export function useOrderController(): OrderController {
       state.breakfastAddOn,
       state.customRequest,
       state.customRequestLink,
+      state.customMealTier,
       state.dessert,
       state.dayMealsDeferred,
       state.dayMealAssignments,
@@ -488,8 +491,8 @@ export function useOrderController(): OrderController {
     selectDessert: useCallback((item) => dispatch({ type: "SELECT_DESSERT", item }), []),
     skipDessert: useCallback(() => dispatch({ type: "SKIP_DESSERT" }), []),
     setCustomRequest: useCallback(
-      (text: string, link: string | null = null) =>
-        dispatch({ type: "SET_CUSTOM_REQUEST", text, link }),
+      (text: string, tier: CustomMealTier, link: string | null = null) =>
+        dispatch({ type: "SET_CUSTOM_REQUEST", text, tier, link }),
       [],
     ),
     clearCustomRequest: useCallback(() => dispatch({ type: "CLEAR_CUSTOM_REQUEST" }), []),

@@ -197,4 +197,30 @@ describe("pricingQuoteClient", () => {
     );
     expect(buildPricingQuotePayload(state)).not.toHaveProperty("contactEmail");
   });
+
+  it("carries the chosen fixed-price meal option with a custom request", () => {
+    const state = {
+      ...INITIAL_ORDER_STATE,
+      main: {
+        id: "custom-request",
+        name: "Custom Request",
+        description: "Ouma's chicken curry",
+        priceDisplay: "Three courses",
+        price: 0,
+        course: "main",
+        imageSrc: "/images/loop/meal-3.webp",
+        imageAlt: "Custom dish request",
+        paletteId: "persimmon",
+        goalTags: [],
+      },
+      customRequest: "Ouma's chicken curry",
+      customMealTier: "three-course",
+    } as const;
+
+    expect(buildPricingQuotePayload(state)).toMatchObject({
+      mainSlug: "custom-request",
+      customRequest: "Ouma's chicken curry",
+      customMealTier: "three-course",
+    });
+  });
 });
