@@ -53,9 +53,12 @@ export default function LindiCustomOrderPage() {
         phone: normalizePhone(phone),
       };
       if (contact.name.length < 2) throw new Error("Contact name is required.");
-      if (!/^\S+@\S+\.\S+$/.test(contact.email)) throw new Error("A valid contact email is required.");
-      if (street.trim().length <= 2) throw new Error("Street address is required for the chef visit.");
-      if (area.trim().length <= 1) throw new Error("Area or suburb is required for the chef visit.");
+      if (!/^\S+@\S+\.\S+$/.test(contact.email))
+        throw new Error("A valid contact email is required.");
+      if (street.trim().length <= 2)
+        throw new Error("Street address is required for the chef visit.");
+      if (area.trim().length <= 1)
+        throw new Error("Area or suburb is required for the chef visit.");
 
       const confirmation = await submitBookingRequestPayload(
         {
@@ -92,7 +95,9 @@ export default function LindiCustomOrderPage() {
       window.location.assign(checkout.authorizationUrl);
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Chefmate could not start this booking.",
+        submitError instanceof Error
+          ? submitError.message
+          : "Chefmate could not start this booking.",
       );
       setIsSubmitting(false);
     }
@@ -108,20 +113,27 @@ export default function LindiCustomOrderPage() {
           Lindi&apos;s custom order — {TOTAL_LABEL}
         </h1>
         <div className="mt-4 rounded-2xl bg-[var(--color-warm-cream)] p-4 text-sm leading-6 text-[var(--color-charcoal)]/80">
-          <p className="font-bold text-[var(--color-oxblood)]">Friday 2 October 2026 · 16:00 (Johannesburg time)</p>
+          <p className="font-bold text-[var(--color-oxblood)]">
+            Friday 2 October 2026 · 16:00 (Johannesburg time)
+          </p>
           <p className="mt-2">
-            <span className="font-bold">Main 1:</span> Creamy Coconut Fish Curry and Rice with a side
-            of cucumber and coriander salad.
+            <span className="font-bold">Main 1:</span> Creamy Coconut Fish Curry and Rice with a
+            side of cucumber and coriander salad.
           </p>
           <p className="mt-1">
             <span className="font-bold">Main 2:</span> Honey Garlic roasted chicken with crispy
             rosemary potatoes and rocket and butternut salad.
           </p>
-          <p className="mt-2 font-bold text-[var(--color-oxblood)]">Session total: {TOTAL_LABEL} via Paystack</p>
+          <p className="mt-2 font-bold text-[var(--color-oxblood)]">
+            Session total: {TOTAL_LABEL} via Paystack
+          </p>
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={submit}>
-          <label className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]" htmlFor="lindi-name">
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-name"
+          >
             Full name
             <input
               id="lindi-name"
@@ -133,7 +145,10 @@ export default function LindiCustomOrderPage() {
               className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]" htmlFor="lindi-email">
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-email"
+          >
             Email address
             <input
               id="lindi-email"
@@ -145,7 +160,10 @@ export default function LindiCustomOrderPage() {
               className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]" htmlFor="lindi-phone">
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-phone"
+          >
             Phone number
             <input
               id="lindi-phone"
@@ -158,7 +176,10 @@ export default function LindiCustomOrderPage() {
               className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]" htmlFor="lindi-street">
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-street"
+          >
             Street address (where the chef cooks)
             <input
               id="lindi-street"
@@ -169,7 +190,10 @@ export default function LindiCustomOrderPage() {
               className="min-h-11 rounded-lg border border-[var(--color-oxblood)]/25 px-3 text-base font-normal outline-none focus:border-[var(--color-oxblood)] focus:ring-2 focus:ring-[var(--color-terracotta)]/35"
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]" htmlFor="lindi-area">
+          <label
+            className="grid gap-2 text-sm font-bold text-[var(--color-charcoal)]"
+            htmlFor="lindi-area"
+          >
             Area / suburb
             <input
               id="lindi-area"
