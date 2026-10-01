@@ -109,9 +109,7 @@ describe("CustomerActivationPage save and pay", () => {
     });
     render(<CustomerActivationPage token="activation-token" />);
 
-    expect(
-      await screen.findByRole("button", { name: /Save and pay/ }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Save and pay/ })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 

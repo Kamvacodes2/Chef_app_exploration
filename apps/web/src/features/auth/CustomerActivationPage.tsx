@@ -65,7 +65,8 @@ export function CustomerActivationPage({
       return () => {
         active = false;
       };
-    }    const initialise = async (user: ActivatedCustomer): Promise<void> => {
+    }
+    const initialise = async (user: ActivatedCustomer): Promise<void> => {
       setState({ status: "ready", user });
       setDisplayName(user.displayName);
       setPhone(user.phone ?? "");
