@@ -47,9 +47,7 @@ export function PolicyAcceptanceModal({
 
   const pendingPolicies = useMemo(
     () =>
-      policies.filter(
-        (policy) => !policy.accepted && !acceptedLocally.has(policyIdentity(policy)),
-      ),
+      policies.filter((policy) => !policy.accepted && !acceptedLocally.has(policyIdentity(policy))),
     [acceptedLocally, policies],
   );
   const allChecked =
@@ -165,7 +163,7 @@ export function PolicyAcceptanceModal({
   const hasPending = pendingPolicies.length > 0;
   const heading = hasPending
     ? pendingPolicies.length === 1
-      ? pendingPolicies[0]?.title ?? "Review policy"
+      ? (pendingPolicies[0]?.title ?? "Review policy")
       : `Review and accept ${pendingPolicies.length} policies`
     : "Confirming policy status";
   const description = hasPending
@@ -230,8 +228,7 @@ export function PolicyAcceptanceModal({
                       <div className="rounded-xl border-l-4 border-amber-600 bg-amber-50 p-3 text-amber-950">
                         <p className="font-semibold">This policy has been updated.</p>
                         <p className="mt-1 text-xs">
-                          Please review the current document and acknowledge it again to
-                          continue.
+                          Please review the current document and acknowledge it again to continue.
                         </p>
                       </div>
                     ) : null}
@@ -252,9 +249,7 @@ export function PolicyAcceptanceModal({
                         onChange={(event) => toggleChecked(identity, event.target.checked)}
                         type="checkbox"
                       />
-                      <span>
-                        I acknowledge that I have reviewed and accept {policy.title}.
-                      </span>
+                      <span>I acknowledge that I have reviewed and accept {policy.title}.</span>
                     </label>
                   </li>
                 );
