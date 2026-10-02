@@ -23,6 +23,12 @@ export const CHEF_NAV: readonly NavItem[] = [
     icon: <IconCalendar width={18} height={18} />,
   },
   {
+    id: "menus",
+    label: "Weekly Menus",
+    path: "/chef/portal/menus",
+    icon: <IconCalendar width={18} height={18} />,
+  },
+  {
     id: "messages",
     label: "Messages",
     path: "/chef/portal/messages",
