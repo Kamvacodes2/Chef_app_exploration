@@ -21,6 +21,12 @@ export const CUSTOMER_NAV: readonly NavItem[] = [
     icon: <IconCalendar width={18} height={18} />,
   },
   {
+    id: "menus",
+    label: "Weekly Menus",
+    path: "/customer/menus",
+    icon: <IconCalendar width={18} height={18} />,
+  },
+  {
     id: "messages",
     label: "Messages",
     path: "/customer/messages",
