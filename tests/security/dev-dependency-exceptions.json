@@ -17,5 +17,20 @@
     "     newly introduced advisory cannot arrive unnoticed."
   ],
   "policyVersion": 1,
-  "exceptions": []
+  "exceptions": [
+    {
+      "advisoryId": "GHSA-vfj7-8cjw-p6xm",
+      "module": "braces",
+      "severity": "high",
+      "title": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns",
+      "vulnerableVersions": "<=3.0.3",
+      "patchedVersions": "none published",
+      "justification": "The advisory lists >=3.0.4 as patched, but braces has published no 3.x release past 3.0.3, so there is nothing to upgrade to. An override pinned here would silently do nothing while appearing to fix the finding.",
+      "scope": "Development-only: apps/web > eslint-config-next > @next/eslint-plugin-next > fast-glob > micromatch > braces. Reached solely by the ESLint configuration, so no production request can execute it; lint input is repository source rather than attacker-controlled.",
+      "owner": "engineering",
+      "createdOn": "2026-10-03",
+      "reviewBy": "2026-11-02",
+      "removalCondition": "Remove as soon as braces publishes 3.0.4 (or later); upgrade the lockfile at the next dependency refresh regardless."
+    }
+  ]
 }

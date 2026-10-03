@@ -1,6 +1,7 @@
 import type { NavItem } from "@/components/layout/DashboardLayout";
 import {
   IconCalendar,
+  IconCreditCard,
   IconLayoutDashboard,
   IconMessageCircle,
   IconUser,
@@ -25,6 +26,12 @@ export const CUSTOMER_NAV: readonly NavItem[] = [
     label: "Weekly Menus",
     path: "/customer/menus",
     icon: <IconCalendar width={18} height={18} />,
+  },
+  {
+    id: "subscription",
+    label: "Subscription",
+    path: "/customer/subscription",
+    icon: <IconCreditCard width={18} height={18} />,
   },
   {
     id: "messages",
